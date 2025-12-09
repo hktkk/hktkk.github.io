@@ -1,530 +1,499 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartNutri Photo Log</title>
-    
-    <!-- 1. Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    padding: {
-                        'safe-top': 'env(safe-area-inset-top)',
-                        'safe-bottom': 'env(safe-area-inset-bottom)',
-                    }
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SmartNutri Local Ultimate</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          padding: {
+            'safe-top': 'env(safe-area-inset-top)',
+            'safe-bottom': 'env(safe-area-inset-bottom)',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'slide-up': 'slideUp 0.3s ease-out',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+          }
         }
-    </script>
+      }
+    }
+  </script>
 
-    <!-- 2. Babel -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 3. React Logic -->
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
-        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
-        import { 
-            Calculator, Utensils, Activity, Calendar, Camera, 
-            ChevronLeft, ChevronRight, Save, Trash2, 
-            Loader2, Search, Info, Plus, X, BarChart3, TrendingUp,
-            User, CalendarCheck, Image as ImageIcon
-        } from 'https://esm.sh/lucide-react@0.263.1?deps=react@18.2.0';
+  <style>
+    /* 隱藏捲軸但保留功能 */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* 日期輸入框樣式優化 */
+    input[type="date"] { position: relative; }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%; height: 100%; opacity: 0; cursor: pointer;
+    }
+  </style>
+</head>
+<body class="bg-[#F0F2F5] font-sans text-slate-900 overflow-x-hidden">
+  
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
+    import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
+    import { 
+      Calculator, Utensils, Activity, Calendar, Camera, 
+      ChevronLeft, ChevronRight, Save, Trash2, 
+      Loader2, Search, Info, Plus, X, BarChart3, TrendingUp,
+      User, CalendarCheck, Zap
+    } from 'https://esm.sh/lucide-react@0.263.1?deps=react@18.2.0';
 
-        // 圖片壓縮函數 (為了節省 LocalStorage 空間)
-        const resizeImage = (file) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600; 
-                        const scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7)); 
-                    };
-                };
-            });
+    // --- 工具：取得本地日期字串 (解決時區問題) ---
+    const getLocalDateStr = (date = new Date()) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // --- 工具：圖片壓縮 ---
+    const resizeImage = (file) => new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 600;
+          const scale = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          // 使用 JPEG 0.7 以獲得最佳相容性與壓縮率
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); 
         };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
 
-        // ==========================================
-        // 主程式元件
-        // ==========================================
-        const SmartNutriLocal = () => {
-            const [loading, setLoading] = useState(true);
+    // --- 主程式 ---
+    const SmartNutriLocal = () => {
+      const [loading, setLoading] = useState(true);
+      const todayStr = getLocalDateStr();
+      const [selectedDate, setSelectedDate] = useState(todayStr);
+      const [showAnalysis, setShowAnalysis] = useState(false);
+      const [showProfile, setShowProfile] = useState(false);
+      const [historyData, setHistoryData] = useState([]);
+
+      const [userProfile, setUserProfile] = useState({
+        gender: 'female', dob: '1995-01-01', height: 160, weight: 55, activityLevel: 1.2
+      });
+
+      const defaultMeals = [
+        { id: 'breakfast', name: '早餐', type: 'fixed', calories: 0, protein: 0, carbs: 0, fat: 0, image: null, desc: '' },
+        { id: 'lunch', name: '午餐', type: 'fixed', calories: 0, protein: 0, carbs: 0, fat: 0, image: null, desc: '' },
+        { id: 'dinner', name: '晚餐', type: 'fixed', calories: 0, protein: 0, carbs: 0, fat: 0, image: null, desc: '' },
+      ];
+      const [currentMeals, setCurrentMeals] = useState(defaultMeals);
+
+      // 初始化讀取
+      useEffect(() => {
+        const savedProfile = localStorage.getItem('smartnutri_profile');
+        if (savedProfile) setUserProfile(JSON.parse(savedProfile));
+        setLoading(false);
+      }, []);
+
+      // 日期變更讀取
+      useEffect(() => {
+        const savedMeals = localStorage.getItem(`smartnutri_logs_${selectedDate}`);
+        setCurrentMeals(savedMeals ? JSON.parse(savedMeals) : defaultMeals);
+      }, [selectedDate]);
+
+      // 儲存邏輯
+      const saveMeals = (meals) => {
+        localStorage.setItem(`smartnutri_logs_${selectedDate}`, JSON.stringify(meals));
+        setCurrentMeals(meals);
+      };
+
+      const saveProfile = (profile) => {
+        setUserProfile(profile);
+        localStorage.setItem('smartnutri_profile', JSON.stringify(profile));
+        setShowProfile(false);
+      };
+
+      // 歷史數據計算
+      const fetchHistory = () => {
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dateStr = getLocalDateStr(d);
+          const dayLabel = d.toLocaleDateString('zh-TW', { weekday: 'narrow' });
+          const saved = localStorage.getItem(`smartnutri_logs_${dateStr}`);
+          const total = saved ? JSON.parse(saved).reduce((a,m) => a + (Number(m.calories)||0), 0) : 0;
+          data.push({ date: dateStr, dayLabel, total });
+        }
+        setHistoryData(data);
+      };
+
+      useEffect(() => { if (showAnalysis) fetchHistory(); }, [showAnalysis, selectedDate, currentMeals]);
+
+      // 操作功能
+      const goToToday = () => setSelectedDate(todayStr);
+      
+      const addSnack = () => saveMeals([...currentMeals, {
+        id: `snack_${Date.now()}`, name: '點心 / 其他', type: 'extra',
+        calories: 0, protein: 0, carbs: 0, fat: 0, image: null, desc: ''
+      }]);
+
+      const removeMealEntry = (id) => saveMeals(currentMeals.filter(m => m.id !== id));
+
+      const handleImageUpload = async (mealId, e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const resized = await resizeImage(file);
+        saveMeals(currentMeals.map(m => m.id === mealId ? {...m, image: resized} : m));
+      };
+
+      const removeImage = (mealId) => {
+        if (!confirm("確定要刪除這張照片嗎？")) return;
+        saveMeals(currentMeals.map(m => m.id === mealId ? {...m, image: null} : m));
+      };
+
+      const updateMeal = (id, field, value) => {
+        saveMeals(currentMeals.map(m => m.id === id ? {...m, [field]: value} : m));
+      };
+
+      // 統計計算 (精確年齡版)
+      const calculateStats = () => {
+        const birthDate = new Date(userProfile.dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        
+        let bmr = 0;
+        if (userProfile.gender === 'male') {
+          bmr = 10 * userProfile.weight + 6.25 * userProfile.height - 5 * age + 5;
+        } else {
+          bmr = 10 * userProfile.weight + 6.25 * userProfile.height - 5 * age - 161;
+        }
+        const tdee = Math.round(bmr * userProfile.activityLevel);
+        return { age, bmr: Math.round(bmr), tdee };
+      };
+
+      const stats = calculateStats();
+      const totalCalories = currentMeals.reduce((a,m) => a + (Number(m.calories)||0), 0);
+      const remaining = stats.tdee - totalCalories;
+      const progress = stats.tdee ? Math.min((totalCalories / stats.tdee) * 100, 100) : 0;
+
+      if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-slate-400" size={40}/></div>;
+
+      return (
+        <div className="max-w-[480px] mx-auto min-h-screen pb-32 relative bg-[#F0F2F5] shadow-2xl">
+          {/* 背景光暈 */}
+          <div className="fixed inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[50%] bg-blue-200/30 rounded-full blur-[100px]"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[50%] bg-emerald-200/30 rounded-full blur-[100px]"></div>
+          </div>
+
+          {/* Top Bar */}
+          <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-white/20 pt-safe-top">
+            <div className="flex items-center justify-between px-4 py-3 gap-2">
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowAnalysis(!showAnalysis)} 
+                  className={`w-10 h-10 flex items-center justify-center rounded-full transition active:scale-95 ${showAnalysis ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-black/5 text-slate-600 hover:bg-black/10'}`}
+                >
+                  {showAnalysis ? <X size={20}/> : <BarChart3 size={20}/>}
+                </button>
+                {selectedDate !== todayStr && (
+                  <button 
+                    onClick={goToToday} 
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 text-emerald-600 hover:bg-emerald-50 transition active:scale-95 animate-fade-in"
+                  >
+                    <CalendarCheck size={20}/>
+                  </button>
+                )}
+              </div>
+              
+              <div className="flex-1 flex justify-center min-w-0">
+                <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/5 hover:bg-black/10 transition cursor-pointer relative">
+                  <Calendar size={16} className="text-emerald-600 shrink-0"/>
+                  <span className="font-bold text-slate-800 text-sm whitespace-nowrap">{selectedDate}</span>
+                  <input 
+                    type="date" 
+                    value={selectedDate} 
+                    onChange={e=>setSelectedDate(e.target.value)} 
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </label>
+              </div>
+
+              <button 
+                onClick={()=>setShowProfile(true)} 
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 text-slate-600 hover:bg-black/10 transition active:scale-95"
+              >
+                <User size={20}/>
+              </button>
+            </div>
+          </div>
+
+          <div className="relative z-10 px-4 pt-4 space-y-6">
             
-            // 日期設定
-            const todayStr = new Date().toISOString().split('T')[0];
-            const [selectedDate, setSelectedDate] = useState(todayStr);
-            
-            const [showAnalysis, setShowAnalysis] = useState(false);
-            const [historyData, setHistoryData] = useState([]);
-            const [showProfile, setShowProfile] = useState(false);
+            {/* View: 7天分析 */}
+            {showAnalysis && (
+              <div className="bg-white/80 backdrop-blur-xl rounded-[28px] p-6 border border-white/60 shadow-lg animate-slide-up">
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                     <TrendingUp className="text-emerald-500" size={20}/>
+                     過去 7 天分析
+                   </h3>
+                   <span className="text-xs text-slate-400 font-medium">TDEE: {stats.tdee}</span>
+                 </div>
+                 
+                 <div className="flex items-end justify-between h-40 gap-2 pt-4 border-b border-slate-100 pb-2">
+                   {historyData.map((day) => {
+                     const isSelected = day.date === selectedDate;
+                     const percentage = stats.tdee > 0 ? Math.min((day.total / stats.tdee) * 100, 100) : 0;
+                     const isOver = day.total > stats.tdee;
+                     
+                     return (
+                       <div 
+                         key={day.date} 
+                         onClick={() => { setSelectedDate(day.date); setShowAnalysis(false); }}
+                         className="flex-1 flex flex-col items-center justify-end h-full gap-2 cursor-pointer group"
+                       >
+                         <div className="w-full relative flex items-end justify-center h-full bg-slate-100 rounded-t-lg overflow-hidden">
+                            <div 
+                              className={`w-full transition-all duration-500 rounded-t-lg ${isOver ? 'bg-red-400' : 'bg-emerald-400'} ${isSelected ? 'opacity-100 ring-2 ring-emerald-500/50' : 'opacity-70 group-hover:opacity-100'}`}
+                              style={{ height: `${percentage}%` }}
+                            ></div>
+                         </div>
+                         <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-600' : 'text-slate-400'}`}>
+                           {day.dayLabel}
+                         </span>
+                       </div>
+                     );
+                   })}
+                 </div>
+              </div>
+            )}
 
-            // 個人資料 (預設值)
-            const [userProfile, setUserProfile] = useState({
-                gender: 'female', dob: '1995-01-01', height: 160, weight: 55, activityLevel: 1.2
-            });
-            
-            // 餐點資料
-            const defaultMeals = [
-                { id: 'breakfast', name: '早餐', type: 'fixed', calories: 0, protein: 0, carbs: 0, fat: 0, image: null, desc: '' },
-                { id: 'lunch', name: '午餐', type: 'fixed', calories: 0, protein: 0, carbs: 0, fat: 0, image: null, desc: '' },
-                { id: 'dinner', name: '晚餐', type: 'fixed', calories: 0, protein: 0, carbs: 0, fat: 0, image: null, desc: '' },
-            ];
-            const [currentMeals, setCurrentMeals] = useState(defaultMeals);
+            {/* View: 每日儀表板 */}
+            {!showAnalysis && (
+              <div className="relative overflow-hidden rounded-[28px] p-6 text-white shadow-lg shadow-emerald-500/10 border border-white/20 animate-fade-in">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 opacity-90 backdrop-blur-3xl z-0"></div>
+                <div className="relative z-20">
+                  <h2 className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">今日卡路里餘額</h2>
+                  <div className={`text-5xl font-bold tracking-tight mb-4 ${remaining < 0 ? 'text-red-100' : 'text-white'}`}>
+                    {remaining}
+                  </div>
 
-            // --- 1. 初始化：從 LocalStorage 讀取資料 ---
-            useEffect(() => {
-                const savedProfile = localStorage.getItem('smartnutri_profile');
-                if (savedProfile) {
-                    setUserProfile(JSON.parse(savedProfile));
-                }
-                setLoading(false);
-            }, []);
-
-            // --- 2. 監聽日期改變，讀取該日期的餐點 ---
-            useEffect(() => {
-                const savedMeals = localStorage.getItem(`smartnutri_logs_${selectedDate}`);
-                if (savedMeals) {
-                    setCurrentMeals(JSON.parse(savedMeals));
-                } else {
-                    setCurrentMeals(defaultMeals);
-                }
-            }, [selectedDate]);
-
-            // --- 資料儲存函數 ---
-            const saveMealsToLocal = (newMeals) => {
-                localStorage.setItem(`smartnutri_logs_${selectedDate}`, JSON.stringify(newMeals));
-            };
-
-            const saveProfileToLocal = (newProfile) => {
-                setUserProfile(newProfile);
-                localStorage.setItem('smartnutri_profile', JSON.stringify(newProfile));
-                setShowProfile(false);
-            };
-
-            // --- 歷史資料讀取 ---
-            const fetchHistory = () => {
-                const last7Days = [];
-                for (let i = 6; i >= 0; i--) {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    const dateStr = d.toISOString().split('T')[0];
-                    const dayLabel = d.toLocaleDateString('zh-TW', { weekday: 'narrow' });
+                  <div className="bg-black/20 p-4 rounded-[20px] backdrop-blur-md border border-white/5">
+                    <div className="flex justify-between text-xs font-medium text-white/90 mb-2">
+                      <span>目標: {stats.tdee}</span>
+                      <span>已吃: {totalCalories}</span>
+                    </div>
+                    <div className="w-full bg-black/10 h-2.5 rounded-full overflow-hidden mb-4">
+                      <div 
+                        className={`h-full transition-all duration-700 ${remaining < 0 ? 'bg-red-400' : 'bg-emerald-300'}`} 
+                        style={{width: `${progress}%`}}
+                      ></div>
+                    </div>
                     
-                    const savedLog = localStorage.getItem(`smartnutri_logs_${dateStr}`);
-                    let total = 0;
-                    if (savedLog) {
-                        const meals = JSON.parse(savedLog);
-                        total = meals.reduce((acc, m) => acc + (Number(m.calories) || 0), 0);
-                    }
-
-                    last7Days.push({ date: dateStr, dayLabel, total });
-                }
-                setHistoryData(last7Days);
-            };
-
-            useEffect(() => {
-                if (showAnalysis) fetchHistory();
-            }, [showAnalysis, currentMeals, selectedDate]);
-
-
-            // --- 操作邏輯 ---
-            const goToToday = () => setSelectedDate(todayStr);
-
-            const updateMealLocally = (mealId, field, value) => {
-                const updated = currentMeals.map(m => m.id === mealId ? { ...m, [field]: value } : m);
-                setCurrentMeals(updated);
-                saveMealsToLocal(updated);
-            };
-
-            const addSnack = () => {
-                const newSnack = {
-                    id: `snack_${Date.now()}`,
-                    name: '點心 / 其他',
-                    type: 'extra',
-                    calories: 0, protein: 0, carbs: 0, fat: 0, 
-                    image: null, desc: '' 
-                };
-                const updated = [...currentMeals, newSnack];
-                setCurrentMeals(updated);
-                saveMealsToLocal(updated);
-            };
-
-            const removeMealEntry = (mealId) => {
-                const updated = currentMeals.filter(m => m.id !== mealId);
-                setCurrentMeals(updated);
-                saveMealsToLocal(updated);
-            };
-
-            // 圖片上傳邏輯 (僅保存，不分析)
-            const handleImageUpload = async (mealId, e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                // 顯示簡單的 loading 狀態 (非 AI 分析，只是壓縮圖片)
-                // 這裡因為壓縮很快，通常不需要額外 state，直接更新即可
-                const resizedBase64 = await resizeImage(file);
-                
-                const updatedMeals = currentMeals.map(m => {
-                    if (m.id === mealId) {
-                        return { ...m, image: resizedBase64 };
-                    }
-                    return m;
-                });
-                
-                setCurrentMeals(updatedMeals);
-                saveMealsToLocal(updatedMeals);
-            };
-
-            const removeImage = (mealId) => {
-                if(!confirm("確定要刪除這張照片嗎？")) return;
-                const updatedMeals = currentMeals.map(m => {
-                    if (m.id === mealId) {
-                        return { ...m, image: null };
-                    }
-                    return m;
-                });
-                setCurrentMeals(updatedMeals);
-                saveMealsToLocal(updatedMeals);
-            };
-
-            const calculateStats = () => {
-                const birthDate = new Date(userProfile.dob);
-                const today = new Date();
-                let age = today.getFullYear() - birthDate.getFullYear();
-                const m = today.getMonth() - birthDate.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-                let bmr = 0;
-                if (userProfile.gender === 'male') {
-                    bmr = (10 * userProfile.weight) + (6.25 * userProfile.height) - (5 * age) + 5;
-                } else {
-                    bmr = (10 * userProfile.weight) + (6.25 * userProfile.height) - (5 * age) - 161;
-                }
-                const tdee = Math.round(bmr * userProfile.activityLevel);
-                return { age, bmr, tdee };
-            };
-            const stats = calculateStats();
-            const totalCalories = currentMeals.reduce((acc, m) => acc + (Number(m.calories) || 0), 0);
-            const remaining = stats.tdee - totalCalories;
-            const progress = stats.tdee > 0 ? Math.min((totalCalories / stats.tdee) * 100, 100) : 0;
-
-            if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-slate-400" size={32} /></div>;
-
-            return (
-                <div className="max-w-[480px] mx-auto min-h-screen font-sans text-slate-900 pb-32 relative bg-[#F0F2F5]">
-                    {/* Background Glows */}
-                    <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-                        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[40%] bg-blue-200/30 rounded-full blur-[80px]"></div>
-                        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[40%] bg-emerald-200/30 rounded-full blur-[80px]"></div>
+                    <div className="flex gap-2">
+                      {['蛋白質', '碳水', '脂肪'].map((label, idx) => {
+                        const keys = ['protein', 'carbs', 'fat'];
+                        const val = currentMeals.reduce((a,b)=>a+(Number(b[keys[idx]])||0),0);
+                        return (
+                          <div key={label} className="flex-1 text-center bg-white/10 rounded-xl p-1.5 border border-white/5">
+                            <div className="text-[9px] text-white/60 mb-0.5">{label}</div>
+                            <div className="text-sm font-bold">{val}g</div>
+                          </div>
+                        );
+                      })}
                     </div>
-
-                    {/* Top Navigation */}
-                    <div className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-white/20 pt-safe-top">
-                        <div className="flex items-center justify-between px-4 py-3 gap-2">
-                            <div className="flex items-center gap-2">
-                                <button 
-                                onClick={() => setShowAnalysis(!showAnalysis)}
-                                className={`w-10 h-10 flex items-center justify-center rounded-full transition active:scale-95 ${showAnalysis ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-black/5 text-slate-600 hover:bg-black/10'}`}
-                                >
-                                {showAnalysis ? <X size={20}/> : <BarChart3 size={20}/>}
-                                </button>
-                                
-                                {selectedDate !== todayStr && (
-                                <button 
-                                    onClick={goToToday}
-                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 text-emerald-600 hover:bg-emerald-50 transition active:scale-95 animate-in zoom-in duration-200"
-                                    title="回到今天"
-                                >
-                                    <CalendarCheck size={20}/>
-                                </button>
-                                )}
-                            </div>
-                            
-                            <div className="flex-1 flex justify-center min-w-0">
-                                <label className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/5 hover:bg-black/10 transition cursor-pointer">
-                                <Calendar size={16} className="text-emerald-600 shrink-0"/>
-                                <input 
-                                    type="date" 
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="bg-transparent outline-none cursor-pointer text-center font-bold text-slate-800 text-sm whitespace-nowrap"
-                                    style={{ minWidth: '100px' }} 
-                                />
-                                </label>
-                            </div>
-
-                            <button 
-                                onClick={() => setShowProfile(true)}
-                                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 text-slate-600 hover:bg-black/10 transition active:scale-95"
-                            >
-                                <User size={20}/>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="relative z-10 px-4 pt-4 space-y-6">
-                        
-                        {/* 圖表視圖 */}
-                        {showAnalysis && (
-                        <div className="bg-white/80 backdrop-blur-xl rounded-[28px] p-6 border border-white/60 shadow-lg animate-in slide-in-from-top-4 fade-in duration-300">
-                            <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                                <TrendingUp className="text-emerald-500" size={20}/>
-                                過去 7 天攝取分析
-                            </h3>
-                            <span className="text-xs text-slate-400 font-medium">TDEE: {stats.tdee}</span>
-                            </div>
-                            
-                            <div className="flex items-end justify-between h-40 gap-2 pt-4 border-b border-slate-100 pb-2">
-                            {historyData.map((day) => {
-                                const isSelected = day.date === selectedDate;
-                                const percentage = stats.tdee > 0 ? Math.min((day.total / stats.tdee) * 100, 100) : 0;
-                                const isOver = day.total > stats.tdee;
-                                
-                                return (
-                                <div 
-                                    key={day.date} 
-                                    onClick={() => {
-                                    setSelectedDate(day.date);
-                                    setShowAnalysis(false);
-                                    }}
-                                    className="flex-1 flex flex-col items-center justify-end h-full gap-2 cursor-pointer group"
-                                >
-                                    <div className="w-full relative flex items-end justify-center h-full bg-slate-100 rounded-t-lg overflow-hidden">
-                                        <div 
-                                        className={`w-full transition-all duration-500 rounded-t-lg ${isOver ? 'bg-red-400' : 'bg-emerald-400'} ${isSelected ? 'opacity-100 ring-2 ring-emerald-500/50' : 'opacity-70 group-hover:opacity-100'}`}
-                                        style={{ height: `${percentage}%` }}
-                                        ></div>
-                                    </div>
-                                    <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                    {day.dayLabel}
-                                    </span>
-                                </div>
-                                );
-                            })}
-                            </div>
-                            <div className="text-center mt-3 text-xs text-slate-400">
-                            點擊長條圖可快速跳轉至該日期
-                            </div>
-                        </div>
-                        )}
-
-                        {/* 每日儀表板 */}
-                        {!showAnalysis && (
-                        <div className="relative overflow-hidden rounded-[28px] p-6 text-white shadow-lg shadow-emerald-500/10 border border-white/20">
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 opacity-90 backdrop-blur-3xl z-0"></div>
-                            <div className="relative z-20">
-                            <h2 className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-1">今日卡路里餘額</h2>
-                            <div className={`text-5xl font-bold tracking-tight mb-4 ${remaining < 0 ? 'text-red-100' : 'text-white'}`}>
-                                {remaining}
-                            </div>
-
-                            <div className="bg-black/20 p-4 rounded-[20px] backdrop-blur-md border border-white/5">
-                                <div className="flex justify-between text-xs font-medium text-white/90 mb-2">
-                                <span>目標: {stats.tdee}</span>
-                                <span>已吃: {totalCalories}</span>
-                                </div>
-                                <div className="w-full bg-black/10 h-2.5 rounded-full overflow-hidden mb-4">
-                                <div 
-                                    className={`h-full transition-all duration-700 ${remaining < 0 ? 'bg-red-400' : 'bg-emerald-300'}`} 
-                                    style={{width: `${progress}%`}}
-                                ></div>
-                                </div>
-                                
-                                <div className="flex gap-2">
-                                {['蛋白質', '碳水', '脂肪'].map((label, idx) => {
-                                    const vals = [
-                                    currentMeals.reduce((a,b)=>a+(Number(b.protein)||0),0),
-                                    currentMeals.reduce((a,b)=>a+(Number(b.carbs)||0),0),
-                                    currentMeals.reduce((a,b)=>a+(Number(b.fat)||0),0)
-                                    ];
-                                    return (
-                                    <div key={label} className="flex-1 text-center bg-white/10 rounded-xl p-1.5 border border-white/5">
-                                        <div className="text-[9px] text-white/60 mb-0.5">{label}</div>
-                                        <div className="text-sm font-bold">{vals[idx]}g</div>
-                                    </div>
-                                    );
-                                })}
-                                </div>
-                            </div>
-                            </div>
-                        </div>
-                        )}
-
-                        {/* 餐點列表 */}
-                        <div className="space-y-4 pb-10">
-                        <div className="flex items-center justify-between pl-2">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">今日飲食記錄</h3>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            {currentMeals.map((meal) => (
-                            <div key={meal.id} className="bg-white/80 backdrop-blur-xl rounded-[24px] border border-white/60 overflow-hidden shadow-sm">
-                                <div className="px-5 py-4 flex justify-between items-center bg-white/40 border-b border-slate-100/50">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-2 h-2 rounded-full ${meal.calories > 0 ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                                    <span className="font-bold text-base text-slate-800">{meal.name}</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-mono font-bold text-emerald-600">
-                                    {meal.calories > 0 ? meal.calories : 0} <span className="text-[10px] text-slate-400 font-sans">kcal</span>
-                                    </span>
-                                    {meal.type === 'extra' && (
-                                    <button onClick={(e) => { e.stopPropagation(); removeMealEntry(meal.id); }} className="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors">
-                                        <X size={16} />
-                                    </button>
-                                    )}
-                                </div>
-                                </div>
-
-                                <div className="p-5">
-                                <div className="mb-5">
-                                    {meal.image ? (
-                                    <div className="relative group rounded-2xl overflow-hidden shadow-sm">
-                                        <img src={meal.image} alt={meal.name} className="w-full h-48 object-cover"/>
-                                        
-                                        {/* 刪除圖片按鈕 */}
-                                        <button 
-                                            onClick={() => removeImage(meal.id)}
-                                            className="absolute top-3 right-3 bg-black/40 text-white p-2 rounded-full hover:bg-red-500/80 backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100"
-                                            title="刪除照片"
-                                        >
-                                            <Trash2 size={16}/>
-                                        </button>
-                                        
-                                        {/* 更改照片按鈕 (隱藏的 input) */}
-                                        <label className="absolute bottom-3 right-3 bg-white/90 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 hover:bg-white active:scale-95 transition cursor-pointer">
-                                            <Camera size={14} /> 更換照片
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(meal.id, e)}/>
-                                        </label>
-                                    </div>
-                                    ) : (
-                                    <label className="group flex flex-col items-center justify-center w-full h-32 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-white hover:border-emerald-300 transition-all">
-                                        <div className="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                                        <Camera className="text-slate-400 group-hover:text-emerald-500" size={20}/>
-                                        </div>
-                                        <span className="text-xs text-slate-400 font-medium">拍照記錄</span>
-                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(meal.id, e)}/>
-                                    </label>
-                                    )}
-                                </div>
-
-                                <div className="space-y-0 divide-y divide-slate-100 border border-slate-100 rounded-xl bg-white/50 overflow-hidden">
-                                    <div className="flex items-center px-3 py-2">
-                                    <Search size={16} className="text-slate-400 mr-2"/>
-                                    <input type="text" placeholder="輸入食物名稱..." value={meal.desc} onChange={(e) => updateMealLocally(meal.id, 'desc', e.target.value)} className="flex-1 bg-transparent text-sm py-1 outline-none placeholder:text-slate-400 text-slate-700"/>
-                                    </div>
-                                    <div className="grid grid-cols-4 divide-x divide-slate-100 bg-white/30">
-                                    {[{l:'熱量',k:'calories'},{l:'蛋白',k:'protein'},{l:'碳水',k:'carbs'},{l:'脂肪',k:'fat'}].map(f=>(
-                                        <div key={f.k} className="flex flex-col items-center p-2">
-                                        <label className="text-[9px] text-slate-400 mb-0.5">{f.l}</label>
-                                        <input type="number" value={meal[f.k]||''} onChange={e=>updateMealLocally(meal.id, f.k, e.target.value)} className="w-full text-center bg-transparent text-sm font-bold text-slate-700 outline-none p-0"/>
-                                        </div>
-                                    ))}
-                                    </div>
-                                </div>
-                                </div>
-                            </div>
-                            ))}
-                        </div>
-
-                        <button onClick={addSnack} className="w-full py-3 bg-white/60 backdrop-blur-md border border-slate-200 text-emerald-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-white hover:shadow-md transition-all active:scale-[0.98]">
-                            <Plus size={18} /> 新增點心
-                        </button>
-                        </div>
-                    </div>
-
-                    {/* 個人設定 Modal */}
-                    {showProfile && (
-                        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-in fade-in duration-200">
-                        <div className="bg-white/95 backdrop-blur-xl w-full max-w-md rounded-[32px] p-8 shadow-2xl scale-100 animate-in zoom-in-95 duration-200 border border-white/20">
-                            <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-slate-800 text-xl flex items-center gap-2">
-                                <User className="text-emerald-500" size={24}/> 個人設定
-                            </h3>
-                            <button onClick={() => setShowProfile(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200 text-slate-500">
-                                <X size={20} />
-                            </button>
-                            </div>
-                            
-                            <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 ml-1">出生日期</label>
-                                <input 
-                                    type="date" 
-                                    value={userProfile.dob} 
-                                    onChange={e => setUserProfile({...userProfile, dob: e.target.value})} 
-                                    className="w-full h-14 bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold outline-none transition-all"
-                                />
-                                </div>
-                                <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 ml-1">性別</label>
-                                <div className="relative h-14">
-                                    <select 
-                                        value={userProfile.gender} 
-                                        onChange={e => setUserProfile({...userProfile, gender: e.target.value})} 
-                                        className="w-full h-full bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold appearance-none outline-none transition-all"
-                                    >
-                                    <option value="female">女性</option>
-                                    <option value="male">男性</option>
-                                    </select>
-                                    <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90" size={16}/>
-                                </div>
-                                </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 ml-1">身高 (cm)</label>
-                                <input type="number" value={userProfile.height} onChange={e => setUserProfile({...userProfile, height: Number(e.target.value)})} className="w-full h-14 bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-bold text-center outline-none"/>
-                                </div>
-                                <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 ml-1">體重 (kg)</label>
-                                <input type="number" value={userProfile.weight} onChange={e => setUserProfile({...userProfile, weight: Number(e.target.value)})} className="w-full h-14 bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-bold text-center outline-none"/>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 ml-1">活動量</label>
-                                <div className="relative h-14">
-                                <select value={userProfile.activityLevel} onChange={e => setUserProfile({...userProfile, activityLevel: Number(e.target.value)})} className="w-full h-full bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold appearance-none outline-none">
-                                    <option value={1.2}>久坐不動</option>
-                                    <option value={1.375}>輕度活動 (每週1-3次)</option>
-                                    <option value={1.55}>中度活動 (每週3-5次)</option>
-                                    <option value={1.725}>高度活動 (每週6-7次)</option>
-                                </select>
-                                <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90" size={16}/>
-                                </div>
-                            </div>
-
-                            <button onClick={() => saveProfileToLocal(userProfile)} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-emerald-200 hover:bg-emerald-600 active:scale-[0.98] transition-all mt-4">
-                                儲存設定
-                            </button>
-                            </div>
-                        </div>
-                        </div>
-                    )}
+                  </div>
                 </div>
-            );
-        };
+              </div>
+            )}
 
-        const root = ReactDOM.createRoot(document.body);
-        root.render(<SmartNutriLocal />);
-    </script>
-    <style>
-        body { margin: 0; padding: 0; background-color: #F0F2F5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    </style>
+            {/* 餐點列表 */}
+            <div className="space-y-4 pb-10">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2">今日飲食記錄</h3>
+              
+              <div className="space-y-4">
+                {currentMeals.map((meal) => (
+                  <div key={meal.id} className="bg-white/80 backdrop-blur-xl rounded-[24px] border border-white/60 overflow-hidden shadow-sm animate-fade-in">
+                    <div className="px-5 py-4 flex justify-between items-center bg-white/40 border-b border-slate-100/50">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2.5 h-2.5 rounded-full ${meal.calories > 0 ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                        <span className="font-bold text-base text-slate-800">{meal.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-mono font-bold text-emerald-600">
+                          {meal.calories > 0 ? meal.calories : 0} <span className="text-[10px] text-slate-400 font-sans">kcal</span>
+                        </span>
+                        {meal.type === 'extra' && (
+                          <button onClick={() => removeMealEntry(meal.id)} className="w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors">
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <div className="mb-5">
+                        {meal.image ? (
+                          <div className="relative group rounded-2xl overflow-hidden shadow-sm">
+                            <img src={meal.image} alt={meal.name} className="w-full h-48 object-cover"/>
+                            <button 
+                                onClick={() => removeImage(meal.id)}
+                                className="absolute top-3 right-3 bg-black/40 text-white p-2 rounded-full hover:bg-red-500/80 backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                                <Trash2 size={16}/>
+                            </button>
+                            <label className="absolute bottom-3 right-3 bg-white/90 text-slate-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 hover:bg-white active:scale-95 transition cursor-pointer">
+                                <Camera size={14} /> 更換照片
+                                <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(meal.id, e)}/>
+                            </label>
+                          </div>
+                        ) : (
+                          <label className="group flex flex-col items-center justify-center w-full h-32 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-white hover:border-emerald-300 transition-all">
+                             <div className="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                               <Camera className="text-slate-400 group-hover:text-emerald-500" size={20}/>
+                             </div>
+                             <span className="text-xs text-slate-400 font-medium">拍照記錄</span>
+                             <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(meal.id, e)}/>
+                          </label>
+                        )}
+                      </div>
+
+                      <div className="space-y-0 divide-y divide-slate-100 border border-slate-100 rounded-xl bg-white/50 overflow-hidden">
+                        <div className="flex items-center px-3 py-2">
+                           <Search size={16} className="text-slate-400 mr-2"/>
+                           <input 
+                             type="text" 
+                             placeholder="輸入食物名稱..." 
+                             value={meal.desc} 
+                             onChange={(e) => updateMeal(meal.id, 'desc', e.target.value)} 
+                             className="flex-1 bg-transparent text-sm py-1 outline-none placeholder:text-slate-400 text-slate-700"
+                           />
+                        </div>
+                        <div className="grid grid-cols-4 divide-x divide-slate-100 bg-white/30">
+                          {[{l:'熱量',k:'calories'},{l:'蛋白',k:'protein'},{l:'碳水',k:'carbs'},{l:'脂肪',k:'fat'}].map(f=>(
+                            <div key={f.k} className="flex flex-col items-center p-2">
+                              <label className="text-[9px] text-slate-400 mb-0.5">{f.l}</label>
+                              <input 
+                                type="number" 
+                                value={meal[f.k]||''} 
+                                onChange={e=>updateMeal(meal.id, f.k, e.target.value)} 
+                                className="w-full text-center bg-transparent text-sm font-bold text-slate-700 outline-none p-0"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={addSnack} className="w-full py-3 bg-white/60 backdrop-blur-md border border-slate-200 text-emerald-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-white hover:shadow-md transition-all active:scale-[0.98]">
+                <Plus size={18} /> 新增點心
+              </button>
+            </div>
+          </div>
+
+          {/* Profile Modal */}
+          {showProfile && (
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-6 animate-fade-in">
+              <div className="bg-white/95 backdrop-blur-xl w-full max-w-md rounded-[32px] p-8 shadow-2xl scale-100 animate-slide-up border border-white/20">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-slate-800 text-xl flex items-center gap-2">
+                    <User className="text-emerald-500" size={24}/> 個人設定
+                  </h3>
+                  <button onClick={() => setShowProfile(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200 text-slate-500">
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                       <label className="text-xs font-bold text-slate-500 ml-1">出生日期</label>
+                       <input 
+                         type="date" 
+                         value={userProfile.dob} 
+                         onChange={e => setUserProfile({...userProfile, dob: e.target.value})} 
+                         className="w-full h-14 bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold outline-none transition-all"
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-xs font-bold text-slate-500 ml-1">性別</label>
+                       <div className="relative h-14">
+                         <select 
+                            value={userProfile.gender} 
+                            onChange={e => setUserProfile({...userProfile, gender: e.target.value})} 
+                            className="w-full h-full bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold appearance-none outline-none transition-all"
+                         >
+                           <option value="female">女性</option>
+                           <option value="male">男性</option>
+                         </select>
+                         <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90" size={16}/>
+                       </div>
+                     </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                       <label className="text-xs font-bold text-slate-500 ml-1">身高 (cm)</label>
+                       <input type="number" value={userProfile.height} onChange={e => setUserProfile({...userProfile, height: Number(e.target.value)})} className="w-full h-14 bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-bold text-center outline-none"/>
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-xs font-bold text-slate-500 ml-1">體重 (kg)</label>
+                       <input type="number" value={userProfile.weight} onChange={e => setUserProfile({...userProfile, weight: Number(e.target.value)})} className="w-full h-14 bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-bold text-center outline-none"/>
+                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 ml-1">活動量</label>
+                    <div className="relative h-14">
+                      <select value={userProfile.activityLevel} onChange={e => setUserProfile({...userProfile, activityLevel: Number(e.target.value)})} className="w-full h-full bg-slate-50 px-4 rounded-2xl border-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold appearance-none outline-none">
+                        <option value={1.2}>久坐不動</option>
+                        <option value={1.375}>輕度活動 (每週1-3次)</option>
+                        <option value={1.55}>中度活動 (每週3-5次)</option>
+                        <option value={1.725}>高度活動 (每週6-7次)</option>
+                      </select>
+                      <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90" size={16}/>
+                    </div>
+                  </div>
+
+                  <button onClick={() => saveProfile(userProfile)} className="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-emerald-200 hover:bg-emerald-600 active:scale-[0.98] transition-all mt-4">
+                    儲存設定
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.body);
+    root.render(<SmartNutriLocal />);
+  </script>
 </body>
 </html>
+
