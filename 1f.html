@@ -114,20 +114,15 @@
           const colors = ['bg-red-500', 'bg-yellow-400', 'bg-blue-500', 'bg-green-500', 'bg-pink-500'];
           return (
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-50">
-              <style>{`
-                @keyframes fall {
-                  0% { transform: translateY(-10px) rotate(0deg) scale(1); opacity: 1; }
-                  100% { transform: translateY(100vh) rotate(360deg) scale(0.5); opacity: 0; }
-                }
-              `}</style>
               {[...Array(60)].map((_, i) => (
                 <div
                   key={i}
-                  className={`absolute w-3 h-3 md:w-5 md:h-5 ${colors[i % colors.length]} rounded-full opacity-90 shadow-sm`}
+                  className={`absolute w-3 h-3 md:w-5 md:h-5 ${colors[i % colors.length]} rounded-full opacity-90 shadow-sm animate-fall`}
                   style={{
                     left: `${Math.random() * 100}%`,
                     top: `-5%`,
-                    animation: `fall ${Math.random() * 3 + 2}s linear ${Math.random() * 2}s infinite`
+                    animationDuration: `${Math.random() * 3 + 2}s`,
+                    animationDelay: `${Math.random() * 2}s`
                   }}
                 />
               ))}
