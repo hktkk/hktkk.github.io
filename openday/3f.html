@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>故事世界 - 魔法拼圖</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            /* 隱藏滾動條，靠 flex 佈局與 vh 分配高度 */
+            overflow: hidden;
+            background: linear-gradient(135deg, #1e1b4b 0%, #3b0764 100%);
+            touch-action: none;
+            user-select: none;
+            color: white;
+        }
+
+        /* 漂浮魔法粉塵 */
+        .dust {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 4s infinite ease-in-out alternate;
+            pointer-events: none;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); opacity: 0.3; }
+            100% { transform: translateY(-20px) scale(1.5); opacity: 0.8; box-shadow: 0 0 10px #fde047; }
+        }
+
+        /* * 核心修復：嚴格的高度與尺寸控制 
+         * 確保在任何設備上都不會超出螢幕 (Overflow) 導致被裁切
+         */
+        :root {
+            /* 底板最大為寬度的 80% 或高度的 40%，確保托盤有足夠空間 */
+            --board-size: clamp(200px, min(80vw, 40vh), 420px);
+            --piece-size: calc(var(--board-size) / 2);
+        }
+
+        /* 魔法書黃色底板 */
+        .storybook {
+            box-sizing: content-box; 
+            width: var(--board-size);
+            height: var(--board-size);
+            background-color: #fef08a; 
+            border: 8px solid #1f2937;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            /* 隱藏超出黃色底板的拼圖直角 */
+            overflow: hidden; 
+        }
+
+        /* 拼圖底格 (置放提示虛線) */
+        .puzzle-slot {
+            width: 100%;
+            height: 100%;
+            border-right: 2px dashed rgba(31, 41, 55, 0.4);
+            border-bottom: 2px dashed rgba(31, 41, 55, 0.4);
+            box-sizing: border-box;
+        }
+        .puzzle-slot:nth-child(2n) { border-right: none; }
+        .puzzle-slot:nth-child(n+3) { border-bottom: none; }
+
+        /* 拼圖塊樣式 */
+        .puzzle-piece {
+            width: var(--piece-size);
+            height: var(--piece-size);
+            cursor: grab;
+            position: absolute;
+            z-index: 10;
+            transition: transform 0.1s, border-radius 0.3s;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.6); 
+            touch-action: none;
+            background-color: transparent;
+        }
+        
+        /* 保留外框設計：使用偽元素繪製邊框，放上底板後才消失 */
+        .puzzle-piece::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 3px solid #1f2937;
+            border-radius: inherit;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .puzzle-piece:active { cursor: grabbing; transform: scale(1.05); }
+        
+        .puzzle-piece.placed { 
+            cursor: default; 
+            box-shadow: none; 
+            border-radius: 0; 
+            z-index: 5;
+        }
+
+        /* 成功置放後隱藏邊框，無縫融合 */
+        .puzzle-piece.placed::after {
+            opacity: 0; 
+        }
+
+        /* 托盤佔位區 (確保 flex 排版留出空間) */
+        .origin-slot {
+            width: var(--piece-size);
+            height: var(--piece-size);
+        }
+
+        .piece-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* 開始與通關畫面 */
+        #start-screen, #win-screen {
+            background: rgba(30, 27, 75, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+        }
+        
+        .fluid-title { font-size: clamp(2rem, 8vh, 4rem); margin-bottom: clamp(10px, 4vh, 32px); }
+        .fluid-subtitle { font-size: clamp(1rem, 4vh, 1.5rem); margin-bottom: clamp(15px, 6vh, 40px); }
+        .fluid-btn { padding: clamp(10px, 3vh, 16px) clamp(24px, 6vh, 48px); font-size: clamp(1.25rem, 5vh, 2rem); }
+        
+        .stamp-clear {
+            font-size: clamp(3rem, 12vh, 5rem);
+            color: #fde047;
+            text-shadow: 0 8px 0 #ca8a04, 0 0 30px #fde047;
+            border: 8px solid #fde047;
+            padding: clamp(5px, 2vh, 10px) clamp(20px, 5vh, 40px);
+            border-radius: 20px;
+            transform: rotate(-15deg);
+            margin-bottom: clamp(10px, 4vh, 40px);
+            opacity: 0; /* 預設為透明，等待動畫觸發 */
+        }
+
+        /* 獨立出來的彈出動畫類別，方便 JavaScript 重複觸發 */
+        .animate-pop {
+            animation: stampPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .rainbow-beam {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 150vmax; height: 150vmax; /* 使用 vmax 確保旋轉時能完全覆蓋畫面角落 */
+            background-color: #fde047; /* 針對不支援 conic 的老舊瀏覽器提供備用底色 */
+            background-image: conic-gradient(from 0deg, #ef4444, #f97316, #f59e0b, #84cc16, #06b6d4, #3b82f6, #8b5cf6, #ef4444);
+            /* 加入 -webkit- 前綴，修復 iOS/Safari 遮罩破圖導致光束消失的問題 */
+            -webkit-mask-image: radial-gradient(circle, transparent 15%, black 65%);
+            mask-image: radial-gradient(circle, transparent 15%, black 65%);
+            opacity: 0.6; /* 提高亮度 */
+            pointer-events: none;
+            z-index: 0;
+            animation: spinBeam 10s linear infinite;
+        }
+        
+        /* 明確定義 0% 和 100% 座標，修復 Safari 旋轉動畫的 Bug */
+        @keyframes spinBeam { 
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
+        
+        @keyframes stampPop { 
+            0% { transform: rotate(-15deg) scale(3); opacity: 0; } 
+            100% { transform: rotate(-15deg) scale(1); opacity: 1; } 
+        }
+
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col relative overflow-hidden">
+
+    <div id="particles-container" class="absolute inset-0 z-0 pointer-events-none"></div>
+
+    <!-- 開始畫面 -->
+    <div id="start-screen" class="absolute inset-0 flex flex-col justify-center items-center px-4">
+        <h1 class="text-yellow-300 font-black drop-shadow-lg tracking-widest text-center fluid-title">魔法圖書拼圖</h1>
+        <p class="text-white font-bold fluid-subtitle">點擊開始以啟用魔法音效</p>
+        <button id="btn-start" class="bg-purple-600 hover:bg-purple-500 border-4 border-yellow-400 rounded-full font-black text-white transition transform hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.5)] fluid-btn">
+            開始遊戲
+        </button>
+    </div>
+
+    <!-- 遊戲主要內容 (嚴格劃分高度，避免底部裁切) -->
+    <main id="game-screen" class="flex flex-col relative z-10 w-full h-full max-w-4xl mx-auto">
+        <!-- 頂部標題區 (10%) -->
+        <header class="h-[10vh] min-h-[60px] flex flex-col justify-center items-center shrink-0">
+            <h2 class="text-sm md:text-lg text-yellow-300 font-bold tracking-widest">故事世界</h2>
+            <h1 class="text-2xl md:text-4xl text-white font-black">魔法繪本拼圖</h1>
+        </header>
+
+        <!-- 底板區域 (45%) -->
+        <div class="h-[45vh] flex justify-center items-center shrink-0 p-2">
+            <div id="book" class="storybook">
+                <div class="puzzle-slot" data-slot="0"></div>
+                <div class="puzzle-slot" data-slot="1"></div>
+                <div class="puzzle-slot" data-slot="2"></div>
+                <div class="puzzle-slot" data-slot="3"></div>
+            </div>
+        </div>
+
+        <!-- 底部托盤區 (45%) - 使用 content-center 確保垂直居中 -->
+        <div id="tray" class="h-[45vh] w-full flex flex-wrap justify-center content-center gap-2 md:gap-4 p-2 bg-white/10 backdrop-blur-md border-t-4 border-gray-800 shrink-0 relative z-20">
+            <div id="origin-0" class="origin-slot"></div>
+            <div id="origin-1" class="origin-slot"></div>
+            <div id="origin-2" class="origin-slot"></div>
+            <div id="origin-3" class="origin-slot"></div>
+        </div>
+    </main>
+
+    <!-- 
+      核心修復：重繪為「填滿邊界」(Full Bleed) 的魔法書。
+      捨棄動態 viewBox，改用更穩定的 translate 定位，確保任何設備皆 100% 精準顯示圖案。
+    -->
+    <template id="piece-template">
+        <div class="puzzle-piece" draggable="false">
+            <svg class="piece-svg" viewBox="0 0 200 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <!-- 內部位移會由 JavaScript 控制 -->
+                <g class="artwork">
+                    <!-- 深棕色書皮底層 (完整 400x400) -->
+                    <rect x="0" y="0" width="400" height="400" fill="#78350f" />
+                    
+                    <!-- 書背邊緣 -->
+                    <rect x="0" y="0" width="40" height="400" fill="#451a03" />
+                    
+                    <!-- 魔法書脊紋路 -->
+                    <line x1="0" y1="60" x2="40" y2="60" stroke="#fcd34d" stroke-width="8"/>
+                    <line x1="0" y1="340" x2="40" y2="340" stroke="#fcd34d" stroke-width="8"/>
+                    
+                    <!-- 四角大型金屬護角 -->
+                    <!-- 左上 -->
+                    <path d="M 0 100 L 80 100 L 80 0" fill="none" stroke="#f59e0b" stroke-width="20" stroke-linejoin="round"/>
+                    <circle cx="40" cy="40" r="6" fill="#fef3c7"/>
+                    <!-- 右上 -->
+                    <path d="M 320 0 L 320 80 L 400 80" fill="none" stroke="#f59e0b" stroke-width="20" stroke-linejoin="round"/>
+                    <circle cx="360" cy="40" r="6" fill="#fef3c7"/>
+                    <!-- 右下 -->
+                    <path d="M 400 320 L 320 320 L 320 400" fill="none" stroke="#f59e0b" stroke-width="20" stroke-linejoin="round"/>
+                    <circle cx="360" cy="360" r="6" fill="#fef3c7"/>
+                    <!-- 左下 -->
+                    <path d="M 80 400 L 80 300 L 0 300" fill="none" stroke="#f59e0b" stroke-width="20" stroke-linejoin="round"/>
+                    <circle cx="40" cy="360" r="6" fill="#fef3c7"/>
+                    
+                    <!-- 內圈金色裝飾虛線 -->
+                    <rect x="60" y="60" width="280" height="280" fill="none" stroke="#fcd34d" stroke-width="4" stroke-dasharray="12,12"/>
+                    
+                    <!-- 中央發光魔法徽章 -->
+                    <g transform="translate(200, 200)">
+                        <circle cx="0" cy="0" r="90" fill="#1e3a8a" stroke="#fcd34d" stroke-width="10"/>
+                        <circle cx="0" cy="0" r="65" fill="#3b82f6"/>
+                        <!-- 金色大星星 -->
+                        <polygon points="0,-45 14,-14 45,-14 20,6 30,36 0,18 -30,36 -20,6 -45,-14 -14,-14" fill="#fde047" stroke="#fff" stroke-width="3"/>
+                        <!-- 星星粉塵 -->
+                        <circle cx="-50" cy="-50" r="8" fill="#fff"/>
+                        <circle cx="40" cy="50" r="5" fill="#fff"/>
+                        <circle cx="50" cy="-20" r="6" fill="#fff"/>
+                    </g>
+                </g>
+            </svg>
+        </div>
+    </template>
+
+    <!-- 通關畫面 -->
+    <div id="win-screen" class="absolute inset-0 flex flex-col justify-center items-center hidden px-4">
+        <div class="rainbow-beam"></div>
+        <div class="stamp-clear font-black tracking-widest z-10">CLEAR</div>
+        <h2 class="text-white font-black z-10 fluid-title text-center">繪本故事拼好囉！</h2>
+        <button id="btn-restart" class="bg-green-500 hover:bg-green-400 border-4 border-gray-800 rounded-full font-black text-white transition transform hover:scale-110 active:scale-95 z-10 fluid-btn">
+            再拼一次
+        </button>
+    </div>
+
+    <script>
+        // 1. 初始化魔法粉塵背景
+        const particles = document.getElementById('particles-container');
+        for(let i=0; i<30; i++) {
+            const d = document.createElement('div');
+            d.className = 'dust';
+            const size = Math.random() * 8 + 4;
+            Object.assign(d.style, {
+                width: size + 'px', height: size + 'px',
+                left: Math.random() * 100 + 'vw', top: Math.random() * 100 + 'vh',
+                animationDuration: (Math.random() * 3 + 2) + 's',
+                animationDelay: Math.random() * 2 + 's'
+            });
+            particles.appendChild(d);
+        }
+
+        // 2. 遊戲狀態變數
+        let activePiece = null;
+        let startX, startY, initialLeft, initialTop;
+        let piecesDone = 0;
+        const totalPieces = 4;
+
+        // --- 音效系統 ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'pickup') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'drop_correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.setValueAtTime(900, now + 0.15);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'drop_wrong') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'win') {
+                osc.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 1.5);
+                
+                osc.frequency.setValueAtTime(523.25, now);       // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.15); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.3);  // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.45); // C6
+                
+                osc.start(now);
+                osc.stop(now + 1.5);
+            }
+        }
+
+        // 3. 初始化拼圖
+        function initGame() {
+            const template = document.getElementById('piece-template');
+            const pieceContainer = document.body;
+            
+            document.querySelectorAll('.puzzle-piece').forEach(p => p.remove());
+            piecesDone = 0;
+            document.getElementById('win-screen').classList.add('hidden');
+
+            const order = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+
+            order.forEach((id, index) => {
+                const clone = template.content.cloneNode(true);
+                const piece = clone.querySelector('.puzzle-piece');
+                piece.dataset.id = id;
+                
+                // 穩定裁切圖案：透過改變內部群組座標來顯示對應的 1/4 區塊
+                const artwork = piece.querySelector('.artwork');
+                const row = Math.floor(id / 2);
+                const col = id % 2;
+                artwork.setAttribute('transform', `translate(-${col * 200}, -${row * 200})`);
+
+                pieceContainer.appendChild(piece);
+                
+                setTimeout(() => positionToTray(piece, index), 50);
+
+                piece.addEventListener('pointerdown', onDragStart);
+            });
+        }
+
+        // 定位回托盤
+        function positionToTray(piece, index) {
+            const origin = document.getElementById('origin-' + index);
+            if (!origin) return;
+            const originRect = origin.getBoundingClientRect();
+            // 因為 slot 和 piece 大小現在是完全相等的，所以直接貼齊即可
+            piece.style.left = originRect.left + 'px';
+            piece.style.top = originRect.top + 'px';
+            piece.dataset.originIndex = index;
+        }
+
+        // 4. 拖曳與判定邏輯
+        function onDragStart(e) {
+            const piece = e.currentTarget;
+            if (piece.classList.contains('placed')) return;
+
+            activePiece = piece;
+            activePiece.style.zIndex = 1000;
+            activePiece.setPointerCapture(e.pointerId);
+
+            playSound('pickup');
+
+            const rect = activePiece.getBoundingClientRect();
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = rect.left;
+            initialTop = rect.top;
+
+            activePiece.addEventListener('pointermove', onDragMove);
+            activePiece.addEventListener('pointerup', onDragEnd);
+        }
+
+        function onDragMove(e) {
+            if (!activePiece) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            activePiece.style.left = (initialLeft + dx) + 'px';
+            activePiece.style.top = (initialTop + dy) + 'px';
+        }
+
+        function onDragEnd(e) {
+            const piece = activePiece; 
+            if (!piece) return;
+
+            piece.removeEventListener('pointermove', onDragMove);
+            piece.removeEventListener('pointerup', onDragEnd);
+            piece.releasePointerCapture(e.pointerId);
+            piece.style.zIndex = 10;
+
+            checkDrop(piece);
+            activePiece = null; 
+        }
+
+        function checkDrop(piece) {
+            const id = piece.dataset.id;
+            const targetSlot = document.querySelector(`.puzzle-slot[data-slot="${id}"]`);
+            const targetRect = targetSlot.getBoundingClientRect();
+            const pieceRect = piece.getBoundingClientRect();
+
+            const dist = Math.hypot(
+                (pieceRect.left + pieceRect.width/2) - (targetRect.left + targetRect.width/2),
+                (pieceRect.top + pieceRect.height/2) - (targetRect.top + targetRect.height/2)
+            );
+
+            if (dist < 80) { 
+                // 成功放入正確位置
+                playSound('drop_correct');
+                piece.classList.add('placed');
+                piece.style.transition = 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                piece.style.left = targetRect.left + 'px';
+                piece.style.top = targetRect.top + 'px';
+                
+                piecesDone++;
+                if (piecesDone === totalPieces) {
+                    playSound('win');
+                    setTimeout(showWinScreen, 600); // 呼叫顯示通關畫面函數
+                }
+            } else {
+                // 回彈至底部托盤
+                playSound('drop_wrong');
+                piece.style.transition = 'all 0.3s ease';
+                positionToTray(piece, piece.dataset.originIndex);
+                setTimeout(() => piece.style.transition = 'transform 0.1s', 300);
+            }
+        }
+
+        // 新增：顯示通關畫面並強制重啟印章動畫
+        function showWinScreen() {
+            const winScreen = document.getElementById('win-screen');
+            winScreen.classList.remove('hidden');
+            
+            const stamp = winScreen.querySelector('.stamp-clear');
+            // 先移除動畫類別
+            stamp.classList.remove('animate-pop');
+            // 觸發瀏覽器重繪 (Reflow)
+            void stamp.offsetWidth; 
+            // 重新加上動畫類別，確保每次過關都會彈出
+            stamp.classList.add('animate-pop');
+        }
+
+        // 綁定 UI 事件
+        document.getElementById('btn-restart').addEventListener('click', initGame);
+        
+        document.getElementById('btn-start').addEventListener('click', () => {
+            initAudio(); 
+            document.getElementById('start-screen').classList.add('hidden');
+            initGame();
+        });
+
+        // 視窗縮放時，重新對齊所有拼圖，防止跑版
+        window.onresize = () => {
+            if (document.getElementById('start-screen').classList.contains('hidden')) {
+                document.querySelectorAll('.puzzle-piece').forEach(piece => {
+                    piece.style.transition = 'none'; 
+                    if (piece.classList.contains('placed')) {
+                        const targetSlot = document.querySelector(`.puzzle-slot[data-slot="${piece.dataset.id}"]`);
+                        const rect = targetSlot.getBoundingClientRect();
+                        piece.style.left = rect.left + 'px';
+                        piece.style.top = rect.top + 'px';
+                    } else {
+                        positionToTray(piece, piece.dataset.originIndex);
+                    }
+                });
+            }
+        };
+
+    </script>
+</body>
+</html>
