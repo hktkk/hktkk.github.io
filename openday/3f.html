@@ -11,7 +11,7 @@
             font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
             margin: 0;
             padding: 0;
-            /* 隱藏滾動條，靠 flex 佈局與 vh 分配高度 */
+            /* 隱藏滾動條，靠 flex 佈局與 dvh 分配高度 */
             overflow: hidden;
             background: linear-gradient(135deg, #1e1b4b 0%, #3b0764 100%);
             touch-action: none;
@@ -33,13 +33,18 @@
             100% { transform: translateY(-20px) scale(1.5); opacity: 0.8; box-shadow: 0 0 10px #fde047; }
         }
 
-        /* * 核心修復：嚴格的高度與尺寸控制 
-         * 確保在任何設備上都不會超出螢幕 (Overflow) 導致被裁切
+        /* * 核心修復：使用 dvh (動態視窗高度) 與安全比例，
+         * 確保托盤有足夠空間，拼圖絕對不會超出螢幕被裁切
          */
         :root {
-            /* 底板最大為寬度的 80% 或高度的 40%，確保托盤有足夠空間 */
-            --board-size: clamp(200px, min(80vw, 40vh), 420px);
+            /* 最大寬度不超過 75vw，最大高度不超過 36vh/dvh，確保雙排拼圖能完美塞入底部 */
+            --board-size: clamp(160px, min(75vw, 36vh), 400px);
             --piece-size: calc(var(--board-size) / 2);
+        }
+        @supports (height: 100dvh) {
+            :root {
+                --board-size: clamp(160px, min(75vw, 36dvh), 400px);
+            }
         }
 
         /* 魔法書黃色底板 */
@@ -109,7 +114,7 @@
             opacity: 0; 
         }
 
-        /* 托盤佔位區 (確保 flex 排版留出空間) */
+        /* 托盤佔位區 */
         .origin-slot {
             width: var(--piece-size);
             height: var(--piece-size);
@@ -141,10 +146,9 @@
             border-radius: 20px;
             transform: rotate(-15deg);
             margin-bottom: clamp(10px, 4vh, 40px);
-            opacity: 0; /* 預設為透明，等待動畫觸發 */
+            opacity: 0; 
         }
 
-        /* 獨立出來的彈出動畫類別，方便 JavaScript 重複觸發 */
         .animate-pop {
             animation: stampPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
@@ -152,19 +156,17 @@
         .rainbow-beam {
             position: absolute;
             top: 50%; left: 50%;
-            width: 150vmax; height: 150vmax; /* 使用 vmax 確保旋轉時能完全覆蓋畫面角落 */
-            background-color: #fde047; /* 針對不支援 conic 的老舊瀏覽器提供備用底色 */
+            width: 150vmax; height: 150vmax; 
+            background-color: #fde047; 
             background-image: conic-gradient(from 0deg, #ef4444, #f97316, #f59e0b, #84cc16, #06b6d4, #3b82f6, #8b5cf6, #ef4444);
-            /* 加入 -webkit- 前綴，修復 iOS/Safari 遮罩破圖導致光束消失的問題 */
             -webkit-mask-image: radial-gradient(circle, transparent 15%, black 65%);
             mask-image: radial-gradient(circle, transparent 15%, black 65%);
-            opacity: 0.6; /* 提高亮度 */
+            opacity: 0.6; 
             pointer-events: none;
             z-index: 0;
             animation: spinBeam 10s linear infinite;
         }
         
-        /* 明確定義 0% 和 100% 座標，修復 Safari 旋轉動畫的 Bug */
         @keyframes spinBeam { 
             0% { transform: translate(-50%, -50%) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg); } 
@@ -177,7 +179,8 @@
 
     </style>
 </head>
-<body class="w-screen h-screen flex flex-col relative overflow-hidden">
+<!-- 使用 h-[100dvh] 避開行動裝置瀏覽器工具列裁切問題 -->
+<body class="w-full h-[100dvh] flex flex-col relative overflow-hidden">
 
     <div id="particles-container" class="absolute inset-0 z-0 pointer-events-none"></div>
 
@@ -185,21 +188,21 @@
     <div id="start-screen" class="absolute inset-0 flex flex-col justify-center items-center px-4">
         <h1 class="text-yellow-300 font-black drop-shadow-lg tracking-widest text-center fluid-title">魔法圖書拼圖</h1>
         <p class="text-white font-bold fluid-subtitle">點擊開始以啟用魔法音效</p>
-        <button id="btn-start" class="bg-purple-600 hover:bg-purple-500 border-4 border-yellow-400 rounded-full font-black text-white transition transform hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.5)] fluid-btn">
+        <button id="btn-start" class="bg-purple-600 hover:bg-purple-500 border-4 border-yellow-400 rounded-full font-black text-white transition transform hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.5)] fluid-btn touch-none">
             開始遊戲
         </button>
     </div>
 
-    <!-- 遊戲主要內容 (嚴格劃分高度，避免底部裁切) -->
+    <!-- 遊戲主要內容 (透過 Flex 動態伸縮配置高度，確保托盤不被擠壓) -->
     <main id="game-screen" class="flex flex-col relative z-10 w-full h-full max-w-4xl mx-auto">
-        <!-- 頂部標題區 (10%) -->
-        <header class="h-[10vh] min-h-[60px] flex flex-col justify-center items-center shrink-0">
+        <!-- 頂部標題區 (不佔多餘空間) -->
+        <header class="flex-none py-3 md:py-6 flex flex-col justify-center items-center">
             <h2 class="text-sm md:text-lg text-yellow-300 font-bold tracking-widest">故事世界</h2>
             <h1 class="text-2xl md:text-4xl text-white font-black">魔法繪本拼圖</h1>
         </header>
 
-        <!-- 底板區域 (45%) -->
-        <div class="h-[45vh] flex justify-center items-center shrink-0 p-2">
+        <!-- 底板區域 (吸收剩餘空間) -->
+        <div class="flex-1 min-h-0 flex justify-center items-center p-2">
             <div id="book" class="storybook">
                 <div class="puzzle-slot" data-slot="0"></div>
                 <div class="puzzle-slot" data-slot="1"></div>
@@ -208,8 +211,8 @@
             </div>
         </div>
 
-        <!-- 底部托盤區 (45%) - 使用 content-center 確保垂直居中 -->
-        <div id="tray" class="h-[45vh] w-full flex flex-wrap justify-center content-center gap-2 md:gap-4 p-2 bg-white/10 backdrop-blur-md border-t-4 border-gray-800 shrink-0 relative z-20">
+        <!-- 底部托盤區 (隨內容高度自適應延伸，加入 env 安全區間防止被 iPhone 橫條擋住) -->
+        <div id="tray" class="flex-none w-full flex flex-wrap justify-center content-center gap-3 p-3 pb-[max(16px,env(safe-area-inset-bottom))] bg-white/10 backdrop-blur-md border-t-4 border-gray-800 relative z-20">
             <div id="origin-0" class="origin-slot"></div>
             <div id="origin-1" class="origin-slot"></div>
             <div id="origin-2" class="origin-slot"></div>
@@ -217,10 +220,7 @@
         </div>
     </main>
 
-    <!-- 
-      核心修復：重繪為「填滿邊界」(Full Bleed) 的魔法書。
-      捨棄動態 viewBox，改用更穩定的 translate 定位，確保任何設備皆 100% 精準顯示圖案。
-    -->
+    <!-- 重繪為「填滿邊界」(Full Bleed) 的魔法書 -->
     <template id="piece-template">
         <div class="puzzle-piece" draggable="false">
             <svg class="piece-svg" viewBox="0 0 200 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -274,7 +274,7 @@
         <div class="rainbow-beam"></div>
         <div class="stamp-clear font-black tracking-widest z-10">CLEAR</div>
         <h2 class="text-white font-black z-10 fluid-title text-center">繪本故事拼好囉！</h2>
-        <button id="btn-restart" class="bg-green-500 hover:bg-green-400 border-4 border-gray-800 rounded-full font-black text-white transition transform hover:scale-110 active:scale-95 z-10 fluid-btn">
+        <button id="btn-restart" class="bg-green-500 hover:bg-green-400 border-4 border-gray-800 rounded-full font-black text-white transition transform hover:scale-110 active:scale-95 z-10 fluid-btn touch-none">
             再拼一次
         </button>
     </div>
@@ -375,7 +375,6 @@
                 const piece = clone.querySelector('.puzzle-piece');
                 piece.dataset.id = id;
                 
-                // 穩定裁切圖案：透過改變內部群組座標來顯示對應的 1/4 區塊
                 const artwork = piece.querySelector('.artwork');
                 const row = Math.floor(id / 2);
                 const col = id % 2;
@@ -389,12 +388,10 @@
             });
         }
 
-        // 定位回托盤
         function positionToTray(piece, index) {
             const origin = document.getElementById('origin-' + index);
             if (!origin) return;
             const originRect = origin.getBoundingClientRect();
-            // 因為 slot 和 piece 大小現在是完全相等的，所以直接貼齊即可
             piece.style.left = originRect.left + 'px';
             piece.style.top = originRect.top + 'px';
             piece.dataset.originIndex = index;
@@ -464,7 +461,7 @@
                 piecesDone++;
                 if (piecesDone === totalPieces) {
                     playSound('win');
-                    setTimeout(showWinScreen, 600); // 呼叫顯示通關畫面函數
+                    setTimeout(showWinScreen, 600); 
                 }
             } else {
                 // 回彈至底部托盤
@@ -475,28 +472,35 @@
             }
         }
 
-        // 新增：顯示通關畫面並強制重啟印章動畫
         function showWinScreen() {
             const winScreen = document.getElementById('win-screen');
             winScreen.classList.remove('hidden');
             
             const stamp = winScreen.querySelector('.stamp-clear');
-            // 先移除動畫類別
             stamp.classList.remove('animate-pop');
-            // 觸發瀏覽器重繪 (Reflow)
             void stamp.offsetWidth; 
-            // 重新加上動畫類別，確保每次過關都會彈出
             stamp.classList.add('animate-pop');
         }
 
-        // 綁定 UI 事件
-        document.getElementById('btn-restart').addEventListener('click', initGame);
-        
-        document.getElementById('btn-start').addEventListener('click', () => {
+        // --- 核心修復：使用 pointerdown 徹底解決 iOS 雙擊 hover 觸發問題 ---
+        function bindInstantTap(element, callback) {
+            element.addEventListener('pointerdown', (e) => {
+                e.preventDefault(); // 阻擋原生的延遲 click 和雙擊 hover
+                callback(e);
+            });
+            // 預防極少數不支援 pointer 事件的老舊裝置
+            element.addEventListener('click', (e) => {
+                callback(e);
+            });
+        }
+
+        bindInstantTap(document.getElementById('btn-start'), () => {
             initAudio(); 
             document.getElementById('start-screen').classList.add('hidden');
             initGame();
         });
+        
+        bindInstantTap(document.getElementById('btn-restart'), initGame);
 
         // 視窗縮放時，重新對齊所有拼圖，防止跑版
         window.onresize = () => {
