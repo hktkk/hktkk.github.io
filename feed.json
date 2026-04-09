@@ -10,6 +10,20 @@
     },
     "items": [
         {
+            "id": "https://hktkk.github.io/wen-hua-ri.html",
+            "url": "https://hktkk.github.io/wen-hua-ri.html",
+            "title": "文化日",
+            "summary": "1樓 華夏之光",
+            "content_html": "<p><a href=\"https://hktkk.github.io/app/openday/1f.html\">1樓 華夏之光</a></p>",
+            "author": {
+                "name": "Jacky Tam"
+            },
+            "tags": [
+            ],
+            "date_published": "2026-04-09T21:58:39+09:00",
+            "date_modified": "2026-04-09T21:58:39+09:00"
+        },
+        {
             "id": "https://hktkk.github.io/qr-code-sheng-cheng-qi.html",
             "url": "https://hktkk.github.io/qr-code-sheng-cheng-qi.html",
             "title": "QR Code 生成器",
@@ -21,7 +35,7 @@
             "tags": [
             ],
             "date_published": "2026-04-09T20:37:05+09:00",
-            "date_modified": "2026-04-09T20:45:53+09:00"
+            "date_modified": "2026-04-09T21:51:20+09:00"
         }
     ]
 }

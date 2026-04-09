@@ -3,12 +3,32 @@
     <title>Jacky 的網站</title>
     <link href="https://hktkk.github.io/feed.xml" rel="self" />
     <link href="https://hktkk.github.io" />
-    <updated>2026-04-09T20:45:53+09:00</updated>
+    <updated>2026-04-09T21:58:39+09:00</updated>
     <author>
         <name>Jacky Tam</name>
     </author>
     <id>https://hktkk.github.io</id>
 
+    <entry>
+        <title>文化日</title>
+        <author>
+            <name>Jacky Tam</name>
+        </author>
+        <link href="https://hktkk.github.io/wen-hua-ri.html"/>
+        <id>https://hktkk.github.io/wen-hua-ri.html</id>
+
+        <updated>2026-04-09T21:58:39+09:00</updated>
+            <summary type="html">
+                <![CDATA[
+                    1樓 華夏之光
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p><a href="https://hktkk.github.io/app/openday/1f.html">1樓 華夏之光</a></p>
+            ]]>
+        </content>
+    </entry>
     <entry>
         <title>QR Code 生成器</title>
         <author>
