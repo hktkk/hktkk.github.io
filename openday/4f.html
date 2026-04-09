@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI 機械人能量齒輪</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 引入科幻感字體 */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ff00ea;
+            --neon-yellow: #fcee0a;
+            --dark-bg: #050508;
+            --panel-bg: rgba(10, 15, 30, 0.85);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
+            background-color: var(--dark-bg);
+            color: #fff;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+            background: radial-gradient(circle at center, #111424 0%, var(--dark-bg) 100%);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Cyberpunk 動態透視網格 */
+        .cyber-grid-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .cyber-grid {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            bottom: -20%;
+            left: -50%;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.3) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.3) 2px, transparent 2px);
+            background-size: 50px 50px;
+            transform: perspective(400px) rotateX(60deg);
+            animation: gridMove 3s linear infinite;
+        }
+        @keyframes gridMove {
+            0% { transform: perspective(400px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(400px) rotateX(60deg) translateY(50px); }
+        }
+
+        /* 標題與文字特效 */
+        .neon-text-cyan {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan);
+        }
+        .neon-text-pink {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink);
+        }
+
+        /* UI 按鈕 (Cyberpunk 切角設計) */
+        .btn-cyber {
+            position: relative;
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 15px rgba(0, 243, 255, 0.2);
+            text-transform: uppercase;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.2s;
+        }
+        .btn-cyber:active {
+            background: rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.6), inset 0 0 25px rgba(0, 243, 255, 0.5);
+            transform: scale(0.95);
+        }
+
+        /* 機器人設計與狀態過渡 */
+        .mecha-svg {
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        
+        /* 睡眠狀態 (斷電) */
+        .robot-off .mecha-head {
+            transform: translateY(15px) rotate(8deg); /* 頭部低垂 */
+            transform-origin: center 100px;
+            transition: all 0.8s ease-in-out;
+        }
+        .robot-off .mecha-glow { stroke: #2d3748; filter: none; opacity: 0.3; }
+        .robot-off .mecha-fill { fill: #1a202c; }
+        .robot-off .mecha-visor { fill: #000; stroke: #2d3748; }
+        .robot-off .eye-on { opacity: 0; }
+        .robot-off .eye-off { opacity: 1; }
+        .robot-off .scanline { display: none; }
+
+        /* 喚醒狀態 (通電) */
+        .robot-on .mecha-head {
+            transform: translateY(0) rotate(0); /* 頭部抬起 */
+            transform-origin: center 100px;
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .robot-on .mecha-glow { 
+            stroke: var(--neon-cyan); 
+            filter: drop-shadow(0 0 8px var(--neon-cyan)); 
+            opacity: 1; 
+        }
+        .robot-on .mecha-fill { fill: #2d3748; }
+        .robot-on .mecha-visor { fill: #050b14; stroke: var(--neon-cyan); }
+        .robot-on .eye-on { 
+            opacity: 1; 
+            animation: flicker 2s infinite alternate;
+        }
+        .robot-on .eye-off { opacity: 0; display: none; }
+        .robot-on .scanline { 
+            display: block; 
+            animation: scan 2s linear infinite; 
+        }
+
+        .robot-hover {
+            animation: mechaFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes mechaFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+            20%, 24%, 55% { opacity: 0.4; }
+        }
+        @keyframes scan {
+            0% { transform: translateY(-50px); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(150px); opacity: 0; }
+        }
+
+        /* 齒輪與拖曳 */
+        .dock-panel {
+            background: rgba(10, 15, 30, 0.9);
+            border-top: 2px solid var(--neon-cyan);
+            box-shadow: 0 -10px 30px rgba(0, 243, 255, 0.15);
+            clip-path: polygon(0 15%, 10% 0, 90% 0, 100% 15%, 100% 100%, 0 100%);
+        }
+        
+        .draggable-gear {
+            cursor: grab;
+            touch-action: none;
+            transition: transform 0.1s;
+        }
+        .draggable-gear:active { cursor: grabbing; }
+        .dragging-clone {
+            pointer-events: none;
+            z-index: 1000;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+            transform: scale(1.15);
+        }
+        .placed-gear {
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            animation: popInNeon 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popInNeon {
+            0% { transform: scale(0.2); opacity: 0; filter: brightness(3); }
+            50% { transform: scale(1.2); filter: brightness(2); }
+            100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+        }
+
+        /* 肚子上的加大插槽 */
+        .slot-container {
+            width: 75px;
+            height: 75px;
+            position: relative;
+        }
+        .slot-outline {
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 4;
+            stroke-dasharray: 8 6;
+            fill: rgba(0, 0, 0, 0.5);
+            transition: all 0.3s;
+        }
+        .robot-on .slot-outline {
+            stroke: var(--neon-cyan);
+            fill: rgba(0, 243, 255, 0.1);
+        }
+
+        /* 完成畫面特效 */
+        .win-text-anim {
+            animation: textPulse 1.5s ease-in-out infinite alternate;
+            display: inline-block;
+        }
+
+        @keyframes textPulse {
+            0% { text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink); transform: scale(1); }
+            100% { text-shadow: 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink); transform: scale(1.05); }
+        }
+
+        .screen-shake { animation: shake 0.4s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-15px, 15px); }
+            40% { transform: translate(15px, -15px); }
+            60% { transform: translate(-10px, -5px); }
+            80% { transform: translate(10px, 5px); }
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px; height: 15px;
+            background: var(--neon-cyan);
+            pointer-events: none;
+            z-index: 40;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            animation: explode 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes explode {
+            0% { transform: scale(1) translate(0, 0) rotate(var(--rot)); opacity: 1; }
+            100% { transform: scale(0) var(--target) rotate(var(--rot)); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <!-- Cyberpunk 背景網格 -->
+    <div class="cyber-grid-container">
+        <div class="cyber-grid"></div>
+    </div>
+
+    <!-- 開始畫面 -->
+    <div id="screen-start" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#050508] bg-opacity-95 backdrop-blur-md px-6">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl md:text-6xl font-black mb-2 neon-text-cyan tracking-wider">AI 機械人</h1>
+            <h1 class="text-4xl md:text-5xl font-black neon-text-pink tracking-widest">能量齒輪</h1>
+        </div>
+        
+        <!-- 玩法說明框 -->
+        <div class="mb-10 p-6 border border-[#00f3ff] bg-[#00f3ff] bg-opacity-20 rounded-lg shadow-[0_0_20px_rgba(0,243,255,0.5)] max-w-sm" style="clip-path: polygon(5% 0, 100% 0, 100% 90%, 95% 100%, 0 100%, 0 10%);">
+            <h3 class="text-[#fff] font-black text-2xl mb-4 flex items-center" style="text-shadow: 0 0 10px var(--neon-cyan);">
+                <svg class="w-6 h-6 mr-2 text-[#00f3ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                系統任務說明
+            </h3>
+            <p class="text-white text-lg leading-relaxed font-bold" style="text-shadow: 0 0 5px rgba(255,255,255,0.5);">
+                拖曳<strong class="text-[#fcee0a]" style="text-shadow: 0 0 10px var(--neon-yellow);">形狀齒輪</strong>，放入機械人肚子對應的位置，啟動機械人！
+            </p>
+        </div>
+
+        <button id="btn-start" class="btn-cyber text-2xl font-bold py-4 px-12 tracking-widest">
+            啟動系統 (START)
+        </button>
+    </div>
+
+    <!-- 遊戲/通關主畫面 -->
+    <div id="screen-game" class="absolute inset-0 flex flex-col z-10">
+        
+        <!-- 頂部遊戲標題 -->
+        <header class="absolute top-4 w-full text-center z-30">
+            <h2 class="text-2xl md:text-3xl font-black tracking-widest neon-text-cyan opacity-80 uppercase">AI 核心修復系統</h2>
+            <div class="h-0.5 w-48 mx-auto mt-2 bg-gradient-to-r from-transparent via-[#00f3ff] to-transparent"></div>
+        </header>
+
+        <!-- 上方區域：機甲機器人 -->
+        <div class="flex-1 relative flex items-center justify-center mt-12 mb-4">
+            <div id="robot-wrapper" class="relative w-[340px] h-[400px] z-20 robot-off">
+                <!-- 機器人 SVG (機甲風格) -->
+                <svg viewBox="0 0 340 400" class="w-full h-full mecha-svg drop-shadow-2xl" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 掃描線 (喚醒時顯示) -->
+                    <rect x="50" y="80" width="240" height="2" fill="var(--neon-cyan)" class="scanline" style="filter: drop-shadow(0 0 5px var(--neon-cyan));"/>
+
+                    <!-- 天線/耳朵 -->
+                    <path d="M 60 120 L 30 100 L 30 160 Z" fill="#2d3748" stroke-width="4" class="mecha-glow"/>
+                    <path d="M 280 120 L 310 100 L 310 160 Z" fill="#2d3748" stroke-width="4" class="mecha-glow"/>
+                    
+                    <!-- 頭部群組 (具備睡眠點頭動畫) -->
+                    <g class="mecha-head">
+                        <!-- 脖子關節 -->
+                        <rect x="150" y="140" width="40" height="30" fill="#1a202c" stroke="#4a5568" stroke-width="3"/>
+                        <line x1="160" y1="140" x2="160" y2="170" stroke="#4a5568" stroke-width="2"/>
+                        <line x1="180" y1="140" x2="180" y2="170" stroke="#4a5568" stroke-width="2"/>
+
+                        <!-- 頭盔主體 -->
+                        <polygon points="100,50 240,50 260,90 260,150 220,165 120,165 80,150 80,90" stroke-width="6" class="mecha-fill mecha-glow"/>
+                        <polygon points="110,60 230,60 245,90 245,140 125,140 95,90" fill="#1a202c"/>
+                        
+                        <!-- 護目鏡 (Visor) -->
+                        <polygon points="105,95 235,95 235,130 180,140 160,140 105,130" stroke-width="3" class="mecha-visor"/>
+                        
+                        <!-- 發光眼睛 (喚醒時顯示) -->
+                        <g class="eye-on">
+                            <rect x="120" y="105" width="40" height="15" fill="var(--neon-cyan)" filter="drop-shadow(0 0 8px var(--neon-cyan))" transform="skewX(-15)"/>
+                            <rect x="180" y="105" width="40" height="15" fill="var(--neon-cyan)" filter="drop-shadow(0 0 8px var(--neon-cyan))" transform="skewX(15)"/>
+                        </g>
+                        <!-- 睡眠符號 (斷電時顯示) -->
+                        <text x="170" y="125" font-family="Arial" font-weight="bold" font-size="20" fill="#4a5568" class="eye-off" text-anchor="middle">Z z z</text>
+                    </g>
+
+                    <!-- 身體主機 -->
+                    <polygon points="70,170 270,170 300,220 300,380 260,395 80,395 40,380 40,220" stroke-width="6" class="mecha-fill mecha-glow"/>
+                    
+                    <!-- 內部能量面板 (大肚子) -->
+                    <polygon points="60,230 280,230 280,370 60,370" fill="#0b101a" stroke-width="4" class="mecha-glow"/>
+                    
+                    <!-- 面板科技裝飾線 -->
+                    <line x1="60" y1="240" x2="80" y2="240" stroke-width="2" class="mecha-glow"/>
+                    <line x1="280" y1="360" x2="260" y2="360" stroke-width="2" class="mecha-glow"/>
+                </svg>
+
+                <!-- 凹槽插槽 (放大尺寸，覆蓋在肚子面板上) -->
+                <div class="absolute top-[245px] left-[60px] w-[220px] h-[110px] flex justify-between items-center px-1">
+                    <!-- 圓形插槽 -->
+                    <div class="slot-container" data-shape="circle" id="slot-circle">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <circle cx="50" cy="50" r="45" class="slot-outline" fill="none"/>
+                        </svg>
+                    </div>
+                    <!-- 三角形插槽 -->
+                    <div class="slot-container" data-shape="triangle" id="slot-triangle">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <polygon points="50,10 95,85 5,85" stroke-linejoin="round" class="slot-outline" fill="none"/>
+                        </svg>
+                    </div>
+                    <!-- 正方形插槽 -->
+                    <div class="slot-container" data-shape="square" id="slot-square">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <rect x="10" y="10" width="80" height="80" rx="10" class="slot-outline" fill="none"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通關文字提示 (取代原本的印章) -->
+        <div id="clear-message" class="absolute bottom-[25%] left-1/2 transform -translate-x-1/2 z-50 flex flex-col items-center justify-center w-full pointer-events-none hidden">
+            <div class="bg-black bg-opacity-80 p-5 border-y-4 border-[var(--neon-pink)] w-full text-center backdrop-blur-md shadow-[0_0_30px_rgba(255,0,234,0.4)]">
+                <h2 class="win-text-anim text-4xl md:text-5xl font-black tracking-widest mb-0" style="color: var(--neon-pink);">機械人復活！</h2>
+            </div>
+        </div>
+
+        <!-- 底部區域：拖曳齒輪區 (加大版) -->
+        <div id="dock-area" class="dock-panel h-1/4 min-h-[160px] flex items-center justify-center gap-6 z-30 pb-2 px-4 relative">
+            <!-- 裝飾用科幻條紋 -->
+            <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-[var(--neon-cyan)] opacity-50 rounded"></div>
+
+            <!-- 圓形齒輪 (Cyan) -->
+            <div class="w-24 h-24 draggable-gear" data-shape="circle">
+                <svg viewBox="0 0 100 100" class="w-full h-full" style="filter: drop-shadow(0 0 10px var(--neon-cyan));">
+                    <circle cx="50" cy="50" r="45" fill="rgba(0, 243, 255, 0.2)" stroke="var(--neon-cyan)" stroke-width="6" stroke-dasharray="15 10"/>
+                    <circle cx="50" cy="50" r="15" fill="var(--neon-cyan)"/>
+                    <circle cx="50" cy="50" r="30" fill="none" stroke="var(--neon-cyan)" stroke-width="2" opacity="0.5"/>
+                </svg>
+            </div>
+            <!-- 三角形齒輪 (Pink) -->
+            <div class="w-24 h-24 draggable-gear" data-shape="triangle">
+                <svg viewBox="0 0 100 100" class="w-full h-full" style="filter: drop-shadow(0 0 10px var(--neon-pink));">
+                    <polygon points="50,5 95,85 5,85" fill="rgba(255, 0, 234, 0.2)" stroke="var(--neon-pink)" stroke-width="6" stroke-linejoin="round" stroke-dasharray="15 10"/>
+                    <circle cx="50" cy="60" r="15" fill="var(--neon-pink)"/>
+                    <polygon points="50,25 75,70 25,70" fill="none" stroke="var(--neon-pink)" stroke-width="2" opacity="0.5"/>
+                </svg>
+            </div>
+            <!-- 正方形齒輪 (Yellow) -->
+            <div class="w-24 h-24 draggable-gear" data-shape="square">
+                <svg viewBox="0 0 100 100" class="w-full h-full" style="filter: drop-shadow(0 0 10px var(--neon-yellow));">
+                    <rect x="5" y="5" width="90" height="90" rx="12" fill="rgba(252, 238, 10, 0.2)" stroke="var(--neon-yellow)" stroke-width="6" stroke-dasharray="15 10"/>
+                    <circle cx="50" cy="50" r="15" fill="var(--neon-yellow)"/>
+                    <rect x="25" y="25" width="50" height="50" fill="none" stroke="var(--neon-yellow)" stroke-width="2" opacity="0.5"/>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- 再玩一次按鈕 -->
+        <div id="btn-restart-container" class="absolute bottom-12 left-0 right-0 flex justify-center z-50 hidden">
+            <button id="btn-restart" class="btn-cyber text-xl font-bold py-3 px-10 tracking-widest bg-black">
+                再修復機械人
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    /** ================= 音效系統 (Web Audio API - Cyberpunk 風格) ================= **/
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playTone(freq, type, duration, vol = 0.1, slideFreq = null) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = type; // 'sine', 'square', 'sawtooth', 'triangle'
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        if (slideFreq) {
+            osc.frequency.exponentialRampToValueAtTime(slideFreq, audioCtx.currentTime + duration);
+        }
+        
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const sounds = {
+        grab: () => playTone(300, 'square', 0.1, 0.05, 500),
+        dropWrong: () => playTone(150, 'sawtooth', 0.3, 0.1, 100),
+        dropCorrect: () => {
+            playTone(800, 'square', 0.1, 0.05);
+            setTimeout(() => playTone(1200, 'sine', 0.2, 0.1), 100);
+        },
+        win: () => {
+            // 科技感啟動音效
+            const notes = [400, 600, 800, 1200, 1600];
+            notes.forEach((f, i) => {
+                setTimeout(() => playTone(f, 'square', 0.1, 0.05), i * 150);
+            });
+            setTimeout(() => playTone(2000, 'sine', 0.8, 0.1, 1000), notes.length * 150);
+        }
+    };
+
+    /** ================= 遊戲狀態與邏輯 ================= **/
+    let placedCount = 0;
+    const totalGears = 3;
+    
+    // DOM 元素
+    const screenStart = document.getElementById('screen-start');
+    const btnStart = document.getElementById('btn-start');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnRestartContainer = document.getElementById('btn-restart-container');
+    const robotWrapper = document.getElementById('robot-wrapper');
+    const dockArea = document.getElementById('dock-area');
+    const clearMessage = document.getElementById('clear-message');
+    const gameContainer = document.getElementById('game-container');
+
+    let activeDragClone = null;
+    let originalGear = null;
+    let offsetX = 0;
+    let offsetY = 0;
+    let initialRect = null;
+
+    /** 遊戲初始化 **/
+    btnStart.addEventListener('click', () => {
+        initAudio();
+        screenStart.classList.add('hidden');
+        resetGame();
+    });
+
+    btnRestart.addEventListener('click', () => {
+        resetGame();
+    });
+
+    function resetGame() {
+        placedCount = 0;
+        
+        // 恢復機器人睡眠狀態
+        robotWrapper.classList.remove('robot-on', 'robot-hover');
+        robotWrapper.classList.add('robot-off');
+        
+        // 隱藏通關文字與按鈕
+        clearMessage.classList.add('hidden');
+        btnRestartContainer.classList.add('hidden');
+        dockArea.classList.remove('hidden');
+
+        // 重建 Dock 中的科技齒輪 HTML
+        dockArea.innerHTML = `
+            <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-20 h-1 bg-[var(--neon-cyan)] opacity-50 rounded"></div>
+            <div class="w-24 h-24 draggable-gear" data-shape="circle">
+                <svg viewBox="0 0 100 100" class="w-full h-full" style="filter: drop-shadow(0 0 10px var(--neon-cyan));">
+                    <circle cx="50" cy="50" r="45" fill="rgba(0, 243, 255, 0.2)" stroke="var(--neon-cyan)" stroke-width="6" stroke-dasharray="15 10"/>
+                    <circle cx="50" cy="50" r="15" fill="var(--neon-cyan)"/>
+                    <circle cx="50" cy="50" r="30" fill="none" stroke="var(--neon-cyan)" stroke-width="2" opacity="0.5"/>
+                </svg>
+            </div>
+            <div class="w-24 h-24 draggable-gear" data-shape="triangle">
+                <svg viewBox="0 0 100 100" class="w-full h-full" style="filter: drop-shadow(0 0 10px var(--neon-pink));">
+                    <polygon points="50,5 95,85 5,85" fill="rgba(255, 0, 234, 0.2)" stroke="var(--neon-pink)" stroke-width="6" stroke-linejoin="round" stroke-dasharray="15 10"/>
+                    <circle cx="50" cy="60" r="15" fill="var(--neon-pink)"/>
+                    <polygon points="50,25 75,70 25,70" fill="none" stroke="var(--neon-pink)" stroke-width="2" opacity="0.5"/>
+                </svg>
+            </div>
+            <div class="w-24 h-24 draggable-gear" data-shape="square">
+                <svg viewBox="0 0 100 100" class="w-full h-full" style="filter: drop-shadow(0 0 10px var(--neon-yellow));">
+                    <rect x="5" y="5" width="90" height="90" rx="12" fill="rgba(252, 238, 10, 0.2)" stroke="var(--neon-yellow)" stroke-width="6" stroke-dasharray="15 10"/>
+                    <circle cx="50" cy="50" r="15" fill="var(--neon-yellow)"/>
+                    <rect x="25" y="25" width="50" height="50" fill="none" stroke="var(--neon-yellow)" stroke-width="2" opacity="0.5"/>
+                </svg>
+            </div>
+        `;
+        
+        // 清空肚子插槽中的齒輪
+        document.querySelectorAll('.slot-container').forEach(slot => {
+            Array.from(slot.children).forEach(child => {
+                if(!child.tagName.toLowerCase().includes('svg')) {
+                    child.remove();
+                }
+            });
+        });
+
+        setupDragEvents();
+    }
+
+    /** ================= 拖曳系統 ================= **/
+    function setupDragEvents() {
+        const gears = document.querySelectorAll('.draggable-gear');
+        gears.forEach(gear => {
+            gear.addEventListener('pointerdown', handlePointerDown);
+        });
+    }
+
+    function handlePointerDown(e) {
+        if (activeDragClone) return;
+        const gear = e.currentTarget;
+        if (gear.dataset.placed === "true") return;
+
+        sounds.grab();
+        originalGear = gear;
+        initialRect = originalGear.getBoundingClientRect();
+
+        activeDragClone = originalGear.cloneNode(true);
+        activeDragClone.classList.remove('draggable-gear');
+        activeDragClone.classList.add('dragging-clone');
+        
+        document.body.appendChild(activeDragClone);
+
+        activeDragClone.style.position = 'absolute';
+        activeDragClone.style.left = initialRect.left + 'px';
+        activeDragClone.style.top = initialRect.top + 'px';
+        activeDragClone.style.width = initialRect.width + 'px';
+        activeDragClone.style.height = initialRect.height + 'px';
+        
+        offsetX = e.clientX - initialRect.left;
+        offsetY = e.clientY - initialRect.top;
+
+        originalGear.style.opacity = '0';
+
+        document.addEventListener('pointermove', handlePointerMove, { passive: false });
+        document.addEventListener('pointerup', handlePointerUp);
+        document.addEventListener('pointercancel', handlePointerUp);
+    }
+
+    function handlePointerMove(e) {
+        if (!activeDragClone) return;
+        e.preventDefault(); 
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        activeDragClone.style.left = x + 'px';
+        activeDragClone.style.top = y + 'px';
+    }
+
+    function handlePointerUp(e) {
+        if (!activeDragClone) return;
+        document.removeEventListener('pointermove', handlePointerMove);
+        document.removeEventListener('pointerup', handlePointerUp);
+        document.removeEventListener('pointercancel', handlePointerUp);
+        checkDrop();
+    }
+
+    function checkDrop() {
+        const dragRect = activeDragClone.getBoundingClientRect();
+        const shape = originalGear.dataset.shape;
+        const targetSlot = document.getElementById(`slot-${shape}`);
+        const slotRect = targetSlot.getBoundingClientRect();
+
+        const centerX = dragRect.left + dragRect.width / 2;
+        const centerY = dragRect.top + dragRect.height / 2;
+        const margin = 20; // 放大寬容度
+
+        if (centerX >= slotRect.left - margin && centerX <= slotRect.right + margin &&
+            centerY >= slotRect.top - margin && centerY <= slotRect.bottom + margin) {
+            
+            // 放置成功
+            sounds.dropCorrect();
+            const gearSvg = originalGear.querySelector('svg').cloneNode(true);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'placed-gear absolute inset-0 flex items-center justify-center';
+            // 將齒輪縮放以符合插槽大小
+            wrapper.innerHTML = `<div class="w-[65px] h-[65px]">${gearSvg.outerHTML}</div>`;
+            targetSlot.appendChild(wrapper);
+
+            originalGear.dataset.placed = "true";
+            cleanupDrag(true);
+
+            placedCount++;
+            if (placedCount === totalGears) {
+                setTimeout(triggerWin, 600);
+            }
+
+        } else {
+            // 放置失敗退回
+            sounds.dropWrong();
+            activeDragClone.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            activeDragClone.style.left = initialRect.left + 'px';
+            activeDragClone.style.top = initialRect.top + 'px';
+
+            setTimeout(() => {
+                cleanupDrag(false);
+            }, 300);
+        }
+    }
+
+    function cleanupDrag(success) {
+        if (activeDragClone) {
+            activeDragClone.remove();
+            activeDragClone = null;
+        }
+        if (originalGear) {
+            if(!success) {
+                originalGear.style.opacity = '1';
+            }
+            originalGear = null;
+        }
+    }
+
+    /** ================= 通關特效 ================= **/
+    function triggerWin() {
+        sounds.win();
+        dockArea.classList.add('hidden');
+
+        // 喚醒機器人 (CSS 動畫接手)
+        robotWrapper.classList.remove('robot-off');
+        robotWrapper.classList.add('robot-on', 'robot-hover');
+
+        // 螢幕震動與顯示成功文字
+        setTimeout(() => {
+            gameContainer.classList.add('screen-shake');
+            clearMessage.classList.remove('hidden');
+            createCyberFireworks();
+            
+            setTimeout(() => {
+                gameContainer.classList.remove('screen-shake');
+                btnRestartContainer.classList.remove('hidden');
+            }, 800);
+        }, 1000); // 等待頭部抬起動畫完成
+    }
+
+    // 科技感粒子特效 (取代原本的圓形煙火)
+    function createCyberFireworks() {
+        const colors = ['#00f3ff', '#ff00ea', '#fcee0a', '#ffffff'];
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        for (let i = 0; i < 40; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.left = centerX + 'px';
+            particle.style.top = centerY + 'px';
+            
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 80 + Math.random() * 200;
+            const tx = Math.cos(angle) * velocity;
+            const ty = Math.sin(angle) * velocity;
+            
+            // 讓線條朝向飛出的方向
+            const rot = (angle * 180 / Math.PI) + 90;
+            
+            particle.style.setProperty('--target', `translate(${tx}px, ${ty}px)`);
+            particle.style.setProperty('--rot', `${rot}deg`);
+            
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 800);
+        }
+    }
+</script>
+</body>
+</html>
