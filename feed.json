@@ -1,0 +1,27 @@
+{
+    "version": "https://jsonfeed.org/version/1",
+    "title": "Jacky 的網站",
+    "description": "",
+    "home_page_url": "https://hktkk.github.io",
+    "feed_url": "https://hktkk.github.io/feed.json",
+    "user_comment": "",
+    "author": {
+        "name": "Jacky Tam"
+    },
+    "items": [
+        {
+            "id": "https://hktkk.github.io/qr-code-sheng-cheng-qi.html",
+            "url": "https://hktkk.github.io/qr-code-sheng-cheng-qi.html",
+            "title": "QR Code 生成器",
+            "summary": "Link",
+            "content_html": "\n  <p>\n    <a href=\"https://hktkk.github.io/app/qrcode.html\">Link</a>\n  </p>\n\n  <p>\n    \n  </p>",
+            "author": {
+                "name": "Jacky Tam"
+            },
+            "tags": [
+            ],
+            "date_published": "2026-04-09T20:37:05+09:00",
+            "date_modified": "2026-04-09T20:45:53+09:00"
+        }
+    ]
+}
