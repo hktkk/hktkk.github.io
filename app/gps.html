@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps Plus Code 轉換器 (香港專用版)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet Maps CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        #map {
+            height: 380px;
+            width: 100%;
+            border-radius: 0.75rem;
+            z-index: 10;
+        }
+
+        .result-card {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-3xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <!-- 頂部狀態欄 -->
+        <div class="bg-slate-800 p-6 text-white">
+            <div class="flex items-center justify-between mb-2">
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-location-dot text-red-500"></i> Plus Code 轉換器
+                </h1>
+                <span class="text-[10px] bg-red-600 px-2 py-1 rounded-full uppercase tracking-widest font-bold">HK Priority</span>
+            </div>
+            <p class="text-slate-400 text-xs">專為香港座標校準優化，解決短碼定位偏離問題</p>
+        </div>
+
+        <div class="p-6 sm:p-8">
+            <!-- 輸入區域 -->
+            <div class="space-y-4 mb-8">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">請輸入代碼與地名</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="relative flex-grow">
+                            <input type="text" id="plusCodeInput" 
+                                class="w-full pl-4 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-xl outline-none transition-all text-lg font-medium"
+                                placeholder="例如：93WF+HPF 大欖"
+                                autocomplete="off">
+                        </div>
+                        <button id="convertBtn" onclick="convertCode()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap">
+                            <i class="fa-solid fa-magnifying-glass-location"></i> 立即定位
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="errorMessage" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-600 text-sm">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="errorText">格式錯誤</span>
+                </div>
+            </div>
+
+            <!-- 結果區域 -->
+            <div id="resultContainer" class="hidden space-y-6 animate-fade-in">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 緯度卡片 -->
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 relative overflow-hidden group">
+                        <div class="flex justify-between items-start mb-1 relative z-20">
+                            <p class="text-[10px] font-bold text-blue-400 uppercase tracking-tighter">精確緯度 Latitude</p>
+                            <button onclick="copyText('latResult')" class="text-blue-400 hover:text-blue-600 transition-colors" title="複製緯度">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                        <p id="latResult" class="text-2xl font-mono font-black text-blue-900 relative z-20">0.000000</p>
+                        <i class="fa-solid fa-arrows-up-down absolute -right-2 -bottom-2 text-blue-100 text-5xl z-10"></i>
+                    </div>
+                    <!-- 經度卡片 -->
+                    <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 relative overflow-hidden group">
+                        <div class="flex justify-between items-start mb-1 relative z-20">
+                            <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-tighter">精確經度 Longitude</p>
+                            <button onclick="copyText('lngResult')" class="text-indigo-400 hover:text-indigo-600 transition-colors" title="複製經度">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                        <p id="lngResult" class="text-2xl font-mono font-black text-indigo-900 relative z-20">0.000000</p>
+                        <i class="fa-solid fa-arrows-left-right absolute -right-2 -bottom-2 text-indigo-100 text-5xl z-10"></i>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">還原完整代碼 Full Plus Code</p>
+                        <p id="fullCodeDisplay" class="font-mono font-bold text-gray-700"></p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="copyBoth()" class="text-xs bg-white hover:bg-gray-100 text-gray-600 py-2 px-4 rounded-lg border border-gray-300 transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-copy"></i> 複製座標組合 (Lat, Lng)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border-4 border-gray-100 rounded-2xl overflow-hidden shadow-inner bg-gray-100">
+                    <div id="map"></div>
+                </div>
+                
+                <p id="refInfo" class="text-[10px] text-gray-400 italic text-center"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 transition-all pointer-events-none z-50 flex items-center gap-2">
+        <i class="fa-solid fa-check-circle text-green-400"></i>
+        <span id="toastMsg">已複製</span>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/gh/google/open-location-code@main/js/src/openlocationcode.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        let map = null;
+        let marker = null;
+        
+        const HK_BOUNDS = {
+            minLat: 22.15,
+            maxLat: 22.57,
+            minLng: 113.82,
+            maxLng: 114.45
+        };
+        const HK_DEFAULT = { lat: 22.3193, lng: 114.1694 };
+
+        function isPointInHK(lat, lng) {
+            return lat >= HK_BOUNDS.minLat && lat <= HK_BOUNDS.maxLat && 
+                   lng >= HK_BOUNDS.minLng && lng <= HK_BOUNDS.maxLng;
+        }
+
+        function initMap(lat, lng) {
+            if (!map) {
+                map = L.map('map', { zoomControl: false }).setView([lat, lng], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+                L.control.zoom({ position: 'bottomright' }).addTo(map);
+            } else {
+                map.setView([lat, lng], 16);
+            }
+        }
+
+        document.getElementById('plusCodeInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') convertCode();
+        });
+
+        async function convertCode() {
+            const inputEl = document.getElementById('plusCodeInput');
+            const errorMsgEl = document.getElementById('errorMessage');
+            const resultContainer = document.getElementById('resultContainer');
+            const convertBtn = document.getElementById('convertBtn');
+            
+            let inputStr = inputEl.value.trim();
+            errorMsgEl.classList.add('hidden');
+
+            if (typeof OpenLocationCode === 'undefined') {
+                showError("系統載入中，請重新整理頁面");
+                return;
+            }
+
+            if (!inputStr) {
+                showError("請輸入 Plus Code");
+                return;
+            }
+
+            try {
+                convertBtn.disabled = true;
+                convertBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 處理中';
+
+                let parts = inputStr.split(/\s+/);
+                let codePart = "";
+                let localityPart = "";
+                
+                for (let i = 0; i < parts.length; i++) {
+                    if (parts[i].includes('+')) {
+                        codePart = parts[i].toUpperCase();
+                        parts.splice(i, 1);
+                        localityPart = parts.join(' ').trim();
+                        break;
+                    }
+                }
+                if (!codePart) codePart = inputStr.toUpperCase();
+
+                let refLat = HK_DEFAULT.lat;
+                let refLng = HK_DEFAULT.lng;
+                let refSource = "系統預設 (香港中心)";
+
+                if (OpenLocationCode.isShort(codePart)) {
+                    if (localityPart) {
+                        const searchQuery = `${localityPart} Hong Kong`;
+                        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`;
+                        
+                        const res = await fetch(url, { headers: { 'Accept-Language': 'zh-TW' } });
+                        const data = await res.json();
+
+                        if (data && data.length > 0) {
+                            let tempLat = parseFloat(data[0].lat);
+                            let tempLng = parseFloat(data[0].lon);
+                            
+                            if (isPointInHK(tempLat, tempLng)) {
+                                refLat = tempLat;
+                                refLng = tempLng;
+                                refSource = `搜尋定位: ${data[0].display_name}`;
+                            } else {
+                                refSource = `地名「${localityPart}」匹配至境外，已強制校正回香港。`;
+                            }
+                        }
+                    }
+                }
+
+                let fullCode = OpenLocationCode.isFull(codePart) ? codePart : OpenLocationCode.recoverNearest(codePart, refLat, refLng);
+                
+                if (!OpenLocationCode.isValid(fullCode)) {
+                    showError("代碼無效，請檢查格式。");
+                    return;
+                }
+
+                const decoded = OpenLocationCode.decode(fullCode);
+                const finalLat = decoded.latitudeCenter;
+                const finalLng = decoded.longitudeCenter;
+
+                document.getElementById('latResult').innerText = finalLat.toFixed(6);
+                document.getElementById('lngResult').innerText = finalLng.toFixed(6);
+                document.getElementById('fullCodeDisplay').innerText = fullCode;
+                document.getElementById('refInfo').innerText = refSource;
+                resultContainer.classList.remove('hidden');
+
+                initMap(finalLat, finalLng);
+                setTimeout(() => {
+                    map.invalidateSize();
+                    if (marker) marker.setLatLng([finalLat, finalLng]);
+                    else marker = L.marker([finalLat, finalLng]).addTo(map);
+                    
+                    marker.bindPopup(`
+                        <div class="text-center">
+                            <b class="text-blue-600">${fullCode}</b><br>
+                            <span class="text-[10px] text-gray-400">系統精確還原坐標</span>
+                        </div>
+                    `).openPopup();
+                }, 100);
+
+            } catch (err) {
+                showError("轉換失敗，請稍後再試");
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass-location"></i> 立即定位';
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('errorText').innerText = msg;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('resultContainer').classList.add('hidden');
+        }
+
+        function copyText(id) {
+            const val = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(val).then(() => showToast(`已複製: ${val}`));
+        }
+
+        function copyBoth() {
+            const lat = document.getElementById('latResult').innerText;
+            const lng = document.getElementById('lngResult').innerText;
+            const text = `${lat}, ${lng}`;
+            navigator.clipboard.writeText(text).then(() => showToast("已複製經緯度組合"));
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.style.opacity = "1";
+            t.style.transform = "translateX(-50%) translateY(20px)";
+            setTimeout(() => {
+                t.style.opacity = "0";
+                t.style.transform = "translateX(-50%) translateY(0px)";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
