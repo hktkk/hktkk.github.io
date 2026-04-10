@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>五樓：文藝殿堂 - 辨認樂器小大師</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -16,7 +16,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            /* 使用 dvh 解決手機瀏覽器上下選單遮擋問題 */
+            height: 100vh; 
+            height: 100dvh; 
             overflow: hidden;
             touch-action: none; /* Prevent scrolling on mobile */
         }
@@ -81,7 +83,7 @@
             position: absolute;
             top: 0;
             width: 40%;
-            height: 60%;
+            height: 50%;
             background-color: #d63031;
             border-bottom-left-radius: 50%;
             border-bottom-right-radius: 50%;
@@ -94,9 +96,9 @@
 
         .stage-floor {
             position: absolute;
-            bottom: 25%;
+            bottom: 22%;
             width: 150%;
-            height: 200px;
+            height: 250px;
             background-color: #e17055;
             border-top: 10px solid #d63031;
             border-radius: 50%;
@@ -123,22 +125,11 @@
             100% { opacity: 0.9; }
         }
 
-        /* Fairy & Instruments */
-        .fairy {
-            position: absolute;
-            bottom: 38%;
-            width: 140px;
-            height: 160px;
-            z-index: 3;
-            transition: transform 0.2s;
-        }
-        .fairy.happy {
-            animation: bounce 0.5s ease infinite alternate;
-        }
-
+        /* Instruments Panel */
         .instrument-panel {
             position: absolute;
-            bottom: 2%;
+            /* 大幅拉高底部距離，並加入手機安全邊界考量 */
+            bottom: calc(max(8%, 30px) + env(safe-area-inset-bottom));
             width: 100%;
             display: flex;
             justify-content: space-around;
@@ -148,8 +139,8 @@
         }
 
         .instrument {
-            width: 80px;
-            height: 80px;
+            width: 75px; /* 稍微縮小以適應手機 */
+            height: 75px;
             cursor: grab;
             filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
             transition: transform 0.1s;
@@ -163,36 +154,6 @@
             width: 100%;
             height: 100%;
             pointer-events: none; /* Let the container handle events */
-        }
-
-        /* Play Button in Game */
-        .play-audio-btn {
-            position: absolute;
-            bottom: 58%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #00cec9;
-            border: 4px solid #00b894;
-            color: white;
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 6;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #00b894, 0 10px 15px rgba(0,0,0,0.2);
-            transition: all 0.1s;
-        }
-        .play-audio-btn:active {
-            transform: translate(-50%, 6px);
-            box-shadow: 0 0px 0 #00b894, 0 4px 5px rgba(0,0,0,0.2);
-        }
-        .play-audio-btn svg {
-            width: 40px;
-            height: 40px;
-            margin-left: 5px; /* Visual center adjustment for play icon */
         }
 
         /* Clear Screen Elements */
@@ -247,11 +208,11 @@
         /* 重新定位：精靈 */
         .fairy {
             position: absolute;
-            bottom: 25%;
+            bottom: 35%; /* 向上移動 */
             left: 50%;
-            margin-left: -150px; /* 向左偏移 */
-            width: 120px;
-            height: 140px;
+            margin-left: -130px; /* 拉近距離 */
+            width: 100px;
+            height: 120px;
             z-index: 3;
             transition: transform 0.2s;
         }
@@ -262,11 +223,11 @@
         /* 重新定位：放置區與指示文字 */
         .drop-zone {
             position: absolute;
-            bottom: 25%;
+            bottom: 35%; /* 向上移動 */
             left: 50%;
-            margin-left: 15px; /* 向右偏移 */
-            width: 130px;
-            height: 130px;
+            margin-left: 10px; /* 拉近距離 */
+            width: 110px;
+            height: 110px;
             border: 6px dashed #fff;
             border-radius: 20px;
             background-color: rgba(255, 255, 255, 0.2);
@@ -284,7 +245,7 @@
 
         .instruction-banner {
             position: absolute;
-            top: 12%;
+            top: 8%; /* 往上移，留空間給按鈕 */
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -295,7 +256,7 @@
             color: #d63031;
             padding: 10px 20px;
             border-radius: 30px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 900;
             border: 4px solid #ff7675;
             z-index: 10;
@@ -305,15 +266,15 @@
         /* 重新定位：播放按鈕 */
         .play-audio-btn {
             position: absolute;
-            top: 28%;
+            top: 20%; /* 往上移動 */
             left: 50%;
             transform: translateX(-50%);
             background-color: #00cec9;
             border: 4px solid #00b894;
             color: white;
             border-radius: 50%;
-            width: 80px;
-            height: 80px;
+            width: 70px; /* 稍微縮小避免擠壓 */
+            height: 70px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -327,8 +288,8 @@
             box-shadow: 0 0px 0 #00b894, 0 4px 5px rgba(0,0,0,0.2);
         }
         .play-audio-btn svg {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             margin-left: 5px;
         }
 
@@ -376,15 +337,15 @@
             🔊 點擊播放音效，把樂器拖到「放置區」！
         </div>
 
-        <!-- 放置區 -->
-        <div id="drop-zone" class="drop-zone animate-pulse">放置區</div>
-
         <!-- Play Audio Button -->
         <div id="btn-play-audio" class="play-audio-btn animate-pulse">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z"/>
             </svg>
         </div>
+
+        <!-- 放置區 -->
+        <div id="drop-zone" class="drop-zone animate-pulse">放置區</div>
 
         <!-- Music Fairy -->
         <div id="fairy-target" class="fairy">
