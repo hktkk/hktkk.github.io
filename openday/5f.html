@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>五樓：文藝殿堂 - 辨認樂器小大師</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap');
+
+        body {
+            font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #2d3748; /* Dark background outside the game area */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none; /* Prevent scrolling on mobile */
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            max-width: 800px;
+            background: linear-gradient(180deg, #ffecd2 0%, #fcb69f 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        /* Screen Management */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        /* Cute Button Style */
+        .btn-cute {
+            background-color: #ff5e7e;
+            color: white;
+            border: 4px solid #ff2a55;
+            border-radius: 50px;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #cc173c, 0 15px 20px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        .btn-cute:active {
+            transform: translateY(8px);
+            box-shadow: 0 0px 0 #cc173c, 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Stage Elements */
+        .curtain {
+            position: absolute;
+            top: 0;
+            width: 40%;
+            height: 60%;
+            background-color: #d63031;
+            border-bottom-left-radius: 50%;
+            border-bottom-right-radius: 50%;
+            border: 8px solid #b21f1f;
+            border-top: none;
+            z-index: 5;
+        }
+        .curtain.left { left: -10%; border-left: none; }
+        .curtain.right { right: -10%; border-right: none; }
+
+        .stage-floor {
+            position: absolute;
+            bottom: 25%;
+            width: 150%;
+            height: 200px;
+            background-color: #e17055;
+            border-top: 10px solid #d63031;
+            border-radius: 50%;
+            left: -25%;
+            z-index: 1;
+        }
+
+        .spotlight {
+            position: absolute;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 80%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+            clip-path: polygon(30% 0, 70% 0, 100% 100%, 0% 100%);
+            z-index: 2;
+            pointer-events: none;
+            animation: pulse-light 3s infinite alternate;
+        }
+
+        @keyframes pulse-light {
+            0% { opacity: 0.6; }
+            100% { opacity: 0.9; }
+        }
+
+        /* Fairy & Instruments */
+        .fairy {
+            position: absolute;
+            bottom: 38%;
+            width: 140px;
+            height: 160px;
+            z-index: 3;
+            transition: transform 0.2s;
+        }
+        .fairy.happy {
+            animation: bounce 0.5s ease infinite alternate;
+        }
+
+        .instrument-panel {
+            position: absolute;
+            bottom: 2%;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10;
+            padding: 0 10px;
+        }
+
+        .instrument {
+            width: 80px;
+            height: 80px;
+            cursor: grab;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+            transition: transform 0.1s;
+            touch-action: none; /* Crucial for custom dragging */
+        }
+        .instrument:active {
+            cursor: grabbing;
+        }
+        
+        .instrument svg {
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let the container handle events */
+        }
+
+        /* Play Button in Game */
+        .play-audio-btn {
+            position: absolute;
+            bottom: 58%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #00cec9;
+            border: 4px solid #00b894;
+            color: white;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 6;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #00b894, 0 10px 15px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+        }
+        .play-audio-btn:active {
+            transform: translate(-50%, 6px);
+            box-shadow: 0 0px 0 #00b894, 0 4px 5px rgba(0,0,0,0.2);
+        }
+        .play-audio-btn svg {
+            width: 40px;
+            height: 40px;
+            margin-left: 5px; /* Visual center adjustment for play icon */
+        }
+
+        /* Clear Screen Elements */
+        .clear-stamp {
+            font-size: 80px;
+            color: #fdcb6e;
+            text-shadow: 0 0 20px #ffeaa7, 4px 4px 0 #e17055, 0 0 40px #fdcb6e;
+            transform: scale(0) rotate(-15deg);
+            opacity: 0;
+            border: 8px solid #fdcb6e;
+            border-radius: 20px;
+            padding: 10px 30px;
+            box-shadow: inset 0 0 20px #fdcb6e, 0 0 30px #fdcb6e;
+        }
+        
+        .show-stamp {
+            animation: stamp-in 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes stamp-in {
+            0% { transform: scale(3) rotate(20deg); opacity: 0; }
+            50% { transform: scale(0.8) rotate(-20deg); opacity: 1; }
+            100% { transform: scale(1) rotate(-15deg); opacity: 1; }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: red;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); }
+        }
+        
+        /* Floating Note */
+        .floating-note {
+            position: absolute;
+            font-size: 30px;
+            color: #ffeaa7;
+            pointer-events: none;
+            animation: float-up 1.5s ease-out forwards;
+            z-index: 20;
+        }
+        @keyframes float-up {
+            0% { transform: translateY(0) scale(0.5); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+
+        /* 重新定位：精靈 */
+        .fairy {
+            position: absolute;
+            bottom: 25%;
+            left: 50%;
+            margin-left: -150px; /* 向左偏移 */
+            width: 120px;
+            height: 140px;
+            z-index: 3;
+            transition: transform 0.2s;
+        }
+        .fairy.happy {
+            animation: bounce 0.5s ease infinite alternate;
+        }
+
+        /* 重新定位：放置區與指示文字 */
+        .drop-zone {
+            position: absolute;
+            bottom: 25%;
+            left: 50%;
+            margin-left: 15px; /* 向右偏移 */
+            width: 130px;
+            height: 130px;
+            border: 6px dashed #fff;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+            font-weight: 900;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            box-shadow: inset 0 0 15px rgba(255,255,255,0.5);
+            text-align: center;
+        }
+
+        .instruction-banner {
+            position: absolute;
+            top: 12%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 450px;
+            white-space: normal;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #d63031;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 900;
+            border: 4px solid #ff7675;
+            z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* 重新定位：播放按鈕 */
+        .play-audio-btn {
+            position: absolute;
+            top: 28%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #00cec9;
+            border: 4px solid #00b894;
+            color: white;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 6;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #00b894, 0 10px 15px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+        }
+        .play-audio-btn:active {
+            transform: translate(-50%, 6px);
+            box-shadow: 0 0px 0 #00b894, 0 4px 5px rgba(0,0,0,0.2);
+        }
+        .play-audio-btn svg {
+            width: 40px;
+            height: 40px;
+            margin-left: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <!-- Screen 1: Start Screen -->
+    <div id="screen-start" class="screen active justify-center bg-[#ffeaa7]">
+        <div class="text-center">
+            <!-- Cute Mascot for Start Screen -->
+            <svg width="150" height="150" viewBox="0 0 200 200" class="mx-auto mb-6 animate-bounce">
+                <circle cx="100" cy="100" r="90" fill="#ff7675" stroke="#d63031" stroke-width="10"/>
+                <circle cx="65" cy="80" r="12" fill="#2d3436"/>
+                <circle cx="135" cy="80" r="12" fill="#2d3436"/>
+                <path d="M 70 120 Q 100 150 130 120" fill="none" stroke="#2d3436" stroke-width="8" stroke-linecap="round"/>
+                <path d="M 40 40 Q 60 10 90 30" fill="none" stroke="#d63031" stroke-width="8" stroke-linecap="round"/>
+                <path d="M 160 40 Q 140 10 110 30" fill="none" stroke="#d63031" stroke-width="8" stroke-linecap="round"/>
+            </svg>
+            <h1 class="text-4xl font-black text-[#d63031] mb-2 text-shadow-md" style="text-shadow: 2px 2px 0 white;">辨認樂器小大師</h1>
+            <p class="text-[#636e72] font-bold mb-10 text-lg">點擊播放音效，幫小精靈找樂器！</p>
+            <button id="btn-start" class="btn-cute">開始遊戲</button>
+        </div>
+    </div>
+
+    <!-- Screen 2: Game Screen -->
+    <div id="screen-game" class="screen hidden">
+        <!-- Stage Background Elements -->
+        <div class="curtain left"></div>
+        <div class="curtain right"></div>
+        <div class="stage-floor"></div>
+        <div class="spotlight"></div>
+        
+        <!-- Score/Round Indicator -->
+        <div class="absolute top-4 left-4 z-10 flex space-x-2" id="round-indicator">
+            <div class="text-xl font-bold bg-white/90 text-teal-600 px-4 py-2 rounded-full border-4 border-teal-500 shadow-md">
+                第 <span id="q-num">1</span> / 3 題
+            </div>
+        </div>
+
+        <!-- 遊戲指示 -->
+        <div class="instruction-banner">
+            🔊 點擊播放音效，把樂器拖到「放置區」！
+        </div>
+
+        <!-- 放置區 -->
+        <div id="drop-zone" class="drop-zone animate-pulse">放置區</div>
+
+        <!-- Play Audio Button -->
+        <div id="btn-play-audio" class="play-audio-btn animate-pulse">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+            </svg>
+        </div>
+
+        <!-- Music Fairy -->
+        <div id="fairy-target" class="fairy">
+            <svg viewBox="0 0 200 200" width="100%" height="100%">
+                <!-- Wings -->
+                <path d="M 50 100 Q 10 60 30 20 Q 70 40 100 80" fill="#a29bfe" stroke="#6c5ce7" stroke-width="6"/>
+                <path d="M 150 100 Q 190 60 170 20 Q 130 40 100 80" fill="#a29bfe" stroke="#6c5ce7" stroke-width="6"/>
+                <!-- Body -->
+                <circle cx="100" cy="110" r="60" fill="#ffeaa7" stroke="#fdcb6e" stroke-width="8"/>
+                <!-- Eyes -->
+                <circle cx="75" cy="100" r="8" fill="#2d3436"/>
+                <circle cx="125" cy="100" r="8" fill="#2d3436"/>
+                <!-- Blush -->
+                <ellipse cx="60" cy="115" rx="10" ry="6" fill="#ff7675" opacity="0.6"/>
+                <ellipse cx="140" cy="115" rx="10" ry="6" fill="#ff7675" opacity="0.6"/>
+                <!-- Smile -->
+                <path d="M 85 125 Q 100 140 115 125" fill="none" stroke="#2d3436" stroke-width="6" stroke-linecap="round"/>
+                <!-- Antennae -->
+                <path d="M 100 50 L 90 20" stroke="#fdcb6e" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="90" cy="20" r="8" fill="#ff7675"/>
+                <path d="M 100 50 L 110 20" stroke="#fdcb6e" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="110" cy="20" r="8" fill="#00cec9"/>
+            </svg>
+        </div>
+
+        <!-- Instruments Panel -->
+        <div class="instrument-panel">
+            <!-- Drum -->
+            <div class="instrument" id="inst-drum" data-type="drum">
+                <svg viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="drum-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#ff7675" />
+                            <stop offset="50%" stop-color="#d63031" />
+                            <stop offset="100%" stop-color="#b21f1f" />
+                        </linearGradient>
+                        <linearGradient id="drum-top" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#fff" />
+                            <stop offset="100%" stop-color="#ffeaa7" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Drum body -->
+                    <path d="M 15 40 L 15 80 Q 50 95 85 80 L 85 40" fill="url(#drum-grad)" stroke="#2d3436" stroke-width="4"/>
+                    <!-- Drum top -->
+                    <ellipse cx="50" cy="40" rx="35" ry="15" fill="url(#drum-top)" stroke="#2d3436" stroke-width="4"/>
+                    <!-- Details / Strings -->
+                    <path d="M 20 50 L 80 75" stroke="#ffeaa7" stroke-width="2" opacity="0.6"/>
+                    <path d="M 20 75 L 80 50" stroke="#ffeaa7" stroke-width="2" opacity="0.6"/>
+                    <path d="M 50 55 L 50 88" stroke="#ffeaa7" stroke-width="2" opacity="0.6"/>
+                    <!-- Stick -->
+                    <path d="M 5 15 L 40 35" stroke="#b2bec3" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="40" cy="35" r="7" fill="#d63031"/>
+                    <path d="M 95 15 L 60 35" stroke="#b2bec3" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="60" cy="35" r="7" fill="#d63031"/>
+                </svg>
+            </div>
+            <!-- Triangle -->
+            <div class="instrument" id="inst-triangle" data-type="triangle">
+                <svg viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fff" />
+                            <stop offset="50%" stop-color="#b2bec3" />
+                            <stop offset="100%" stop-color="#636e72" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Triangle base -->
+                    <path d="M 50 15 L 15 80 L 85 80" fill="none" stroke="url(#metal-grad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" filter="drop-shadow(2px 2px 2px rgba(0,0,0,0.3))"/>
+                    <!-- String -->
+                    <path d="M 50 5 L 50 15" stroke="#2d3436" stroke-width="3"/>
+                    <circle cx="50" cy="5" r="3" fill="#2d3436"/>
+                    <!-- Wand -->
+                    <path d="M 90 30 L 90 90" stroke="url(#metal-grad)" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="90" cy="90" r="4" fill="#2d3436"/>
+                </svg>
+            </div>
+            <!-- Trumpet -->
+            <div class="instrument" id="inst-trumpet" data-type="trumpet">
+                <svg viewBox="0 0 100 100">
+                    <defs>
+                        <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffeaa7" />
+                            <stop offset="50%" stop-color="#fdcb6e" />
+                            <stop offset="100%" stop-color="#e17055" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Bell -->
+                    <path d="M 70 25 Q 95 25 95 15 L 95 85 Q 95 75 70 75 Z" fill="url(#gold-grad)" stroke="#2d3436" stroke-width="3"/>
+                    <!-- Tube main -->
+                    <rect x="15" y="45" width="55" height="10" fill="url(#gold-grad)" stroke="#2d3436" stroke-width="3"/>
+                    <!-- Loop -->
+                    <path d="M 25 45 C -5 45 -5 65 25 65 L 60 65" fill="none" stroke="url(#gold-grad)" stroke-width="8"/>
+                    <path d="M 25 45 C -5 45 -5 65 25 65 L 60 65" fill="none" stroke="#2d3436" stroke-width="3" stroke-dasharray="100 0" opacity="0.3"/>
+                    <!-- Valves -->
+                    <rect x="35" y="30" width="6" height="15" fill="url(#gold-grad)" stroke="#2d3436" stroke-width="2"/>
+                    <rect x="45" y="30" width="6" height="15" fill="url(#gold-grad)" stroke="#2d3436" stroke-width="2"/>
+                    <rect x="55" y="30" width="6" height="15" fill="url(#gold-grad)" stroke="#2d3436" stroke-width="2"/>
+                    <!-- Buttons -->
+                    <circle cx="38" cy="28" r="4" fill="#d63031" stroke="#2d3436" stroke-width="2"/>
+                    <circle cx="48" cy="28" r="4" fill="#d63031" stroke="#2d3436" stroke-width="2"/>
+                    <circle cx="58" cy="28" r="4" fill="#d63031" stroke="#2d3436" stroke-width="2"/>
+                    <!-- Mouthpiece -->
+                    <path d="M 15 45 L 5 40 L 5 60 L 15 55 Z" fill="#b2bec3" stroke="#2d3436" stroke-width="2"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 3: Clear Screen -->
+    <div id="screen-clear" class="screen hidden justify-center">
+        <!-- Stage Background reused partially -->
+        <div class="spotlight" style="width: 100%; top: 0; left: 0; transform: none; clip-path: none; opacity: 0.3; background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);"></div>
+        
+        <div class="fairy happy" style="bottom: 40%; left: 50%; margin-left: -90px; width: 180px; height: 200px; z-index: 20;">
+            <svg viewBox="0 0 200 200" width="100%" height="100%">
+                 <!-- Same fairy, but arms raised and holding instruments (abstractly surrounded) -->
+                 <path d="M 50 100 Q 10 60 30 20 Q 70 40 100 80" fill="#a29bfe" stroke="#6c5ce7" stroke-width="6"/>
+                 <path d="M 150 100 Q 190 60 170 20 Q 130 40 100 80" fill="#a29bfe" stroke="#6c5ce7" stroke-width="6"/>
+                 <circle cx="100" cy="110" r="60" fill="#ffeaa7" stroke="#fdcb6e" stroke-width="8"/>
+                 <!-- Happy Eyes -->
+                 <path d="M 65 100 Q 75 90 85 100" fill="none" stroke="#2d3436" stroke-width="6" stroke-linecap="round"/>
+                 <path d="M 115 100 Q 125 90 135 100" fill="none" stroke="#2d3436" stroke-width="6" stroke-linecap="round"/>
+                 <ellipse cx="60" cy="115" rx="10" ry="6" fill="#ff7675" opacity="0.6"/>
+                 <ellipse cx="140" cy="115" rx="10" ry="6" fill="#ff7675" opacity="0.6"/>
+                 <!-- Big Smile -->
+                 <path d="M 80 120 Q 100 150 120 120 Z" fill="#ff7675" stroke="#2d3436" stroke-width="4" stroke-linecap="round"/>
+                 <!-- Little instruments floating around -->
+                 <circle cx="40" cy="150" r="15" fill="#00cec9" stroke="#00b894" stroke-width="3"/>
+                 <rect x="150" y="140" width="20" height="20" fill="#fdcb6e" stroke="#e17055" stroke-width="3"/>
+            </svg>
+        </div>
+
+        <div id="clear-stamp" class="clear-stamp absolute z-30 font-black">CLEAR</div>
+        
+        <button id="btn-restart" class="btn-cute absolute bottom-10 z-30">再玩一次</button>
+    </div>
+
+</div>
+
+<script>
+/**
+ * Game Logic & Audio Synthesizer
+ */
+
+// Web Audio API Context (Initialized on first user interaction)
+let audioCtx = null;
+
+// Game State
+const GAME_ROUNDS = 3;
+let currentRound = 0;
+let targetSequence = [];
+let currentTarget = '';
+let isDragging = false;
+let draggedElement = null;
+
+// Setup DOM Elements
+const screenStart = document.getElementById('screen-start');
+const screenGame = document.getElementById('screen-game');
+const screenClear = document.getElementById('screen-clear');
+const btnStart = document.getElementById('btn-start');
+const btnPlayAudio = document.getElementById('btn-play-audio');
+const btnRestart = document.getElementById('btn-restart');
+const fairyTarget = document.getElementById('fairy-target');
+const instruments = document.querySelectorAll('.instrument');
+const clearStamp = document.getElementById('clear-stamp');
+const gameContainer = document.getElementById('game-container');
+
+// --- Audio Synthesizer Functions ---
+
+function initAudio() {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+// 1. 大鼓 (Bass Drum) - 延長為約三秒的節奏
+function playDrum() {
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    
+    // 播放 4 個重拍，營造三秒的長度
+    [0, 0.8, 1.6, 2.4].forEach(delay => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(120, t + delay);
+        osc.frequency.exponentialRampToValueAtTime(0.01, t + delay + 0.5);
+        
+        gain.gain.setValueAtTime(1, t + delay);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + delay + 0.6);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(t + delay);
+        osc.stop(t + delay + 0.6);
+    });
+}
+
+// 2. 三角鐵 (Triangle) - 延長為約三秒的連續敲擊聲
+function playTriangle() {
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    
+    // 敲擊 3 次
+    [0, 1.0, 2.0].forEach(delay => {
+        // 使用多個高頻率疊加模擬金屬聲
+        const freqs = [3000, 4200, 5400];
+        freqs.forEach(f => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.value = f;
+            
+            gain.gain.setValueAtTime(0, t + delay);
+            gain.gain.linearRampToValueAtTime(0.3, t + delay + 0.05); // 快速敲擊
+            gain.gain.exponentialRampToValueAtTime(0.01, t + delay + 1.0); // 長尾音
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(t + delay);
+            osc.stop(t + delay + 1.0);
+        });
+    });
+}
+
+// 3. 小號 (Trumpet) - 吹奏約三秒的旋律
+function playTrumpet() {
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    
+    // 簡單號角旋律：C4, E4, G4 (持續長音)
+    const notes = [
+        { f: 261.63, start: 0, dur: 0.5 },
+        { f: 329.63, start: 0.5, dur: 0.5 },
+        { f: 392.00, start: 1.0, dur: 2.0 }
+    ];
+    
+    notes.forEach(note => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sawtooth';
+        // 模擬吹奏的音高微調 (起音稍微偏低再拉高)
+        osc.frequency.setValueAtTime(note.f * 0.95, t + note.start);
+        osc.frequency.linearRampToValueAtTime(note.f, t + note.start + 0.1);
+        
+        gain.gain.setValueAtTime(0, t + note.start);
+        gain.gain.linearRampToValueAtTime(0.5, t + note.start + 0.1);
+        gain.gain.setValueAtTime(0.5, t + note.start + note.dur - 0.1);
+        gain.gain.linearRampToValueAtTime(0, t + note.start + note.dur);
+        
+        // 使用低通濾波器讓鋸齒波聽起來像銅管
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(500, t + note.start);
+        filter.frequency.linearRampToValueAtTime(3000, t + note.start + 0.1);
+        filter.frequency.exponentialRampToValueAtTime(1000, t + note.start + note.dur);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(t + note.start);
+        osc.stop(t + note.start + note.dur);
+    });
+}
+
+// UI Sounds
+function playDragSound() {
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, t);
+    osc.frequency.linearRampToValueAtTime(800, t + 0.1);
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.linearRampToValueAtTime(0, t + 0.1);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.1);
+}
+
+function playCorrectSound() {
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    // Chime (Arpeggio)
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, index) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const delay = index * 0.1;
+        gain.gain.setValueAtTime(0, t + delay);
+        gain.gain.linearRampToValueAtTime(0.3, t + delay + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + delay + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t + delay);
+        osc.stop(t + delay + 0.5);
+    });
+}
+
+function playWrongSound() {
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(300, t);
+    osc.frequency.exponentialRampToValueAtTime(100, t + 0.3); // Pitch drop
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.3);
+}
+
+function playClearFanfare() {
+    if(!audioCtx) return;
+    const t = audioCtx.currentTime;
+    // Triumphant chord C major
+    const notes = [
+        {f: 523.25, start: 0, end: 0.2}, // C5 short
+        {f: 523.25, start: 0.2, end: 0.4}, // C5 short
+        {f: 523.25, start: 0.4, end: 0.6}, // C5 short
+        {f: 659.25, start: 0.6, end: 1.5}, // E5 long
+        {f: 783.99, start: 0.6, end: 1.5}, // G5 long
+        {f: 1046.50, start: 0.6, end: 1.5} // C6 long
+    ];
+    
+    notes.forEach(note => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = note.f;
+        gain.gain.setValueAtTime(0, t + note.start);
+        gain.gain.linearRampToValueAtTime(0.15, t + note.start + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + note.end);
+        
+        // Add some basic lowpass filter to make square wave softer
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 2000;
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t + note.start);
+        osc.stop(t + note.end);
+    });
+}
+
+function playCurrentTargetAudio() {
+    // Visual feedback
+    btnPlayAudio.classList.remove('animate-pulse');
+    void btnPlayAudio.offsetWidth; // trigger reflow
+    btnPlayAudio.classList.add('scale-90');
+    setTimeout(() => btnPlayAudio.classList.remove('scale-90'), 150);
+
+    // Play corresponding synth
+    if (currentTarget === 'drum') playDrum();
+    else if (currentTarget === 'triangle') playTriangle();
+    else if (currentTarget === 'trumpet') playTrumpet();
+    
+    // Spawn floating notes from button
+    spawnFloatingNote(btnPlayAudio);
+}
+
+
+// --- Game Flow Logic ---
+
+// 修復切換畫面的邏輯：強制隱藏所有畫面，只顯示目標畫面
+function switchScreen(showId) {
+    document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+        screen.classList.add('hidden');
+    });
+    const targetScreen = document.getElementById(showId);
+    targetScreen.classList.remove('hidden');
+    targetScreen.classList.add('active');
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function startGame() {
+    initAudio();
+    playCorrectSound(); // Small feedback
+    
+    // 確保切換到遊戲畫面，並且隱藏首頁或通關畫面
+    switchScreen('screen-game');
+    
+    // 清除上一次的碎紙花與狀態
+    document.querySelectorAll('.confetti').forEach(el => el.remove());
+    clearStamp.classList.remove('show-stamp');
+    fairyTarget.classList.remove('happy');
+    
+    // Reset state
+    currentRound = 0;
+    targetSequence = shuffleArray(['drum', 'triangle', 'trumpet']);
+    
+    nextRound();
+}
+
+function nextRound() {
+    if (currentRound >= GAME_ROUNDS) {
+        showClearScreen();
+        return;
+    }
+
+    currentTarget = targetSequence[currentRound];
+    
+    // 更新左上角題號
+    document.getElementById('q-num').innerText = currentRound + 1;
+    
+    // Reset all instruments positions & visibility
+    instruments.forEach(inst => {
+        inst.style.transform = `translate(0px, 0px)`;
+        inst.style.opacity = '1';
+        inst.style.pointerEvents = 'auto';
+    });
+
+    // Make Play button pulse to attract attention
+    btnPlayAudio.classList.add('animate-pulse');
+}
+
+function showClearScreen() {
+    switchScreen('screen-clear');
+    playClearFanfare();
+    
+    // Show Stamp
+    clearStamp.classList.remove('show-stamp');
+    void clearStamp.offsetWidth;
+    clearStamp.classList.add('show-stamp');
+
+    // Confetti
+    for(let i=0; i<50; i++){
+        createConfetti();
+    }
+}
+
+
+// --- Visual Effects ---
+
+function createConfetti() {
+    const colors = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
+    const conf = document.createElement('div');
+    conf.classList.add('confetti');
+    conf.style.left = Math.random() * 100 + 'vw';
+    conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    conf.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    conf.style.opacity = Math.random();
+    
+    // Random shape
+    if(Math.random() > 0.5) conf.style.borderRadius = '50%';
+    
+    screenClear.appendChild(conf);
+    
+    setTimeout(() => { conf.remove(); }, 5000);
+}
+
+function spawnFloatingNote(element) {
+    const rect = element.getBoundingClientRect();
+    const note = document.createElement('div');
+    note.innerHTML = '🎵';
+    note.classList.add('floating-note');
+    note.style.left = (rect.left + rect.width/2 - 15) + 'px';
+    note.style.top = (rect.top - 20) + 'px';
+    document.body.appendChild(note);
+    
+    setTimeout(() => { note.remove(); }, 1500);
+}
+
+
+// --- Drag and Drop Logic (Pointer Events for Mouse/Touch) ---
+
+let startX, startY;
+let currentTranslateX = 0, currentTranslateY = 0;
+
+instruments.forEach(inst => {
+    inst.addEventListener('pointerdown', handlePointerDown);
+});
+
+function handlePointerDown(e) {
+    if (e.target.closest('.instrument')) {
+        draggedElement = e.target.closest('.instrument');
+        // Bring to front
+        draggedElement.style.zIndex = '100';
+        isDragging = true;
+        
+        // Initial pointer position
+        startX = e.clientX;
+        startY = e.clientY;
+
+        // Parse current transform
+        const transform = draggedElement.style.transform;
+        const match = transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+        if (match) {
+            currentTranslateX = parseFloat(match[1]);
+            currentTranslateY = parseFloat(match[2]);
+        } else {
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+        }
+
+        playDragSound();
+        draggedElement.setPointerCapture(e.pointerId);
+
+        // Bind move and up to the element tracking the pointer
+        draggedElement.addEventListener('pointermove', handlePointerMove);
+        draggedElement.addEventListener('pointerup', handlePointerUp);
+        draggedElement.addEventListener('pointercancel', handlePointerUp);
+    }
+}
+
+function handlePointerMove(e) {
+    if (!isDragging || !draggedElement) return;
+    
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    
+    const newX = currentTranslateX + dx;
+    const newY = currentTranslateY + dy;
+    
+    draggedElement.style.transform = `translate(${newX}px, ${newY}px)`;
+}
+
+function handlePointerUp(e) {
+    if (!isDragging || !draggedElement) return;
+    isDragging = false;
+    draggedElement.releasePointerCapture(e.pointerId);
+    draggedElement.removeEventListener('pointermove', handlePointerMove);
+    draggedElement.removeEventListener('pointerup', handlePointerUp);
+    draggedElement.removeEventListener('pointercancel', handlePointerUp);
+
+    draggedElement.style.zIndex = '';
+
+    checkCollision();
+    draggedElement = null;
+}
+
+function checkCollision() {
+    if (!draggedElement) return;
+
+    const dragRect = draggedElement.getBoundingClientRect();
+    const dropZone = document.getElementById('drop-zone');
+    const targetRect = dropZone.getBoundingClientRect();
+
+    // Calculate center points
+    const dragCenterX = dragRect.left + dragRect.width / 2;
+    const dragCenterY = dragRect.top + dragRect.height / 2;
+    const targetCenterX = targetRect.left + targetRect.width / 2;
+    const targetCenterY = targetRect.top + targetRect.height / 2;
+
+    // Simple distance check (radius collision) 
+    const distance = Math.hypot(dragCenterX - targetCenterX, dragCenterY - targetCenterY);
+    const hitThreshold = 90; // pixels, allowing easy drop into the box
+
+    if (distance < hitThreshold) {
+        // Hit Target Box! Check if correct instrument
+        const instrumentType = draggedElement.getAttribute('data-type');
+        
+        if (instrumentType === currentTarget) {
+            // Correct!
+            playCorrectSound();
+            fairyTarget.classList.add('happy');
+            setTimeout(() => fairyTarget.classList.remove('happy'), 600);
+            spawnFloatingNote(dropZone);
+
+            // Hide instrument
+            draggedElement.style.opacity = '0';
+            draggedElement.style.pointerEvents = 'none';
+
+            currentRound++;
+            setTimeout(nextRound, 800);
+        } else {
+            // Wrong instrument
+            playWrongSound();
+            snapBack(draggedElement);
+        }
+    } else {
+        // Missed target box, snap back
+        snapBack(draggedElement);
+    }
+}
+
+function snapBack(element) {
+    element.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    element.style.transform = `translate(0px, 0px)`;
+    setTimeout(() => {
+        element.style.transition = 'transform 0.1s'; // reset for next drag
+    }, 300);
+}
+
+
+// --- Event Listeners ---
+btnStart.addEventListener('click', startGame);
+btnPlayAudio.addEventListener('click', playCurrentTargetAudio);
+btnRestart.addEventListener('click', startGame);
+
+</script>
+</body>
+</html>
