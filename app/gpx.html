@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPX Plus Code 專業加工器 (香港優先版)</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 圖示庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 Open Location Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openlocationcode/1.0.4/openlocationcode.min.js"></script>
+    <!-- 引入 Leaflet 地圖套件 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- 引入 SortableJS 拖曳排序套件 -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+    <style>
+        .step-hidden { display: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        /* 拖曳把手樣式 */
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+        /* 拖曳時的行樣式 */
+        .sortable-ghost { opacity: 0.4; background-color: #eff6ff; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 min-h-screen p-4 md:p-6">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- 頂部 Header -->
+        <div class="bg-white rounded-t-xl shadow-sm border-b p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fa-solid fa-location-dot text-blue-600"></i>
+                    GPX 檔案 Plus Code 專業加工器
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">專為香港地區優化，支援高度資料抓取與路線編輯</p>
+            </div>
+            <div class="text-right flex flex-col items-end gap-1">
+                <div class="text-xs px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium whitespace-nowrap">
+                    香港優先版本
+                </div>
+                <div class="text-[10px] text-gray-400 font-mono mt-1">v2.0.0 | 更新日期: 2026-04-12</div>
+            </div>
+        </div>
+
+        <!-- 步驟進度條 -->
+        <div class="bg-white shadow-sm p-4 flex justify-between items-center px-4 md:px-8 border-b overflow-x-auto">
+            <div class="flex items-center flex-shrink-0" id="stepper-1">
+                <div class="flex flex-col items-center text-blue-600">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-blue-600 bg-blue-50 step-circle">
+                        <i class="fa-solid fa-cloud-arrow-up text-lg step-icon"></i>
+                    </div>
+                    <span class="text-xs font-bold">接收與確認</span>
+                </div>
+                <div class="w-8 md:w-16 h-1 mx-2 rounded-full bg-gray-200 step-line"></div>
+            </div>
+            <div class="flex items-center flex-shrink-0" id="stepper-2">
+                <div class="flex flex-col items-center text-gray-400">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-gray-300 step-circle">
+                        <i class="fa-solid fa-location-dot text-lg step-icon"></i>
+                    </div>
+                    <span class="text-xs font-bold">解碼位置</span>
+                </div>
+                <div class="w-8 md:w-16 h-1 mx-2 rounded-full bg-gray-200 step-line"></div>
+            </div>
+            <div class="flex items-center flex-shrink-0" id="stepper-3">
+                <div class="flex flex-col items-center text-gray-400">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-gray-300 step-circle">
+                        <i class="fa-solid fa-gear text-lg step-icon"></i>
+                    </div>
+                    <span class="text-xs font-bold">加工處理</span>
+                </div>
+                <div class="w-8 md:w-16 h-1 mx-2 rounded-full bg-gray-200 step-line"></div>
+            </div>
+            <div class="flex items-center flex-shrink-0" id="stepper-4">
+                <div class="flex flex-col items-center text-gray-400">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-gray-300 step-circle">
+                        <i class="fa-solid fa-circle-check text-lg step-icon"></i>
+                    </div>
+                    <span class="text-xs font-bold">檢視與修訂</span>
+                </div>
+                <div class="w-8 md:w-16 h-1 mx-2 rounded-full bg-gray-200 step-line"></div>
+            </div>
+            <div class="flex items-center flex-shrink-0" id="stepper-5">
+                <div class="flex flex-col items-center text-gray-400">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-gray-300 step-circle">
+                        <i class="fa-solid fa-download text-lg step-icon"></i>
+                    </div>
+                    <span class="text-xs font-bold">完成輸出</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 內容區域 -->
+        <div class="bg-white rounded-b-xl shadow-sm p-4 md:p-6 min-h-[500px]">
+            
+            <!-- 步驟 1：上傳與輸入 -->
+            <div id="step-content-1" class="space-y-6 max-w-2xl mx-auto py-8">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:bg-gray-50 transition cursor-pointer relative">
+                    <i class="fa-solid fa-file-code mx-auto text-4xl text-gray-400 mb-4 block"></i>
+                    <span class="mt-2 block text-sm font-semibold text-gray-900">上傳 GPX 檔案 (選填)</span>
+                    <input type="file" accept=".gpx" id="gpxFileInput" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    <p id="fileNameDisplay" class="mt-1 text-xs text-gray-500">如果沒有 GPX 檔案，系統將為您建立一個全新的路線。</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="block text-sm font-medium text-gray-700">貼上 Plus Code 列表 (每行一個)</label>
+                        <span id="validationStats" class="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">準備就緒</span>
+                    </div>
+                    <textarea id="plusCodeInput" class="w-full h-40 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm" placeholder="例如：&#10;7PJP8JWG+P9&#10;85X3+VG2 金山"></textarea>
+                </div>
+
+                <div class="flex justify-end">
+                    <button onclick="goToStep2()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium transition">
+                        下一步：確認設定
+                    </button>
+                </div>
+            </div>
+
+            <!-- 步驟 2：確認需求 -->
+            <div id="step-content-2" class="step-hidden space-y-6 max-w-2xl mx-auto py-8">
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-6">
+                    <h3 class="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-blue-600"></i> 確認您的需求
+                    </h3>
+                    <p class="text-blue-800 mb-4" id="confirmSummary">已收到您的請求！</p>
+                    
+                    <div class="bg-white p-4 rounded-md border border-blue-200 mb-6 space-y-4">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" id="elevationCheckbox" checked class="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500" />
+                            <div>
+                                <span class="block font-bold text-gray-900">加入海拔高度資訊 (推薦)</span>
+                                <span class="block text-sm text-gray-500 mt-1">系統將分批使用 Open-Meteo API 取得高度。</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button onclick="goToStep(1)" class="text-gray-600 px-4 py-2 hover:bg-gray-200 rounded-lg font-medium transition">返回修改</button>
+                        <button id="processBtn" onclick="processDataPipeline()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium transition flex items-center gap-2 shadow-md">
+                            <span>開始解碼與處理</span>
+                            <i id="processSpinner" class="fa-solid fa-arrows-rotate fa-spin hidden"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 3 & 4：處理與修訂點位 -->
+            <div id="step-content-4" class="step-hidden space-y-4">
+                <!-- 狀態日誌 -->
+                <div id="logContainer" class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-xs overflow-y-auto h-32 mb-4 hidden border border-gray-700 shadow-inner"></div>
+
+                <!-- 地圖預覽區塊 -->
+                <div class="border border-gray-300 rounded-lg overflow-hidden shadow-sm relative z-0 mb-4 flex flex-col">
+                    <div class="bg-blue-50 px-3 py-2 text-sm font-bold text-blue-900 border-b border-gray-300 flex justify-between items-center flex-wrap gap-2">
+                        <span><i class="fa-solid fa-map-location-dot text-blue-600"></i> 路線地圖預覽 (即時更新)</span>
+                        <div class="text-xs font-normal bg-white px-2 py-1 rounded border border-blue-200 shadow-sm flex items-center gap-2 flex-wrap">
+                            <span><i class="fa-solid fa-play text-green-500"></i> 原起點</span>
+                            <span><i class="fa-solid fa-flag-checkered text-red-500"></i> 原終點</span>
+                            <span><span class="text-red-500 font-bold">—</span> 原路線</span>
+                            <span><i class="fa-solid fa-circle text-blue-600 text-[10px]"></i> 新增點位</span>
+                        </div>
+                    </div>
+                    <div id="mapPreview" class="w-full h-[300px] md:h-[400px] z-0 relative"></div>
+                </div>
+
+                <!-- 工具列 -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-blue-600"></i> 匯出模式:
+                            <select id="exportTypeSelect" class="border border-gray-300 rounded-md p-1.5 text-sm focus:ring-blue-500 outline-none" onchange="AppState.exportType = this.value; generateFinalGPX(true);">
+                                <option value="rtept">路線點 (Route - &lt;rtept&gt;)</option>
+                                <option value="wpt">航點 (Waypoint - &lt;wpt&gt;)</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="addCustomPoint()" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 text-sm font-medium transition shadow-sm"><i class="fa-solid fa-plus text-blue-500"></i> 新增點位</button>
+                        <button onclick="exportJsonBackup()" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 text-sm font-medium transition shadow-sm"><i class="fa-solid fa-file-export text-green-500"></i> 備份 JSON</button>
+                        <button onclick="clearAllPoints()" class="bg-white border border-red-300 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 text-sm font-medium transition shadow-sm"><i class="fa-solid fa-trash-can"></i> 清空點位</button>
+                    </div>
+                </div>
+
+                <!-- 點位表格 -->
+                <div class="overflow-x-auto border border-gray-300 rounded-lg shadow-sm">
+                    <table class="w-full text-sm text-left min-w-[900px]">
+                        <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-bold border-b border-gray-300">
+                            <tr>
+                                <th class="px-2 py-3 w-10 text-center" title="拖曳以排序"><i class="fa-solid fa-sort"></i></th>
+                                <th class="px-3 py-3 w-12 text-center">#</th>
+                                <th class="px-3 py-3 w-32">Plus Code</th>
+                                <th class="px-3 py-3 w-40">名稱</th>
+                                <th class="px-3 py-3 w-32">緯度 (lat)</th>
+                                <th class="px-3 py-3 w-32">經度 (lon)</th>
+                                <th class="px-3 py-3 w-24">高度(m)</th>
+                                <th class="px-3 py-3 w-32">狀態</th>
+                                <th class="px-3 py-3 w-12 text-center">刪</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pointsTableBody" class="bg-white">
+                            <!-- JS 動態產生 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end pt-4 gap-4">
+                    <button id="previewXmlBtn" onclick="showXmlPreviewModal()" class="bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-900 font-bold shadow-md transition disabled:opacity-50 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-code"></i> 預覽 XML
+                    </button>
+                    <button id="generateGpxBtn" onclick="goToStep5()" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-bold shadow-md transition disabled:opacity-50 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> 確認無誤，下一步
+                    </button>
+                </div>
+            </div>
+
+            <!-- 步驟 5：完成輸出 -->
+            <div id="step-content-5" class="step-hidden max-w-3xl mx-auto py-8 text-center space-y-6">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 text-green-500 rounded-full mb-2">
+                    <i class="fa-solid fa-circle-check text-4xl"></i>
+                </div>
+                <h2 class="text-3xl font-black text-gray-900">GPX 構建完成！</h2>
+                <p id="finalSummary" class="text-gray-600 text-lg bg-gray-50 p-4 rounded-lg border border-gray-200 inline-block"></p>
+
+                <div class="text-left w-full mt-6 bg-gray-50 border border-gray-300 rounded-lg p-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-gray-700 text-sm"><i class="fa-solid fa-file-code text-blue-500"></i> 最終 GPX 代碼預覽 (唯讀)</span>
+                        <span class="text-xs text-gray-500">僅顯示前 1000 字元...</span>
+                    </div>
+                    <textarea id="finalXmlPreview" readonly class="w-full h-40 bg-gray-900 text-green-400 font-mono text-xs p-3 rounded outline-none border-none resize-y"></textarea>
+                </div>
+
+                <div class="pt-6 flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="goToStep(4)" class="bg-white border-2 border-gray-300 text-gray-700 px-6 py-4 rounded-xl hover:bg-gray-50 font-bold shadow-sm transition flex items-center justify-center gap-2 text-lg">
+                        <i class="fa-solid fa-arrow-left"></i> 返回修改
+                    </button>
+                    <button onclick="downloadGPXFile()" class="bg-green-500 text-white px-10 py-4 rounded-xl hover:bg-green-600 font-bold shadow-lg transition flex items-center justify-center gap-3 text-xl">
+                        <i class="fa-solid fa-download"></i> 下載 GPX 檔案
+                    </button>
+                </div>
+                
+                <div class="pt-8">
+                    <button onclick="resetApp()" class="text-gray-400 hover:text-red-500 underline text-sm transition">
+                        <i class="fa-solid fa-rotate-right"></i> 重置並處理另一個檔案
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- XML 預覽 Modal (隱藏) -->
+    <div id="xmlModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-code text-blue-600"></i> GPX XML 實時預覽</h3>
+                <button onclick="closeXmlPreviewModal()" class="text-gray-500 hover:text-red-500 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 flex-grow overflow-hidden flex flex-col">
+                <textarea id="modalXmlContent" readonly class="w-full h-full min-h-[300px] bg-gray-900 text-green-400 font-mono text-xs p-4 rounded outline-none resize-none"></textarea>
+            </div>
+            <div class="p-4 border-t bg-gray-50 text-right">
+                <button onclick="closeXmlPreviewModal()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 font-bold transition">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 應用程式邏輯 JavaScript -->
+    <script>
+        // 10. 全域狀態集中管理 (State Management)
+        const AppState = {
+            step: 1,
+            fileContent: '',
+            fileName: '',
+            points: [],
+            finalGpxContent: '',
+            exportType: 'rtept', // 'rtept' 或 'wpt'
+            
+            // 地圖與系統狀態
+            map: null,
+            mapLayerGroup: null,
+            originalGpxLayerGroup: null,
+            mapUpdateTimeout: null,
+            sortableInstance: null
+        };
+
+        // DOM 載入後初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initEventDelegation();
+            initPlusCodeValidation();
+        });
+
+        // ==========================================
+        // 核心流程：分段拆解 (Requirement 11)
+        // ==========================================
+
+        // 處理檔案上傳
+        document.getElementById('gpxFileInput').addEventListener('change', function(e) {
+            handleFileUpload(e.target.files[0]);
+        });
+
+        function handleFileUpload(file) {
+            if (!file) return;
+            AppState.fileName = file.name;
+            document.getElementById('fileNameDisplay').innerHTML = `<span class="text-blue-600 font-bold">已載入：${file.name}</span>`;
+            
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                AppState.fileContent = evt.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        // 4. 即時驗證 Plus Code 輸入
+        function initPlusCodeValidation() {
+            const inputEl = document.getElementById('plusCodeInput');
+            const statsEl = document.getElementById('validationStats');
+            
+            inputEl.addEventListener('input', () => {
+                const text = inputEl.value;
+                if (!text.trim()) {
+                    statsEl.innerHTML = '準備就緒';
+                    return;
+                }
+                const codes = text.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
+                let valid = 0, invalid = 0, short = 0;
+                
+                if(typeof OpenLocationCode === 'undefined') return;
+
+                codes.forEach(raw => {
+                    const match = raw.match(/([A-Z0-9]{2,8}\+[A-Z0-9]{2,4})/i);
+                    if(match) {
+                        const code = match[1].toUpperCase();
+                        if(OpenLocationCode.isValid(code)) {
+                            valid++;
+                            if(OpenLocationCode.isShort(code)) short++;
+                        } else invalid++;
+                    } else invalid++;
+                });
+                
+                statsEl.innerHTML = `有效: <span class="text-green-600 font-bold">${valid}</span> (含短碼 ${short}) | 無效: <span class="text-red-500 font-bold">${invalid}</span>`;
+            });
+        }
+
+        // 前往步驟 2
+        function goToStep2() {
+            const rawText = document.getElementById('plusCodeInput').value;
+            const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
+            
+            if (codes.length === 0) {
+                alert('請至少輸入一個 Plus Code');
+                return;
+            }
+            document.getElementById('confirmSummary').innerHTML = `
+                已收到請求：共計解析 <strong>${codes.length}</strong> 行文本。<br>
+                原始 GPX 檔案：<strong>${AppState.fileName || '無 (將建立新檔案)'}</strong>
+            `;
+            goToStep(2);
+        }
+
+        // 主資料管線 (解碼 -> 高度 -> 渲染)
+        async function processDataPipeline() {
+            if (typeof OpenLocationCode === 'undefined') {
+                alert('系統錯誤：Plus Code 函式庫未能載入，請檢查網路連線。'); return;
+            }
+
+            const btn = document.getElementById('processBtn');
+            const spinner = document.getElementById('processSpinner');
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            
+            document.getElementById('logContainer').innerHTML = ''; // 清空日誌
+            goToStep(3); 
+            document.getElementById('step-content-4').classList.remove('step-hidden');
+
+            // 執行解碼
+            decodePlusCodes();
+
+            // 執行高度獲取 (如需)
+            const wantElevation = document.getElementById('elevationCheckbox').checked;
+            if (wantElevation) {
+                await fetchBatchElevations();
+            } else {
+                addLog('步驟 3/5：用戶選擇略過海拔高度獲取。');
+            }
+
+            btn.disabled = false;
+            spinner.classList.add('hidden');
+            
+            goToStep(4);
+            renderTable();
+            initOrUpdateMap();
+            initSortable();
+        }
+
+        function decodePlusCodes() {
+            addLog('步驟 2/5：開始解碼 Plus Code...');
+            const rawText = document.getElementById('plusCodeInput').value;
+            const codes = rawText.split(/[\n,]+/).map(c => c.trim()).filter(c => c.length > 0);
+            AppState.points = [];
+
+            for (let i = 0; i < codes.length; i++) {
+                const rawLine = codes[i];
+                try {
+                    const match = rawLine.match(/([A-Z0-9]{2,8}\+[A-Z0-9]{2,4})/i);
+                    if (!match) throw new Error('未偵測到有效格式');
+
+                    let code = match[1].toUpperCase();
+                    let pointName = rawLine.replace(match[0], '').trim() || code;
+
+                    if (!OpenLocationCode.isValid(code)) throw new Error('格式無效');
+
+                    let fullCode = code;
+                    if (OpenLocationCode.isShort(code)) {
+                        fullCode = OpenLocationCode.recoverNearest(code, 22.3193, 114.1694); // 以香港為參考中心
+                    }
+                    
+                    let decoded = OpenLocationCode.decode(fullCode);
+                    const lat = decoded.latitudeCenter;
+                    const lon = decoded.longitudeCenter;
+                    
+                    AppState.points.push({
+                        id: Date.now() + i + Math.floor(Math.random()*1000), // 確保 ID 唯一
+                        plusCode: fullCode,
+                        name: pointName,
+                        lat: lat.toFixed(6),
+                        lon: lon.toFixed(6),
+                        ele: '',
+                        status: OpenLocationCode.isShort(code) ? '短碼解碼成功' : '成功解碼',
+                        isHK: isHongKong(lat, lon)
+                    });
+                } catch (err) {
+                    addLog(`警告："${rawLine}" 解碼失敗 (${err.message})`);
+                    AppState.points.push({
+                        id: Date.now() + i,
+                        plusCode: rawLine, name: rawLine, lat: '', lon: '', ele: '',
+                        status: '解碼失敗', isHK: false
+                    });
+                }
+            }
+            addLog(`解碼完成，共處理 ${AppState.points.length} 個點位。`);
+        }
+
+        // 1. 批次處理 Open-Meteo 高度 API (上限 100 筆/次)
+        async function fetchBatchElevations() {
+            addLog('步驟 3/5：準備從 Open-Meteo 獲取海拔資訊...');
+            const validPoints = AppState.points.filter(p => p.lat !== '' && p.lon !== '');
+            
+            if (validPoints.length === 0) {
+                addLog('無有效座標可獲取高度。'); return;
+            }
+
+            const BATCH_SIZE = 90; // 保守抓 90 筆一批
+            let successCount = 0;
+
+            for (let i = 0; i < validPoints.length; i += BATCH_SIZE) {
+                const chunk = validPoints.slice(i, i + BATCH_SIZE);
+                const lats = chunk.map(p => p.lat).join(',');
+                const lons = chunk.map(p => p.lon).join(',');
+                
+                addLog(`正在獲取第 ${i + 1} 到 ${Math.min(i + BATCH_SIZE, validPoints.length)} 筆點位高度...`);
+                
+                try {
+                    const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`);
+                    if(!res.ok) throw new Error(`API 狀態碼 ${res.status}`);
+                    
+                    const data = await res.json();
+                    if (data.elevation) {
+                        chunk.forEach((vp, idx) => {
+                            const ele = data.elevation[idx];
+                            const ptItem = AppState.points.find(p => p.id === vp.id);
+                            if (ptItem && ele !== null && ele !== undefined) {
+                                ptItem.ele = ele.toFixed(1);
+                                ptItem.status += ' (已獲高度)';
+                                successCount++;
+                            }
+                        });
+                    }
+                    // 批次間隔稍作延遲，避免瞬間打爆 API
+                    if (i + BATCH_SIZE < validPoints.length) await new Promise(r => setTimeout(r, 300));
+                } catch (error) {
+                    addLog(`錯誤：批次獲取失敗 (${error.message})`);
+                }
+            }
+            addLog(`海拔高度獲取結束，共成功 ${successCount} 筆。`);
+        }
+
+        // ==========================================
+        // UI 渲染與事件綁定
+        // ==========================================
+
+        function renderTable() {
+            const tbody = document.getElementById('pointsTableBody');
+            tbody.innerHTML = '';
+
+            if (AppState.points.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-10 text-gray-400">目前沒有任何點位資料。</td></tr>`;
+                document.getElementById('generateGpxBtn').disabled = true;
+                return;
+            }
+            document.getElementById('generateGpxBtn').disabled = false;
+
+            AppState.points.forEach((pt, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100 hover:bg-gray-50 transition";
+                tr.dataset.id = pt.id; // 給 Sortable 識別用
+                
+                let statusHtml = `<span class="${pt.status.includes('失敗') ? 'text-red-600 font-bold' : 'text-green-700'}">${pt.status}</span>`;
+                if (!pt.isHK && pt.lat && pt.lon) {
+                    statusHtml += `<br/><span class="text-orange-600 font-bold inline-flex items-center gap-1 mt-1"><i class="fa-solid fa-triangle-exclamation"></i> 非香港地區</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-2 py-2 text-center align-middle">
+                        <div class="drag-handle text-gray-300 hover:text-blue-500 p-2"><i class="fa-solid fa-grip-vertical"></i></div>
+                    </td>
+                    <td class="px-3 py-2 text-center font-bold text-gray-500">${index + 1}</td>
+                    <td class="px-3 py-2 font-mono text-xs font-semibold text-gray-500">${pt.plusCode}</td>
+                    <td class="px-3 py-2"><input type="text" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 point-input" data-id="${pt.id}" data-field="name" value="${pt.name}"></td>
+                    <td class="px-3 py-2"><input type="text" class="w-full border border-gray-300 rounded p-1.5 text-sm font-mono focus:ring-blue-500 point-input" data-id="${pt.id}" data-field="lat" value="${pt.lat}"></td>
+                    <td class="px-3 py-2"><input type="text" class="w-full border border-gray-300 rounded p-1.5 text-sm font-mono focus:ring-blue-500 point-input" data-id="${pt.id}" data-field="lon" value="${pt.lon}"></td>
+                    <td class="px-3 py-2"><input type="text" class="w-full border border-gray-300 rounded p-1.5 text-sm font-mono focus:ring-blue-500 point-input" data-id="${pt.id}" data-field="ele" value="${pt.ele}"></td>
+                    <td class="px-3 py-2 text-xs leading-tight">${statusHtml}</td>
+                    <td class="px-3 py-2 text-center">
+                        <button onclick="removePoint(${pt.id})" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            // 每次重新渲染後，同步更新隱藏的 XML
+            generateFinalGPX(true); 
+        }
+
+        // 2. 事件委託 (Event Delegation) 處理 input 變更，不需重複綁定
+        function initEventDelegation() {
+            document.getElementById('pointsTableBody').addEventListener('input', function(e) {
+                if (e.target.classList.contains('point-input')) {
+                    const id = parseInt(e.target.dataset.id);
+                    const field = e.target.dataset.field;
+                    const pt = AppState.points.find(p => p.id === id);
+                    if (pt) pt[field] = e.target.value;
+                    
+                    // 防手震更新地圖與XML
+                    if (['lat', 'lon', 'name'].includes(field)) {
+                        clearTimeout(AppState.mapUpdateTimeout);
+                        AppState.mapUpdateTimeout = setTimeout(() => {
+                            initOrUpdateMap();
+                            generateFinalGPX(true); // 背景更新XML
+                        }, 600);
+                    }
+                }
+            });
+        }
+
+        // 3. 拖曳排序初始化 (SortableJS)
+        function initSortable() {
+            if(AppState.sortableInstance) AppState.sortableInstance.destroy();
+            
+            const tbody = document.getElementById('pointsTableBody');
+            AppState.sortableInstance = new Sortable(tbody, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    if (evt.oldIndex === evt.newIndex) return;
+                    // 同步陣列順序
+                    const movedItem = AppState.points.splice(evt.oldIndex, 1)[0];
+                    AppState.points.splice(evt.newIndex, 0, movedItem);
+                    
+                    renderTable(); // 重新渲染以更新序號
+                    initOrUpdateMap();
+                }
+            });
+        }
+
+        // ==========================================
+        // 地圖處理 (Requirement 13)
+        // ==========================================
+        function initOrUpdateMap() {
+            if (document.getElementById('step-content-4').classList.contains('step-hidden')) return;
+
+            setTimeout(() => {
+                if (!AppState.map) {
+                    AppState.map = L.map('mapPreview').setView([22.3193, 114.1694], 11);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(AppState.map);
+                    AppState.originalGpxLayerGroup = L.layerGroup().addTo(AppState.map);
+                    AppState.mapLayerGroup = L.layerGroup().addTo(AppState.map);
+                }
+
+                AppState.mapLayerGroup.clearLayers();
+                AppState.originalGpxLayerGroup.clearLayers();
+                let allBoundsPoints = []; 
+
+                // 1. 畫出原始 GPX 路線與起終點
+                if (AppState.fileContent) {
+                    try {
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(AppState.fileContent, "text/xml");
+                        
+                        // 8. Error check
+                        if (xmlDoc.getElementsByTagName("parsererror").length > 0) throw new Error("GPX 解析失敗");
+
+                        let firstPoint = null;
+                        let lastPoint = null;
+                        
+                        const drawLines = (nodes) => {
+                            nodes.forEach(segment => {
+                                const pts = segment.querySelectorAll("trkpt, rtept");
+                                const linePts = [];
+                                pts.forEach(pt => {
+                                    const lat = parseFloat(pt.getAttribute("lat"));
+                                    const lon = parseFloat(pt.getAttribute("lon"));
+                                    if (!isNaN(lat) && !isNaN(lon)) {
+                                        const coord = [lat, lon];
+                                        linePts.push(coord);
+                                        allBoundsPoints.push(coord);
+                                        if(!firstPoint) firstPoint = coord;
+                                        lastPoint = coord; // 不斷覆蓋，最後就是終點
+                                    }
+                                });
+                                if (linePts.length > 1) {
+                                    L.polyline(linePts, {color: '#ef4444', weight: 4, opacity: 0.7}).addTo(AppState.originalGpxLayerGroup);
+                                }
+                            });
+                        };
+                        
+                        drawLines(xmlDoc.querySelectorAll("trkseg"));
+                        drawLines(xmlDoc.querySelectorAll("rte"));
+
+                        // 標記起終點
+                        if (firstPoint) {
+                            const startIcon = L.divIcon({ className: 'custom-div-icon', html: `<i class="fa-solid fa-play text-green-500 text-2xl drop-shadow-md"></i>`, iconSize: [20, 20], iconAnchor: [10, 20]});
+                            L.marker(firstPoint, {icon: startIcon, zIndexOffset: 1000}).bindPopup("<b>原始路線：起點</b>").addTo(AppState.originalGpxLayerGroup);
+                        }
+                        if (lastPoint && lastPoint !== firstPoint) {
+                            const endIcon = L.divIcon({ className: 'custom-div-icon', html: `<i class="fa-solid fa-flag-checkered text-red-500 text-2xl drop-shadow-md"></i>`, iconSize: [20, 20], iconAnchor: [10, 20]});
+                            L.marker(lastPoint, {icon: endIcon, zIndexOffset: 1000}).bindPopup("<b>原始路線：終點</b>").addTo(AppState.originalGpxLayerGroup);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+
+                // 2. 畫出 Plus Code 新增點位
+                const validPoints = AppState.points.filter(p => p.lat && p.lon && !isNaN(parseFloat(p.lat)) && !isNaN(parseFloat(p.lon)));
+                validPoints.forEach((pt, index) => {
+                    const lat = parseFloat(pt.lat);
+                    const lon = parseFloat(pt.lon);
+                    allBoundsPoints.push([lat, lon]);
+
+                    const markerIcon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-md border-2 border-white text-xs z-10" style="margin-top:-12px; margin-left:-12px;">${index + 1}</div>`,
+                        iconSize: [24, 24], iconAnchor: [0, 0]
+                    });
+
+                    L.marker([lat, lon], { icon: markerIcon })
+                        .bindPopup(`<b>${index + 1}. ${pt.name}</b><br><span class="text-xs text-gray-500">${pt.plusCode}</span><br><span class="text-xs">高度: ${pt.ele || '無'}</span>`)
+                        .addTo(AppState.mapLayerGroup);
+                });
+
+                if (allBoundsPoints.length > 0) {
+                    AppState.map.fitBounds(L.latLngBounds(allBoundsPoints), { padding: [30, 30], maxZoom: 16 });
+                } else {
+                    AppState.map.setView([22.3193, 114.1694], 11);
+                }
+                AppState.map.invalidateSize();
+            }, 100);
+        }
+
+        // ==========================================
+        // 資料操作工具
+        // ==========================================
+        function removePoint(id) {
+            AppState.points = AppState.points.filter(p => p.id !== id);
+            renderTable();
+            initOrUpdateMap();
+        }
+
+        function addCustomPoint() {
+            AppState.points.push({
+                id: Date.now(), plusCode: '手動點位', name: '新地點', lat: '22.319300', lon: '114.169400', ele: '', status: '手動新增', isHK: true
+            });
+            renderTable();
+            initOrUpdateMap();
+            document.querySelector('.overflow-x-auto').scrollTop = 9999;
+        }
+
+        function clearAllPoints() {
+            if(confirm('確定要清空所有已解析的點位嗎？')) {
+                AppState.points = [];
+                renderTable();
+                initOrUpdateMap();
+            }
+        }
+
+        function exportJsonBackup() {
+            if(AppState.points.length === 0) return alert('沒有資料可備份。');
+            const blob = new Blob([JSON.stringify(AppState.points, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PlusCode_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ==========================================
+        // GPX 最終生成與導出
+        // ==========================================
+
+        // 輔助函數：跳脫 XML 特殊字元
+        function escapeXml(unsafe) {
+            return unsafe.replace(/[<>&'"]/g, function (c) {
+                switch (c) {
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '&': return '&amp;';
+                    case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                }
+            });
+        }
+
+        // 徹底解決 Garmin 結構與命名空間問題：改用字串組裝法 (String Template)
+        // 這能 100% 避免 DOM 操作帶來的 xmlns="" 污染，並保證嚴格的節點順序
+        function generateFinalGPX(isSilentUpdate = false) {
+            if(!isSilentUpdate) addLog('步驟 5/5：構建符合 Garmin 規範的 XML (純字串組裝模式)...');
+            
+            let existingMetadata = '';
+            let existingWpts = '';
+            let existingRtes = '';
+            let existingTrks = '';
+
+            // 1. 安全地提取原有檔案的節點字串，不破壞原有結構
+            if (AppState.fileContent) {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(AppState.fileContent, "text/xml");
+                
+                if (xmlDoc.getElementsByTagName("parsererror").length === 0 && xmlDoc.documentElement && xmlDoc.documentElement.nodeName.toLowerCase() === 'gpx') {
+                    const serializer = new XMLSerializer();
+                    
+                    const metaNodes = xmlDoc.getElementsByTagName("metadata");
+                    if (metaNodes.length > 0) existingMetadata = serializer.serializeToString(metaNodes[0]);
+                    
+                    const wpts = Array.from(xmlDoc.getElementsByTagName("wpt"));
+                    existingWpts = wpts.map(n => serializer.serializeToString(n)).join('\n');
+                    
+                    const rtes = Array.from(xmlDoc.getElementsByTagName("rte"));
+                    existingRtes = rtes.map(n => serializer.serializeToString(n)).join('\n');
+                    
+                    const trks = Array.from(xmlDoc.getElementsByTagName("trk"));
+                    existingTrks = trks.map(n => serializer.serializeToString(n)).join('\n');
+                } else {
+                    if(!isSilentUpdate) alert('原檔案解析錯誤，將忽略原檔案內容，建立全新路線。');
+                }
+            }
+
+            // 2. 構建新增點位的 XML 字串
+            let newWpts = '';
+            let newRte = '';
+            let validPointsCount = 0;
+            const mode = AppState.exportType; // 'rtept' 或 'wpt'
+
+            let pointsXmlContent = '';
+            AppState.points.forEach(pt => {
+                if (!pt.lat || !pt.lon || isNaN(parseFloat(pt.lat)) || isNaN(parseFloat(pt.lon))) return; 
+                validPointsCount++;
+                
+                let ptXml = `  <${mode} lat="${pt.lat}" lon="${pt.lon}">\n`;
+                if (pt.name) ptXml += `    <name>${escapeXml(pt.name)}</name>\n`;
+                if (pt.ele && !isNaN(parseFloat(pt.ele))) ptXml += `    <ele>${pt.ele}</ele>\n`;
+                ptXml += `    <cmt>Plus Code: ${escapeXml(pt.plusCode)}</cmt>\n`;
+                ptXml += `  </${mode}>`;
+                
+                pointsXmlContent += ptXml + '\n';
+            });
+
+            if (mode === 'wpt') {
+                newWpts = pointsXmlContent;
+            } else if (mode === 'rtept' && validPointsCount > 0) {
+                newRte = `<rte>\n  <name>Plus Code 新增路線</name>\n${pointsXmlContent}</rte>\n`;
+            }
+
+            // 3. 清理與組裝
+            // 清除 XMLSerializer 在子節點產生的多餘 namespace (包含空 xmlns 與重複的 GPX namespace)
+            const cleanXml = (str) => {
+                if (!str) return '';
+                return str.replace(/\sxmlns=""/g, '')
+                          .replace(/\sxmlns="http:\/\/www\.topografix\.com\/GPX\/1\/1"/g, '');
+            };
+            
+            if (!existingMetadata) {
+                existingMetadata = `<metadata>\n  <name>Plus Code 香港路線</name>\n</metadata>`;
+            }
+
+            // 4. 終極絕招：Garmin 嚴格要求的節點順序
+            // 順序必須為：metadata -> wpt -> rte -> trk
+            let finalXml = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GPX Plus Code Processor" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+${cleanXml(existingMetadata)}
+${cleanXml(existingWpts)}
+${newWpts}
+${cleanXml(existingRtes)}
+${newRte}
+${cleanXml(existingTrks)}
+</gpx>`;
+
+            // 去除多餘空行，讓代碼乾淨整齊
+            finalXml = finalXml.replace(/^\s*[\r\n]/gm, '\n');
+
+            AppState.finalGpxContent = finalXml.trim();
+
+            // 預覽寫入
+            const previewText = AppState.finalGpxContent.length > 1500 ? AppState.finalGpxContent.substring(0, 1500) + '\n\n... (代碼過長已截斷，下載後為完整檔案)' : AppState.finalGpxContent;
+            document.getElementById('finalXmlPreview').value = previewText;
+            document.getElementById('modalXmlContent').value = AppState.finalGpxContent;
+            
+            if(!isSilentUpdate) {
+                document.getElementById('finalSummary').innerHTML = `
+                    已完成 <strong class="text-blue-600">${validPointsCount}</strong> 個點位的轉換。<br>
+                    寫入模式：<strong>${mode === 'wpt' ? '獨立航點 (Waypoint)' : '專屬路線 (Route)'}</strong>。
+                `;
+            }
+        }
+
+        function showXmlPreviewModal() {
+            generateFinalGPX(true);
+            document.getElementById('xmlModal').classList.remove('hidden');
+        }
+        function closeXmlPreviewModal() {
+            document.getElementById('xmlModal').classList.add('hidden');
+        }
+
+        function goToStep5() {
+            generateFinalGPX(false);
+            goToStep(5);
+        }
+
+        function downloadGPXFile() {
+            const blob = new Blob([AppState.finalGpxContent], { type: 'application/gpx+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = AppState.fileName ? `Edited_${AppState.fileName}` : 'HK_Route.gpx';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ==========================================
+        // 介面切換器與通用輔助函數
+        // ==========================================
+        function addLog(msg) {
+            const c = document.getElementById('logContainer');
+            c.classList.remove('hidden');
+            const d = document.createElement('div'); d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            c.appendChild(d);
+            c.scrollTop = c.scrollHeight;
+        }
+
+        function isHongKong(lat, lon) {
+            return lat >= 22.15 && lat <= 22.56 && lon >= 113.83 && lon <= 114.44;
+        }
+
+        function updateStepperUI(step) {
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`stepper-${i}`);
+                if(!el) continue;
+                const textCol = el.querySelector('div.flex-col');
+                const circle = el.querySelector('.step-circle');
+                const line = el.querySelector('.step-line');
+                const icon = el.querySelector('.step-icon');
+
+                textCol.className = 'flex flex-col items-center text-gray-400';
+                circle.className = 'w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-gray-300 bg-white step-circle';
+                
+                const icons = ['fa-cloud-arrow-up', 'fa-location-dot', 'fa-gear', 'fa-circle-check', 'fa-download'];
+                icon.className = `fa-solid ${icons[i-1]} text-lg text-gray-400 step-icon`;
+
+                if (i < step) {
+                    textCol.classList.replace('text-gray-400', 'text-blue-600');
+                    circle.className = 'w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-blue-600 bg-blue-600 text-white step-circle';
+                    icon.className = 'fa-solid fa-check text-lg text-white step-icon'; 
+                    if(line) line.classList.replace('bg-gray-200', 'bg-blue-600');
+                } else if (i === step) {
+                    textCol.classList.replace('text-gray-400', 'text-blue-600');
+                    circle.className = 'w-10 h-10 rounded-full flex items-center justify-center mb-1 border-2 border-blue-600 bg-blue-50 text-blue-600 step-circle';
+                    icon.classList.replace('text-gray-400', 'text-blue-600');
+                    if(line) line.classList.replace('bg-blue-600', 'bg-gray-200');
+                } else {
+                    if(line) line.classList.replace('bg-blue-600', 'bg-gray-200');
+                }
+            }
+        }
+
+        function goToStep(step) {
+            AppState.step = step;
+            document.querySelectorAll('[id^="step-content-"]').forEach(el => el.classList.add('step-hidden'));
+            const visibleStep = (step === 3) ? 4 : step; 
+            document.getElementById(`step-content-${visibleStep}`).classList.remove('step-hidden');
+            updateStepperUI(step);
+        }
+
+        function resetApp() {
+            if(!confirm('這將清除所有進度，確定要重置嗎？')) return;
+            AppState.fileContent = ''; AppState.fileName = ''; AppState.points = []; AppState.finalGpxContent = '';
+            document.getElementById('gpxFileInput').value = '';
+            document.getElementById('fileNameDisplay').textContent = '如果沒有 GPX 檔案，系統將為您建立一個全新的路線。';
+            document.getElementById('plusCodeInput').value = '';
+            document.getElementById('validationStats').innerHTML = '準備就緒';
+            document.getElementById('logContainer').innerHTML = '';
+            goToStep(1);
+        }
+    </script>
+</body>
+</html>
