@@ -178,8 +178,8 @@
                         <label class="text-sm font-bold text-gray-700 flex items-center gap-2">
                             <i class="fa-solid fa-layer-group text-blue-600"></i> 匯出模式:
                             <select id="exportTypeSelect" class="border border-gray-300 rounded-md p-1.5 text-sm focus:ring-blue-500 outline-none" onchange="AppState.exportType = this.value; generateFinalGPX(true);">
-                                <option value="rtept">路線點 (Route - &lt;rtept&gt;)</option>
                                 <option value="wpt">航點 (Waypoint - &lt;wpt&gt;)</option>
+                                <option value="rtept">路線點 (Route - &lt;rtept&gt;)</option>
                             </select>
                         </label>
                     </div>
@@ -282,7 +282,7 @@
             fileName: '',
             points: [],
             finalGpxContent: '',
-            exportType: 'rtept', // 'rtept' 或 'wpt'
+            exportType: 'wpt', // 預設更改為 'wpt'
             
             // 地圖與系統狀態
             map: null,
