@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正在轉跳...</title>
+
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger-color: #ef4444;
+            --bg-color: #f3f4f6;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-color);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-main);
+            box-sizing: border-box;
+            /* 防止捲軸出現造成的版面跳動 */
+            overflow: hidden; 
+        }
+
+        .card {
+            background-color: #ffffff;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* 旋轉動畫 */
+        .spinner {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px;
+            border: 4px solid #e5e7eb;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 錯誤圖示 */
+        .error-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            background-color: #fee2e2;
+            color: var(--danger-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        h1 { margin: 0 0 12px; font-size: 1.5rem; font-weight: 600; }
+        p { margin: 0; color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
+
+        /* 預設隱藏錯誤區塊與備用按鈕區塊 */
+        #ui-error { display: none; }
+        
+        #ui-fallback { 
+            display: none;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 10px 24px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn:hover { background-color: var(--primary-hover); }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- 狀態 1：載入中 -->
+        <div id="ui-loading">
+            <div class="spinner"></div>
+            <h1 id="loading-title">正在轉跳中...</h1>
+            <p id="loading-desc">請稍候，我們正在將您安全地帶往目標頁面。</p>
+        </div>
+
+        <!-- 狀態 2：錯誤提示 -->
+        <div id="ui-error">
+            <div class="error-icon">!</div>
+            <h1>轉跳暫停</h1>
+            <p id="error-msg"></p>
+        </div>
+
+        <!-- 備用按鈕 -->
+        <div id="ui-fallback">
+            <p>如果沒有自動轉跳，請點擊下方按鈕：</p>
+            <a id="manual-link" href="#" class="btn" target="_top">點擊這裡前往</a>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ========================================================
+         * 【全域設定：目標網址】
+         * 全份文件唯一需要修改的地方。請確保包含 http:// 或 https://
+         * ========================================================
+         */
+        const REDIRECT_TARGET_URL = "https://google.com";
+
+        function triggerErrorUI(message) {
+            document.getElementById('ui-loading').style.display = 'none';
+            const errorUI = document.getElementById('ui-error');
+            document.getElementById('error-msg').textContent = message;
+            errorUI.style.display = 'block';
+            errorUI.classList.add('animate-fade-in');
+        }
+
+        let fallbackTimer;
+
+        function initRedirect() {
+            try {
+                const target = new URL(REDIRECT_TARGET_URL);
+                document.getElementById('manual-link').href = target.href;
+
+                // 【防護機制 1】：防止無限迴圈
+                // 如果目標網址和現在這個網頁的網址一模一樣，會造成無限重新整理（閃爍）
+                if (window.location.href.split('#')[0].split('?')[0] === target.href.split('#')[0].split('?')[0]) {
+                    triggerErrorUI("目標網址與當前網址相同，已攔截以防止無限迴圈。");
+                    return;
+                }
+
+                // 【防護機制 2】：防止在 iframe 預覽環境中崩潰
+                // 如果偵測到網頁被包在預覽框架中，就不自動轉跳，改為顯示按鈕
+                if (window.self !== window.top) {
+                    document.getElementById('loading-title').textContent = "預覽模式安全攔截";
+                    document.getElementById('loading-desc').textContent = "在預覽視窗中自動轉跳已被停用。請手動點擊下方按鈕測試。";
+                    document.querySelector('.spinner').style.display = 'none';
+                    const fallbackUI = document.getElementById('ui-fallback');
+                    fallbackUI.style.display = 'block';
+                    fallbackUI.classList.add('animate-fade-in');
+                    return;
+                }
+
+                // 設定 3.5 秒後顯示備用按鈕
+                fallbackTimer = setTimeout(() => {
+                    const fallbackUI = document.getElementById('ui-fallback');
+                    fallbackUI.style.display = 'block';
+                    fallbackUI.classList.add('animate-fade-in');
+                }, 3500);
+
+                // 【防護機制 3】：給予 1.5 秒的視覺緩衝時間
+                // 讓 Loading 畫面至少顯示 1.5 秒，避免網頁一閃而過的視覺破圖
+                setTimeout(() => {
+                    try {
+                        window.location.replace(target.href);
+                    } catch (e) {
+                        window.location.href = target.href;
+                    }
+                }, 1500);
+
+            } catch (error) {
+                clearTimeout(fallbackTimer); 
+                triggerErrorUI("目標網址格式無效，請確保網址包含 http:// 或 https://");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initRedirect);
+    </script>
+
+</body>
+</html>
