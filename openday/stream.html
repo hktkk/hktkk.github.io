@@ -114,7 +114,7 @@
         <div id="ui-loading">
             <div class="spinner"></div>
             <h1 id="loading-title">正在轉跳中...</h1>
-            <p id="loading-desc">請稍候，我們正在將您安全地帶往目標頁面。</p>
+            <p id="loading-desc">請稍候，正在前往目標頁面。</p>
         </div>
 
         <!-- 狀態 2：錯誤提示 -->
@@ -138,7 +138,7 @@
          * 全份文件唯一需要修改的地方。請確保包含 http:// 或 https://
          * ========================================================
          */
-        const REDIRECT_TARGET_URL = "https://google.com";
+        const REDIRECT_TARGET_URL = "https://example.com";
 
         function triggerErrorUI(message) {
             document.getElementById('ui-loading').style.display = 'none';
