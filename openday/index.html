@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開放日專案作品集 | Open Day Portfolio</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自訂滾動條樣式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        /* iframe 載入動畫 */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .loading-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-indigo-200 selection:text-indigo-900 overflow-x-hidden">
+
+    <!-- 頂部導航列 -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-slate-900">開放日專案</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 橫幅區域 (Hero Section) -->
+    <header class="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 opacity-90"></div>
+            <!-- 裝飾性背景圖案 -->
+            <svg class="absolute right-0 top-0 transform translate-x-1/2 -translate-y-1/4 w-96 h-96 text-indigo-100 opacity-50" fill="currentColor" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50"></circle></svg>
+        </div>
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight mb-6">
+                探索校園 <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">每個角落</span>
+            </h1>
+            <p class="mt-4 max-w-2xl text-lg md:text-xl text-slate-600 mx-auto mb-10">
+                這是一個整合式的開放日數位導覽作品集。點擊下方的各樓層展區或直播頁面，即可直接在彈出視窗中體驗完整的網頁互動內容。
+            </p>
+        </div>
+    </header>
+
+    <!-- 作品集網格 (Portfolio Grid) -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 -mt-8 relative z-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <!-- 專案卡片：1樓展區 -->
+            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-100 flex flex-col">
+                <div class="h-48 bg-gradient-to-br from-blue-400 to-indigo-500 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
+                    <svg class="w-20 h-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    <div class="absolute bottom-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white">1F</div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">1樓 華夏之光</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-1">探索中華文化的深厚底蘊，體驗傳統與現代交織的文化展覽。</p>
+                    <div class="flex gap-3 mt-auto">
+                        <button onclick="openModal('https://hktkk.github.io/openday/1f.html', '1樓 華夏之光')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold py-2.5 rounded-xl hover:bg-indigo-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            本頁預覽
+                        </button>
+                        <a href="https://hktkk.github.io/openday/1f.html" target="_blank" class="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-colors border border-slate-200" title="在新分頁開啟">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 專案卡片：3樓展區 -->
+            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-100 flex flex-col">
+                <div class="h-48 bg-gradient-to-br from-emerald-400 to-teal-500 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
+                    <svg class="w-20 h-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    <div class="absolute bottom-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white">3F</div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">3樓 故事世界</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-1">走進充滿想像力的文學與故事空間，沉浸於文字的魅力之中。</p>
+                    <div class="flex gap-3 mt-auto">
+                        <button onclick="openModal('https://hktkk.github.io/openday/3f.html', '3樓 故事世界')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold py-2.5 rounded-xl hover:bg-indigo-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            本頁預覽
+                        </button>
+                        <a href="https://hktkk.github.io/openday/3f.html" target="_blank" class="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-colors border border-slate-200" title="在新分頁開啟">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 專案卡片：4樓展區 -->
+            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-100 flex flex-col">
+                <div class="h-48 bg-gradient-to-br from-amber-400 to-orange-500 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
+                    <svg class="w-20 h-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    <div class="absolute bottom-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white">4F</div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">4樓 AI 元宇宙</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-1">體驗前沿科技，探索人工智慧與虛擬實境結合的創新應用。</p>
+                    <div class="flex gap-3 mt-auto">
+                        <button onclick="openModal('https://hktkk.github.io/openday/4f.html', '4樓 AI 元宇宙')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold py-2.5 rounded-xl hover:bg-indigo-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            本頁預覽
+                        </button>
+                        <a href="https://hktkk.github.io/openday/4f.html" target="_blank" class="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-colors border border-slate-200" title="在新分頁開啟">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 專案卡片：5樓展區 -->
+            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-100 flex flex-col">
+                <div class="h-48 bg-gradient-to-br from-rose-400 to-pink-600 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
+                    <svg class="w-20 h-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <div class="absolute bottom-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white">5F</div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">5樓 文藝殿堂</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-1">欣賞學生的藝術創作，參與各類藝文活動，感受校園的文藝氣息。</p>
+                    <div class="flex gap-3 mt-auto">
+                        <button onclick="openModal('https://hktkk.github.io/openday/5f.html', '5樓 文藝殿堂')" class="flex-1 bg-indigo-50 text-indigo-700 font-semibold py-2.5 rounded-xl hover:bg-indigo-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            本頁預覽
+                        </button>
+                        <a href="https://hktkk.github.io/openday/5f.html" target="_blank" class="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-colors border border-slate-200" title="在新分頁開啟">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 專案卡片：現場直播 -->
+            <div class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-slate-100 flex flex-col md:col-span-2 lg:col-span-1">
+                <div class="h-48 bg-gradient-to-br from-slate-800 to-slate-900 relative flex items-center justify-center overflow-hidden">
+                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300"></div>
+                    <!-- 錄影/直播 Icon -->
+                    <div class="relative">
+                        <svg class="w-20 h-20 text-red-500 opacity-90 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <span class="absolute top-0 right-0 -mt-1 -mr-1 flex h-4 w-4">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-slate-900"></span>
+                        </span>
+                    </div>
+                    <div class="absolute bottom-3 right-3 bg-red-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white tracking-wider">LIVE</div>
+                </div>
+                <div class="p-6 flex-1 flex flex-col">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">禮堂活動現場直播</h3>
+                    <p class="text-slate-500 text-sm mb-6 flex-1">觀看開放日禮堂表演、校長致辭及專題講座的即時串流轉播。</p>
+                    <div class="flex gap-3 mt-auto">
+                        <button onclick="openModal('https://hktkk.github.io/openday/stream.html', '禮堂活動現場直播')" class="flex-1 bg-red-50 text-red-700 font-semibold py-2.5 rounded-xl hover:bg-red-600 hover:text-white transition-all duration-200 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            本頁預覽
+                        </button>
+                        <a href="https://hktkk.github.io/openday/stream.html" target="_blank" class="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-colors border border-slate-200" title="在新分頁開啟">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="bg-white border-t border-slate-200 py-8 text-center text-slate-500 text-sm">
+        <p>&copy; 聖公會呂明才紀念小學 All rights reserved.</p>
+    </footer>
+
+    <!-- 全螢幕預覽彈出視窗 (Modal) -->
+    <div id="previewModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
+        <!-- 黑色半透明背景 -->
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onclick="closeModal()"></div>
+        
+        <!-- 視窗內容 -->
+        <div class="absolute inset-4 md:inset-8 lg:inset-10 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden transform scale-95 transition-transform duration-300" id="modalContent">
+            <!-- 視窗頂部操作列 -->
+            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-slate-50">
+                <h2 id="modalTitle" class="text-xl font-bold text-slate-800">載入中...</h2>
+                <div class="flex items-center gap-4">
+                    <a id="modalExternalLink" href="#" target="_blank" class="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors" title="在新分頁開啟">
+                        <span>新分頁開啟</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                    <div class="w-px h-6 bg-slate-300"></div>
+                    <button onclick="closeModal()" class="text-slate-500 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Iframe 顯示區域 -->
+            <div class="relative flex-1 bg-slate-100">
+                <!-- 載入中動畫 -->
+                <div id="loadingIndicator" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-10">
+                    <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                    <p class="text-slate-500 font-medium loading-pulse">正在載入專案...</p>
+                </div>
+                <!-- 實際頁面 -->
+                <iframe id="previewFrame" class="absolute inset-0 w-full h-full border-0 opacity-0 transition-opacity duration-500"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        function openModal(url, title) {
+            const modal = document.getElementById('previewModal');
+            const modalContent = document.getElementById('modalContent');
+            const iframe = document.getElementById('previewFrame');
+            const titleEl = document.getElementById('modalTitle');
+            const externalLink = document.getElementById('modalExternalLink');
+            const loader = document.getElementById('loadingIndicator');
+
+            // 鎖定背景滾動
+            document.body.style.overflow = 'hidden';
+
+            // 設定標題與連結
+            titleEl.textContent = title;
+            externalLink.href = url;
+
+            // 顯示視窗容器與載入動畫，隱藏舊的 iframe 內容
+            modal.classList.remove('hidden');
+            loader.style.display = 'flex';
+            iframe.style.opacity = '0';
+
+            // 強制重繪以觸發動畫
+            void modal.offsetWidth;
+
+            // 加入漸入動畫
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+
+            // 稍微延遲後載入 iframe 資源，讓彈出動畫更流暢
+            setTimeout(() => {
+                iframe.src = url;
+            }, 100);
+        }
+
+        function hideLoading() {
+            const iframe = document.getElementById('previewFrame');
+            const loader = document.getElementById('loadingIndicator');
+            
+            // iframe 資源載入完畢後，隱藏動畫並顯示 iframe
+            if (iframe.src !== 'about:blank' && iframe.src !== '') {
+                loader.style.display = 'none';
+                iframe.style.opacity = '1';
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('previewModal');
+            const modalContent = document.getElementById('modalContent');
+            const iframe = document.getElementById('previewFrame');
+
+            // 恢復背景滾動
+            document.body.style.overflow = '';
+
+            // 加入漸出動畫
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+
+            // 等待動畫結束後隱藏元素並清空 iframe
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                iframe.src = 'about:blank'; // 清除記憶體與停止直播/影片聲音
+            }, 300);
+        }
+
+        // 將函式掛載到 window 全域，確保 HTML 標籤可以存取到
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.hideLoading = hideLoading;
+
+        // 使用 JS 綁定 load 事件，避免 iframe 提早觸發 onload 導致 ReferenceError
+        document.addEventListener('DOMContentLoaded', () => {
+            const iframe = document.getElementById('previewFrame');
+            if (iframe) {
+                iframe.addEventListener('load', hideLoading);
+            }
+        });
+
+        // 支援按 ESC 鍵關閉視窗
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && !document.getElementById('previewModal').classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
