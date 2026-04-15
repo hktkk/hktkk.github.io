@@ -16,9 +16,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* 使用 dvh 解決手機瀏覽器上下選單遮擋問題 */
-            height: 100vh; 
-            height: 100dvh; 
+            height: 100dvh; /* 修改：使用 100dvh 解決手機系統列遮擋問題 */
+            min-height: 100vh;
             overflow: hidden;
             touch-action: none; /* Prevent scrolling on mobile */
         }
@@ -96,9 +95,9 @@
 
         .stage-floor {
             position: absolute;
-            bottom: 22%;
+            bottom: 35%; /* 修改：將舞台大幅向上移，騰出下方樂器空間 */
             width: 150%;
-            height: 250px;
+            height: 200px;
             background-color: #e17055;
             border-top: 10px solid #d63031;
             border-radius: 50%;
@@ -128,8 +127,8 @@
         /* Instruments Panel */
         .instrument-panel {
             position: absolute;
-            /* 大幅拉高底部距離，並加入手機安全邊界考量 */
-            bottom: calc(max(8%, 30px) + env(safe-area-inset-bottom));
+            bottom: 8%; /* 修改：樂器位置拉高，避免在手機最底部無法點擊 */
+            padding-bottom: env(safe-area-inset-bottom); /* 支援 iPhone 安全區域 */
             width: 100%;
             display: flex;
             justify-content: space-around;
@@ -208,11 +207,11 @@
         /* 重新定位：精靈 */
         .fairy {
             position: absolute;
-            bottom: 35%; /* 向上移動 */
+            bottom: 35%; /* 修改：跟著舞台向上移 */
             left: 50%;
-            margin-left: -130px; /* 拉近距離 */
-            width: 100px;
-            height: 120px;
+            margin-left: -150px; /* 向左偏移 */
+            width: 120px;
+            height: 140px;
             z-index: 3;
             transition: transform 0.2s;
         }
@@ -223,11 +222,11 @@
         /* 重新定位：放置區與指示文字 */
         .drop-zone {
             position: absolute;
-            bottom: 35%; /* 向上移動 */
+            bottom: 35%; /* 修改：跟著舞台向上移 */
             left: 50%;
-            margin-left: 10px; /* 拉近距離 */
-            width: 110px;
-            height: 110px;
+            margin-left: 15px; /* 向右偏移 */
+            width: 130px;
+            height: 130px;
             border: 6px dashed #fff;
             border-radius: 20px;
             background-color: rgba(255, 255, 255, 0.2);
@@ -245,7 +244,7 @@
 
         .instruction-banner {
             position: absolute;
-            top: 8%; /* 往上移，留空間給按鈕 */
+            top: 10%; /* 修改：稍微調整位置 */
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
@@ -256,7 +255,7 @@
             color: #d63031;
             padding: 10px 20px;
             border-radius: 30px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 900;
             border: 4px solid #ff7675;
             z-index: 10;
@@ -266,15 +265,15 @@
         /* 重新定位：播放按鈕 */
         .play-audio-btn {
             position: absolute;
-            top: 20%; /* 往上移動 */
+            top: 22%; /* 修改：跟隨標語位置拉高 */
             left: 50%;
             transform: translateX(-50%);
             background-color: #00cec9;
             border: 4px solid #00b894;
             color: white;
             border-radius: 50%;
-            width: 70px; /* 稍微縮小避免擠壓 */
-            height: 70px;
+            width: 80px;
+            height: 80px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -288,8 +287,8 @@
             box-shadow: 0 0px 0 #00b894, 0 4px 5px rgba(0,0,0,0.2);
         }
         .play-audio-btn svg {
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
             margin-left: 5px;
         }
 
@@ -480,7 +479,13 @@
 
         <div id="clear-stamp" class="clear-stamp absolute z-30 font-black">CLEAR</div>
         
-        <button id="btn-restart" class="btn-cute absolute bottom-10 z-30">再玩一次</button>
+        <!-- 新增：5樓密碼提示 -->
+        <div class="absolute bottom-48 z-30 bg-white/95 px-8 py-3 rounded-full border-4 border-[#00b894] shadow-[0_5px_15px_rgba(0,0,0,0.2)] text-2xl font-black text-[#d63031] animate-bounce">
+            5樓密碼：0
+        </div>
+
+        <!-- 修改：提高按鈕位置，避免被手機底部阻擋 -->
+        <button id="btn-restart" class="btn-cute absolute bottom-24 z-30">再玩一次</button>
     </div>
 
 </div>
@@ -751,7 +756,7 @@ function startGame() {
     initAudio();
     playCorrectSound(); // Small feedback
     
-    // 確保切換到遊戲畫面，並且隱藏首頁或通關畫面
+    // 確保切換到遊戲畫面，並且徹底隱藏首頁或通關畫面
     switchScreen('screen-game');
     
     // 清除上一次的碎紙花與狀態
