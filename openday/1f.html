@@ -222,8 +222,8 @@
               const targetCenterY = rect.top + rect.height / 2;
               const distance = Math.hypot(e.clientX - targetCenterX, e.clientY - targetCenterY);
               
-              // 放寬吸附判定：對於長條形，使用較大的寬容度
-              const snapThreshold = rect.width * 0.8; 
+              // 縮小吸附判定：將 0.8 改為 0.4，讓長條形的判定範圍變得更加精準
+              const snapThreshold = rect.width * 0.4; 
               if (distance < snapThreshold) {
                 setPieces(prev => prev.map(p => p.id === id ? { ...p, isPlaced: true } : p));
                 playDropSound(); 
