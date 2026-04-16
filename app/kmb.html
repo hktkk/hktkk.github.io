@@ -9,9 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="九巴追蹤器">
     
-    <!-- 改用 PNG 格式的圖示，iOS 才能正常讀取 -->
-    <link rel="apple-touch-icon" sizes="180x180" href="https://placehold.co/180x180/dc2626/ffffff.png?text=%F0%9F%9A%8C">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://placehold.co/32x32/dc2626/ffffff.png?text=%F0%9F%9A%8C">
+    <!-- 移除舊的 placehold.co 連結，改由底下的 JavaScript 動態生成完美的高清原生 PNG Icon -->
     
     <title>九巴月票回本追蹤器</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -553,6 +551,42 @@
 
         // 啟動程式
         init();
+        setupAppIcon(); // 啟動動態生成 App Icon
+
+        // --- 動態生成 App Icon (解決 iOS 無法顯示外部 Emoji 圖片的問題) ---
+        function setupAppIcon() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 180;
+            canvas.height = 180;
+            const ctx = canvas.getContext('2d');
+            
+            // 畫紅色背景 (對應 Tailwind 的 red-600)
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(0, 0, 180, 180);
+            
+            // 畫巴士 emoji (使用 Apple 原生字體保證顯示)
+            ctx.font = '100px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🚌', 90, 100); 
+
+            // 將 Canvas 轉換為高品質的 PNG 資料網址
+            const iconUrl = canvas.toDataURL('image/png');
+            
+            // 插入至 <head> 中供 iOS 讀取
+            let link = document.createElement('link');
+            link.rel = 'apple-touch-icon';
+            link.sizes = '180x180';
+            link.href = iconUrl;
+            document.head.appendChild(link);
+            
+            // 同時加上普通的 favicon 供瀏覽器分頁使用
+            let favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/png';
+            favicon.href = iconUrl;
+            document.head.appendChild(favicon);
+        }
 
     </script>
 </body>
