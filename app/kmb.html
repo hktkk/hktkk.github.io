@@ -42,7 +42,7 @@
         <section id="configSection" class="bg-white rounded-2xl shadow-sm p-4 hidden border border-gray-100">
             <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-2">基本設定</h2>
             <div class="grid grid-cols-2 gap-3 text-sm">
-                <label class="flex flex-col text-xs text-gray-500">月票單價 ($)<input type="number" id="passPrice" class="border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-red-400 text-black"></label>
+                <label class="flex flex-col text-xs text-gray-500">月票單價 ($)<input type="number" id="passPrice" inputmode="decimal" class="border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-red-400 text-black"></label>
                 <label class="flex flex-col text-xs text-gray-500">購買數量<select id="passQty" class="border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-red-400 text-black bg-white"><option value="1">1 張 (30日)</option><option value="2">2 張 (60日)</option></select></label>
                 <label class="flex flex-col col-span-2 text-xs text-gray-500">啟用日期<input type="date" id="startDate" class="border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-red-400 text-black"></label>
                 <div class="col-span-2 border-t pt-2 mt-1">
@@ -89,68 +89,141 @@
             <div class="max-h-60 overflow-y-auto pr-1"><ul id="recordList" class="space-y-2"></ul><div id="emptyState" class="text-center py-6 text-gray-400 text-sm hidden">🚏 仲未有記錄！</div></div>
         </section>
 
-        <div class="text-center mt-6"><button id="resetBtn" class="text-xs text-red-400 underline">🗑️ 開新月份 (清空數據)</button></div>
+        <div class="text-center mt-6"><button id="resetBtn" class="text-xs text-red-400 underline">🗑️ 清空並開新月份</button></div>
     </div>
 
     <script>
         const els = Object.fromEntries(['configSection','passPrice','passQty','startDate','qfInputs','totalFare','targetAmount','daysRemaining','expiryDate','progressBar','dashboardSection','statusAlert','statusIcon','statusMsg','dailyTargetMsg','addRecordForm','fareInput','quickButtons','recordList','recordCount','emptyState'].map(id => [id, document.getElementById(id)]));
         let state = { config: { price: 800, qty: 1, startDate: new Date().toISOString().split('T')[0], quickFares: [5.4, 7.5, 10.4, 14.2, 19.3, 20.8] }, records: [] };
 
-        function init() {
-            try { const saved = JSON.parse(localStorage.getItem('kmb_data')); if(saved) state = { ...state, ...saved, config: {...state.config, ...saved.config} }; } catch(e){}
+        // 獨立的日期計算函數，處理跨月與邊界情況
+        function calculateDates(startDateStr, qty) {
+            const totalDays = 30 * qty;
+            const startDay = new Date(startDateStr);
+            startDay.setHours(0, 0, 0, 0);
+
+            const expiryDate = new Date(startDay);
+            expiryDate.setDate(startDay.getDate() + totalDays - 1);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const diffTime = expiryDate.getTime() - today.getTime();
+            let daysRem = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // 包含今天
             
-            // 動態生成快捷設定框
-            els.qfInputs.innerHTML = Array(6).fill(0).map((_, i) => `<input type="number" step="0.1" class="qf-cfg border rounded-lg p-2 text-center text-sm outline-none bg-gray-50 focus:ring-2" placeholder="+">`).join('');
+            if (daysRem <= 0) daysRem = 0;
+
+            return { totalDays, expiryDate, daysRem };
+        }
+
+        function init() {
+            try { 
+                const saved = JSON.parse(localStorage.getItem('kmb_data')); 
+                if(saved) state = { ...state, ...saved, config: {...state.config, ...saved.config} }; 
+            } catch(e){}
+            
+            // 確保有 6 個長度的陣列，避免舊資料錯位
+            while(state.config.quickFares.length < 6) state.config.quickFares.push(null);
+            
+            // 動態生成快捷設定框 (加入 inputmode="decimal" 喚起數字鍵盤)
+            els.qfInputs.innerHTML = Array(6).fill(0).map((_, i) => `<input type="number" step="0.1" inputmode="decimal" class="qf-cfg border rounded-lg p-2 text-center text-sm outline-none bg-gray-50 focus:ring-2" placeholder="+">`).join('');
             
             // 綁定輸入同步
-            els.passPrice.value = state.config.price; els.passQty.value = state.config.qty; els.startDate.value = state.config.startDate;
-            document.querySelectorAll('.qf-cfg').forEach((el, i) => { el.value = state.config.quickFares[i] || ''; el.addEventListener('change', updateConfig); });
+            els.passPrice.value = state.config.price; 
+            els.passQty.value = state.config.qty; 
+            els.startDate.value = state.config.startDate;
+            
+            document.querySelectorAll('.qf-cfg').forEach((el, i) => { 
+                el.value = state.config.quickFares[i] || ''; 
+                el.addEventListener('change', updateConfig); 
+            });
             ['passPrice', 'passQty', 'startDate'].forEach(id => els[id].addEventListener('change', updateConfig));
             
             updateUI();
         }
 
         function updateConfig() {
-            state.config = { price: +els.passPrice.value || 800, qty: +els.passQty.value || 1, startDate: els.startDate.value, quickFares: Array.from(document.querySelectorAll('.qf-cfg')).map(el => +el.value).filter(v => v > 0) };
+            state.config = { 
+                price: +els.passPrice.value || 800, 
+                qty: +els.passQty.value || 1, 
+                startDate: els.startDate.value, 
+                quickFares: Array.from(document.querySelectorAll('.qf-cfg')).map(el => {
+                    const val = parseFloat(el.value);
+                    return (isNaN(val) || val <= 0) ? null : val; // 儲存 null 以保留位置
+                }) 
+            };
             save();
         }
 
         function updateUI() {
             const { price, qty, startDate, quickFares } = state.config;
-            const target = price * qty, totalDays = 30 * qty;
-            const startDay = new Date(startDate).setHours(0,0,0,0), today = new Date().setHours(0,0,0,0);
-            const daysRem = Math.max(0, Math.ceil((startDay + totalDays * 86400000 - today) / 86400000));
-            const totalFare = state.records.reduce((sum, r) => sum + r.amount, 0), remain = Math.max(0, target - totalFare);
+            const target = price * qty;
+            
+            const { totalDays, expiryDate, daysRem } = calculateDates(startDate, qty);
+            
+            const totalFare = state.records.reduce((sum, r) => sum + r.amount, 0);
+            const remain = Math.max(0, target - totalFare);
             
             // 更新儀表板數據
-            els.targetAmount.innerText = target; els.totalFare.innerText = totalFare.toFixed(1); els.daysRemaining.innerText = daysRem;
-            els.expiryDate.innerText = new Date(startDay + (totalDays-1) * 86400000).toLocaleDateString('zh-HK');
+            els.targetAmount.innerText = target; 
+            els.totalFare.innerText = totalFare.toFixed(1); 
+            els.daysRemaining.innerText = daysRem;
+            
+            const expDateStr = `${expiryDate.getFullYear()}/${String(expiryDate.getMonth()+1).padStart(2,'0')}/${String(expiryDate.getDate()).padStart(2,'0')}`;
+            els.expiryDate.innerText = expDateStr;
+            
             els.progressBar.style.width = `${Math.min(100, (totalFare/target)*100)}%`;
 
-            // 狀態邏輯極簡化
-            const isSucc = totalFare >= target, isExp = daysRem <= 0, req = remain / Math.max(1, daysRem);
-            els.dashboardSection.className = `bg-white rounded-2xl shadow-md p-5 relative overflow-hidden border ${isSucc?'glow-success':''}`;
-            els.progressBar.className = `h-3 rounded-full transition-all duration-700 ${isSucc?'bg-green-500':isExp?'bg-gray-400':'bg-red-500'}`;
+            // 狀態邏輯格式化與展開
+            const isSucc = totalFare >= target;
+            const isExp = daysRem <= 0;
+            const req = remain / Math.max(1, daysRem);
             
-            const theme = isSucc ? ['green','🥳','成功回本！',`每程賺，共賺 $${(totalFare-target).toFixed(1)}`] 
-                        : isExp ? ['gray','🥲','已過期',`總共蝕 $${remain.toFixed(1)}`]
-                        : req <= (target/totalDays) ? ['blue','💪','進度良好',`每日需 $${req.toFixed(1)}`] 
-                        : ['orange','🏃‍♂️','進度落後',`每日需 $${req.toFixed(1)}`];
+            els.dashboardSection.className = `bg-white rounded-2xl shadow-md p-5 relative overflow-hidden border ${isSucc ? 'glow-success' : ''}`;
+            els.progressBar.className = `h-3 rounded-full transition-all duration-700 ${isSucc ? 'bg-green-500' : isExp ? 'bg-gray-400' : 'bg-red-500'}`;
+            
+            let themeColor, icon, msg, dailyMsg;
+            
+            if (isSucc) {
+                themeColor = 'green';
+                icon = '🥳';
+                msg = '成功回本！';
+                dailyMsg = `每程賺，共賺 $${(totalFare - target).toFixed(1)}`;
+            } else if (isExp) {
+                themeColor = 'gray';
+                icon = '🥲';
+                msg = '已過期';
+                dailyMsg = `總共蝕 $${remain.toFixed(1)}`;
+            } else if (req <= (target / totalDays)) {
+                themeColor = 'blue';
+                icon = '💪';
+                msg = '進度良好';
+                dailyMsg = `每日需 $${req.toFixed(1)}`;
+            } else {
+                themeColor = 'orange';
+                icon = '🏃‍♂️';
+                msg = '進度落後';
+                dailyMsg = `每日需 $${req.toFixed(1)}`;
+            }
 
-            els.statusAlert.className = `mt-4 p-3 rounded-xl text-sm border flex items-start gap-2 bg-${theme[0]}-50 border-${theme[0]}-200`;
-            els.statusIcon.innerText = theme[1]; els.statusMsg.innerText = theme[2]; els.dailyTargetMsg.innerText = theme[3];
-            els.statusMsg.className = `font-medium text-${theme[0]}-800`; els.dailyTargetMsg.className = `text-xs mt-0.5 text-${theme[0]}-600`;
+            els.statusAlert.className = `mt-4 p-3 rounded-xl text-sm border flex items-start gap-2 bg-${themeColor}-50 border-${themeColor}-200`;
+            els.statusIcon.innerText = icon; 
+            els.statusMsg.innerText = msg; 
+            els.dailyTargetMsg.innerText = dailyMsg;
+            els.statusMsg.className = `font-medium text-${themeColor}-800`; 
+            els.dailyTargetMsg.className = `text-xs mt-0.5 text-${themeColor}-600`;
 
-            // 渲染快捷鍵與紀錄
-            els.quickButtons.innerHTML = quickFares.map(f => `<button class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs rounded-lg font-medium active:scale-95" onclick="addFare(${f})">$${f.toFixed(1)}</button>`).join('');
+            // 渲染快捷鍵與紀錄 (過濾 null，確保不顯示空白按鈕)
+            const validFares = quickFares.filter(f => f !== null);
+            els.quickButtons.innerHTML = validFares.map(f => `<button type="button" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs rounded-lg font-medium active:scale-95 text-gray-700 transition" onclick="addFare(${f})">$${f.toFixed(1)}</button>`).join('');
             
             els.recordCount.innerText = state.records.length;
             els.emptyState.classList.toggle('hidden', state.records.length > 0);
             els.recordList.innerHTML = [...state.records].sort((a,b)=>b.ts-a.ts).map(r => `
                 <li class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border">
                     <div class="flex items-center gap-3"><div class="bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center text-xs">🚌</div>
-                    <div><p class="font-bold">$${r.amount.toFixed(1)}</p><p class="text-[10px] text-gray-400">${new Date(r.ts).toLocaleString('zh-HK',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p></div></div>
-                    <button onclick="delFare(${r.id})" class="text-gray-300 hover:text-red-500 p-2">✕</button>
+                    <div><p class="font-bold text-gray-800">$${r.amount.toFixed(1)}</p><p class="text-[10px] text-gray-400">${new Date(r.ts).toLocaleString('zh-HK',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p></div></div>
+                    <button type="button" onclick="delFare(${r.id})" class="text-gray-300 hover:text-red-500 p-2">✕</button>
                 </li>`).join('');
         }
 
@@ -160,7 +233,7 @@
 
         document.getElementById('toggleConfigBtn').onclick = () => els.configSection.classList.toggle('hidden');
         els.addRecordForm.onsubmit = (e) => { e.preventDefault(); const v = +els.fareInput.value; if(v > 0) addFare(v); };
-        document.getElementById('resetBtn').onclick = () => { if(confirm('清空所有紀錄？')) { state.records=[]; state.config.startDate = new Date().toISOString().split('T')[0]; els.startDate.value = state.config.startDate; save(); els.configSection.classList.remove('hidden'); }};
+        document.getElementById('resetBtn').onclick = () => { if(confirm('⚠️ 將會清空所有紀錄，確定要開新月份嗎？')) { state.records=[]; state.config.startDate = new Date().toISOString().split('T')[0]; els.startDate.value = state.config.startDate; save(); els.configSection.classList.remove('hidden'); }};
 
         init();
     </script>
