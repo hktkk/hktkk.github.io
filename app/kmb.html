@@ -5,36 +5,167 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>九巴月票回本追蹤器</title>
     
-    <!-- iOS Native PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="九巴追蹤器">
+    <meta name="apple-mobile-web-app-title" content="九巴追蹤">
     <meta name="theme-color" content="#f3f4f6">
     <link rel="apple-touch-icon" href="https://i.imgur.com/ukbs2uj.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- PWA Manifest & Service Worker Setup (Inline) -->
     <script>
-        // 1. 動態生成並載入 Manifest
-        const manifest = {
-            name: "九巴月票回本追蹤器",
-            short_name: "九巴追蹤",
-            start_url: ".",
-            display: "standalone",
-            background_color: "#f3f4f6",
-            theme_color: "#f3f4f6",
-            icons: [{
-                src: "https://i.imgur.com/ukbs2uj.png",
-                sizes: "512x512",
-                type: "image/png"
-            }]
-        };
-        const manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' }));
+        // 初始化 PWA Manifest (保留 Manifest 以支援加到主畫面)
+        const manifest = { name: "九巴月票回本追蹤器", short_name: "九巴追蹤", start_url: ".", display: "standalone", background_color: "#f3f4f6", theme_color: "#f3f4f6", icons: [{ src: "https://i.imgur.com/ukbs2uj.png", sizes: "512x512", type: "image/png" }] };
+        document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'manifest', href: URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' })) }));
         
-        // 使用更安全的 DOM 操作代替 document.write，避免 Safari 解析錯誤
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
+        // 註：移除了 Blob Service Worker 註冊，以避免在 Safari 及嚴格的安全環境中報錯。
+        // iOS Safari 只需要上方的 meta 標籤與 manifest 即可支援「加到主畫面」。
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .glow-success { box-shadow: 0 0 15px 5px rgba(34, 197, 94, 0.3); }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen pb-10">
+    <div class="max-w-md mx-auto w-full pt-4 px-4 space-y-4">
+        
+        <header class="flex items-center justify-between py-2">
+            <div>
+                <h1 class="text-2xl font-bold text-red-600 tracking-tight">🚌 九巴月票追蹤器</h1>
+                <p class="text-xs text-gray-500 mt-1">你的每日搭車回本好幫手</p>
+            </div>
+            <button id="toggleConfigBtn" class="p-2 bg-white rounded-full shadow text-gray-600 hover:text-red-600">⚙️</button>
+        </header>
+
+        <!-- 設定區塊 -->
+        <section id="configSection" class="bg-white rounded-2xl shadow-sm p-4 hidden border border-gray-100">
+            <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-2">基本設定</h2>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <label class="flex flex-col text-xs text-gray-500">月票單價 ($)<input type="number" id="passPrice" class="border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-red-400 text-black"></label>
+                <label class="flex flex-col text-xs text-gray-500">購買數量<select id="passQty" class="border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-red-400 text-black bg-white"><option value="1">1 張 (30日)</option><option value="2">2 張 (60日)</option></select></label>
+                <label class="flex flex-col col-span-2 text-xs text-gray-500">啟用日期<input type="date" id="startDate" class="border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-red-400 text-black"></label>
+                <div class="col-span-2 border-t pt-2 mt-1">
+                    <label class="text-xs text-gray-500 mb-2 block">自訂快捷車費 (最多6個，留白隱藏)</label>
+                    <div id="qfInputs" class="grid grid-cols-3 gap-2"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 儀表板 -->
+        <section id="dashboardSection" class="bg-white rounded-2xl shadow-md p-5 relative overflow-hidden border border-gray-100">
+            <div class="absolute -right-6 -top-6 text-7xl opacity-5">🎯</div>
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <p class="text-xs text-gray-500">已搭車費 / 目標</p>
+                    <div class="text-3xl font-black tracking-tight">$<span id="totalFare">0.0</span><span class="text-sm text-gray-400 font-normal"> / $<span id="targetAmount">800</span></span></div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500">剩餘日數</p>
+                    <p class="text-lg font-bold text-red-500"><span id="daysRemaining">0</span> 日</p>
+                    <p class="text-[10px] text-gray-400">至 <span id="expiryDate"></span></p>
+                </div>
+            </div>
+            <div class="bg-gray-100 rounded-full h-3 mt-4 mb-2"><div id="progressBar" class="h-3 rounded-full transition-all duration-700 w-0"></div></div>
+            <div id="statusAlert" class="mt-4 p-3 rounded-xl text-sm border flex items-start gap-2">
+                <span id="statusIcon">💡</span>
+                <div><p id="statusMsg" class="font-medium"></p><p id="dailyTargetMsg" class="text-xs mt-0.5"></p></div>
+            </div>
+        </section>
+
+        <!-- 輸入區 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+            <h2 class="text-sm font-bold text-gray-700 mb-3">記低車費</h2>
+            <form id="addRecordForm" class="flex gap-2">
+                <div class="relative flex-1"><span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">$</span><input type="number" id="fareInput" step="0.1" placeholder="0.0" inputmode="decimal" required class="w-full pl-7 pr-3 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-red-400 outline-none text-lg font-bold"></div>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 rounded-xl shadow-md active:scale-95 transition">加入</button>
+            </form>
+            <div class="mt-3"><p class="text-[10px] text-gray-400 mb-2">快捷輸入</p><div id="quickButtons" class="flex flex-wrap gap-2"></div></div>
+        </section>
+
+        <!-- 紀錄清單 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+            <div class="flex justify-between items-center mb-3"><h2 class="text-sm font-bold text-gray-700">搭車記錄</h2><span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md"><span id="recordCount">0</span> 筆</span></div>
+            <div class="max-h-60 overflow-y-auto pr-1"><ul id="recordList" class="space-y-2"></ul><div id="emptyState" class="text-center py-6 text-gray-400 text-sm hidden">🚏 仲未有記錄！</div></div>
+        </section>
+
+        <div class="text-center mt-6"><button id="resetBtn" class="text-xs text-red-400 underline">🗑️ 開新月份 (清空數據)</button></div>
+    </div>
+
+    <script>
+        const els = Object.fromEntries(['configSection','passPrice','passQty','startDate','qfInputs','totalFare','targetAmount','daysRemaining','expiryDate','progressBar','dashboardSection','statusAlert','statusIcon','statusMsg','dailyTargetMsg','addRecordForm','fareInput','quickButtons','recordList','recordCount','emptyState'].map(id => [id, document.getElementById(id)]));
+        let state = { config: { price: 800, qty: 1, startDate: new Date().toISOString().split('T')[0], quickFares: [5.4, 7.5, 10.4, 14.2, 19.3, 20.8] }, records: [] };
+
+        function init() {
+            try { const saved = JSON.parse(localStorage.getItem('kmb_data')); if(saved) state = { ...state, ...saved, config: {...state.config, ...saved.config} }; } catch(e){}
+            
+            // 動態生成快捷設定框
+            els.qfInputs.innerHTML = Array(6).fill(0).map((_, i) => `<input type="number" step="0.1" class="qf-cfg border rounded-lg p-2 text-center text-sm outline-none bg-gray-50 focus:ring-2" placeholder="+">`).join('');
+            
+            // 綁定輸入同步
+            els.passPrice.value = state.config.price; els.passQty.value = state.config.qty; els.startDate.value = state.config.startDate;
+            document.querySelectorAll('.qf-cfg').forEach((el, i) => { el.value = state.config.quickFares[i] || ''; el.addEventListener('change', updateConfig); });
+            ['passPrice', 'passQty', 'startDate'].forEach(id => els[id].addEventListener('change', updateConfig));
+            
+            updateUI();
+        }
+
+        function updateConfig() {
+            state.config = { price: +els.passPrice.value || 800, qty: +els.passQty.value || 1, startDate: els.startDate.value, quickFares: Array.from(document.querySelectorAll('.qf-cfg')).map(el => +el.value).filter(v => v > 0) };
+            save();
+        }
+
+        function updateUI() {
+            const { price, qty, startDate, quickFares } = state.config;
+            const target = price * qty, totalDays = 30 * qty;
+            const startDay = new Date(startDate).setHours(0,0,0,0), today = new Date().setHours(0,0,0,0);
+            const daysRem = Math.max(0, Math.ceil((startDay + totalDays * 86400000 - today) / 86400000));
+            const totalFare = state.records.reduce((sum, r) => sum + r.amount, 0), remain = Math.max(0, target - totalFare);
+            
+            // 更新儀表板數據
+            els.targetAmount.innerText = target; els.totalFare.innerText = totalFare.toFixed(1); els.daysRemaining.innerText = daysRem;
+            els.expiryDate.innerText = new Date(startDay + (totalDays-1) * 86400000).toLocaleDateString('zh-HK');
+            els.progressBar.style.width = `${Math.min(100, (totalFare/target)*100)}%`;
+
+            // 狀態邏輯極簡化
+            const isSucc = totalFare >= target, isExp = daysRem <= 0, req = remain / Math.max(1, daysRem);
+            els.dashboardSection.className = `bg-white rounded-2xl shadow-md p-5 relative overflow-hidden border ${isSucc?'glow-success':''}`;
+            els.progressBar.className = `h-3 rounded-full transition-all duration-700 ${isSucc?'bg-green-500':isExp?'bg-gray-400':'bg-red-500'}`;
+            
+            const theme = isSucc ? ['green','🥳','成功回本！',`每程賺，共賺 $${(totalFare-target).toFixed(1)}`] 
+                        : isExp ? ['gray','🥲','已過期',`總共蝕 $${remain.toFixed(1)}`]
+                        : req <= (target/totalDays) ? ['blue','💪','進度良好',`每日需 $${req.toFixed(1)}`] 
+                        : ['orange','🏃‍♂️','進度落後',`每日需 $${req.toFixed(1)}`];
+
+            els.statusAlert.className = `mt-4 p-3 rounded-xl text-sm border flex items-start gap-2 bg-${theme[0]}-50 border-${theme[0]}-200`;
+            els.statusIcon.innerText = theme[1]; els.statusMsg.innerText = theme[2]; els.dailyTargetMsg.innerText = theme[3];
+            els.statusMsg.className = `font-medium text-${theme[0]}-800`; els.dailyTargetMsg.className = `text-xs mt-0.5 text-${theme[0]}-600`;
+
+            // 渲染快捷鍵與紀錄
+            els.quickButtons.innerHTML = quickFares.map(f => `<button class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs rounded-lg font-medium active:scale-95" onclick="addFare(${f})">$${f.toFixed(1)}</button>`).join('');
+            
+            els.recordCount.innerText = state.records.length;
+            els.emptyState.classList.toggle('hidden', state.records.length > 0);
+            els.recordList.innerHTML = [...state.records].sort((a,b)=>b.ts-a.ts).map(r => `
+                <li class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border">
+                    <div class="flex items-center gap-3"><div class="bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center text-xs">🚌</div>
+                    <div><p class="font-bold">$${r.amount.toFixed(1)}</p><p class="text-[10px] text-gray-400">${new Date(r.ts).toLocaleString('zh-HK',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})}</p></div></div>
+                    <button onclick="delFare(${r.id})" class="text-gray-300 hover:text-red-500 p-2">✕</button>
+                </li>`).join('');
+        }
+
+        const save = () => { localStorage.setItem('kmb_data', JSON.stringify(state)); updateUI(); };
+        const addFare = (amt) => { if(navigator.vibrate) navigator.vibrate(50); state.records.push({id: Date.now(), ts: Date.now(), amount: amt}); els.fareInput.value=''; els.fareInput.blur(); save(); };
+        const delFare = (id) => { if(confirm('刪除此紀錄？')) { state.records = state.records.filter(r => r.id !== id); save(); }};
+
+        document.getElementById('toggleConfigBtn').onclick = () => els.configSection.classList.toggle('hidden');
+        els.addRecordForm.onsubmit = (e) => { e.preventDefault(); const v = +els.fareInput.value; if(v > 0) addFare(v); };
+        document.getElementById('resetBtn').onclick = () => { if(confirm('清空所有紀錄？')) { state.records=[]; state.config.startDate = new Date().toISOString().split('T')[0]; els.startDate.value = state.config.startDate; save(); els.configSection.classList.remove('hidden'); }};
+
+        init();
+    </script>
+</body>
+</html>        manifestLink.rel = 'manifest';
         manifestLink.href = manifestUrl;
         document.head.appendChild(manifestLink);
 
