@@ -105,6 +105,503 @@
                     <label class="text-xs text-gray-500 mb-1">啟用日期</label>
                     <input type="date" id="startDate" class="border rounded-lg p-2 text-sm focus:ring-2 focus:ring-red-400 outline-none">
                 </div>
+                
+                <!-- 新增：自訂快捷車費區塊 -->
+                <div class="flex flex-col col-span-2 border-t pt-3 mt-1 border-gray-100">
+                    <label class="text-xs text-gray-500 mb-2">自訂快捷車費 (留白即隱藏)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <input type="number" step="0.1" class="qf-cfg-input border rounded-lg p-2 text-sm text-center focus:ring-2 focus:ring-red-400 outline-none bg-gray-50" placeholder="+">
+                        <input type="number" step="0.1" class="qf-cfg-input border rounded-lg p-2 text-sm text-center focus:ring-2 focus:ring-red-400 outline-none bg-gray-50" placeholder="+">
+                        <input type="number" step="0.1" class="qf-cfg-input border rounded-lg p-2 text-sm text-center focus:ring-2 focus:ring-red-400 outline-none bg-gray-50" placeholder="+">
+                        <input type="number" step="0.1" class="qf-cfg-input border rounded-lg p-2 text-sm text-center focus:ring-2 focus:ring-red-400 outline-none bg-gray-50" placeholder="+">
+                        <input type="number" step="0.1" class="qf-cfg-input border rounded-lg p-2 text-sm text-center focus:ring-2 focus:ring-red-400 outline-none bg-gray-50" placeholder="+">
+                        <input type="number" step="0.1" class="qf-cfg-input border rounded-lg p-2 text-sm text-center focus:ring-2 focus:ring-red-400 outline-none bg-gray-50" placeholder="+">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 核心儀表板 -->
+        <section id="dashboardSection" class="bg-white rounded-2xl shadow-md p-5 relative overflow-hidden border border-gray-100">
+            <!-- 背景裝飾 -->
+            <div class="absolute -right-6 -top-6 text-7xl opacity-5">🎯</div>
+            
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <p class="text-xs text-gray-500">已搭車費 / 目標</p>
+                    <div class="text-3xl font-black text-gray-800 tracking-tight">
+                        $<span id="totalFare">0.0</span> 
+                        <span class="text-sm text-gray-400 font-normal">/ $<span id="targetAmount">800</span></span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500">剩餘日數</p>
+                    <p class="text-lg font-bold text-red-500"><span id="daysRemaining">30</span> 日</p>
+                    <p class="text-[10px] text-gray-400">至 <span id="expiryDate"></span></p>
+                </div>
+            </div>
+
+            <!-- 進度條 -->
+            <div class="w-full bg-gray-100 rounded-full h-3 mt-4 mb-2 relative overflow-hidden">
+                <div id="progressBar" class="bg-red-500 h-3 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+            </div>
+
+            <!-- 心理激勵與狀態分析 -->
+            <div id="statusAlert" class="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-100 text-sm flex items-start gap-2">
+                <span id="statusIcon">💡</span>
+                <div class="flex-1">
+                    <p id="statusMsg" class="text-blue-800 font-medium">資料計算中...</p>
+                    <p id="dailyTargetMsg" class="text-blue-600 text-xs mt-0.5">每日需搭</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 新增記錄區域 (極簡輸入) -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+            <h2 class="text-sm font-bold text-gray-700 mb-3">記低車費</h2>
+            
+            <form id="addRecordForm" class="flex gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">$</span>
+                    <input type="number" id="fareInput" step="0.1" placeholder="0.0" inputmode="decimal" required
+                        class="w-full pl-7 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-400 focus:bg-white outline-none text-lg font-bold transition">
+                </div>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-md active:transform active:scale-95 transition">
+                    加入
+                </button>
+            </form>
+
+            <!-- 常見車費快捷鍵 (針對單手操作優化) -->
+            <div class="mt-3">
+                <p class="text-[10px] text-gray-400 mb-2">快捷輸入</p>
+                <div class="flex flex-wrap gap-2" id="quickButtons">
+                    <!-- JS 動態生成按鈕 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 乘車記錄列表 -->
+        <section class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-bold text-gray-700">搭車記錄</h2>
+                <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md"><span id="recordCount">0</span> 筆</span>
+            </div>
+            
+            <div class="max-h-60 overflow-y-auto pr-1">
+                <ul id="recordList" class="space-y-2">
+                    <!-- 記錄將由 JS 渲染至此 -->
+                </ul>
+                <div id="emptyState" class="text-center py-6 text-gray-400 text-sm hidden">
+                    🚏 仲未有記錄，快啲記低第一程啦！
+                </div>
+            </div>
+        </section>
+
+        <!-- 危險操作區 -->
+        <div class="text-center mt-8">
+            <button id="resetBtn" class="text-xs text-red-400 hover:text-red-600 underline">
+                🗑️ 清空所有數據 (開新月份)
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 狀態管理 (State) ---
+        const STATE_KEY = 'kmb_tracker_data';
+        
+        let state = {
+            config: {
+                price: 800,
+                qty: 1,
+                startDate: new Date().toISOString().split('T')[0], // 預設今日
+                quickFares: [5.4, 7.5, 10.4, 14.2, 19.3, 20.8] // 新增預設快捷車費
+            },
+            records: [] // { id: number, timestamp: number, amount: number }
+        };
+
+        // --- DOM 元素引用 ---
+        const els = {
+            toggleConfigBtn: document.getElementById('toggleConfigBtn'),
+            configSection: document.getElementById('configSection'),
+            passPrice: document.getElementById('passPrice'),
+            passQty: document.getElementById('passQty'),
+            startDate: document.getElementById('startDate'),
+            qfCfgInputs: document.querySelectorAll('.qf-cfg-input'), // 新增：設定中的車費輸入框
+            
+            totalFare: document.getElementById('totalFare'),
+            targetAmount: document.getElementById('targetAmount'),
+            daysRemaining: document.getElementById('daysRemaining'),
+            expiryDate: document.getElementById('expiryDate'),
+            progressBar: document.getElementById('progressBar'),
+            dashboardSection: document.getElementById('dashboardSection'),
+            
+            statusAlert: document.getElementById('statusAlert'),
+            statusIcon: document.getElementById('statusIcon'),
+            statusMsg: document.getElementById('statusMsg'),
+            dailyTargetMsg: document.getElementById('dailyTargetMsg'),
+            
+            addRecordForm: document.getElementById('addRecordForm'),
+            fareInput: document.getElementById('fareInput'),
+            quickButtons: document.getElementById('quickButtons'),
+            
+            recordList: document.getElementById('recordList'),
+            recordCount: document.getElementById('recordCount'),
+            emptyState: document.getElementById('emptyState'),
+            resetBtn: document.getElementById('resetBtn')
+        };
+
+        // --- 初始化 (Initialization) ---
+        function init() {
+            loadData();
+            setupEventListeners();
+            renderQuickButtons();
+            updateUI();
+        }
+
+        // --- 核心邏輯 (Core Logic) ---
+
+        // 載入 localStorage 數據
+        function loadData() {
+            const saved = localStorage.getItem(STATE_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state.config = { ...state.config, ...parsed.config };
+                    state.records = parsed.records || [];
+                } catch (e) {
+                    console.error("載入數據失敗", e);
+                }
+            }
+            
+            // 同步設定到 UI 欄位
+            els.passPrice.value = state.config.price;
+            els.passQty.value = state.config.qty;
+            els.startDate.value = state.config.startDate;
+            
+            // 同步快捷車費到設定輸入框
+            els.qfCfgInputs.forEach((input, index) => {
+                input.value = state.config.quickFares[index] || '';
+            });
+        }
+
+        // 儲存數據並更新 UI
+        function saveData() {
+            localStorage.setItem(STATE_KEY, JSON.stringify(state));
+            updateUI();
+        }
+
+        // 日期計算輔助函數：將日期重置為午夜，避免時區干擾
+        function getMidnight(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        // 全面更新 UI 與核心計算
+        function updateUI() {
+            const { price, qty, startDate } = state.config;
+            const targetAmount = price * qty;
+            const totalDays = 30 * qty;
+            
+            // 日期計算
+            const start = getMidnight(startDate);
+            const today = getMidnight(new Date());
+            
+            // 計算到期日 (包含開始日當天算作第一天，所以減1)
+            const expiry = new Date(start.getTime() + (totalDays - 1) * 24 * 60 * 60 * 1000);
+            
+            // 剩餘日數 (由今日至到期日，若今日超前則為負數)
+            const diffTime = expiry.getTime() - today.getTime();
+            let daysRem = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 包含今天
+            
+            const isExpired = daysRem <= 0;
+            if (isExpired) daysRem = 0;
+
+            // 總車費計算
+            const totalFare = state.records.reduce((sum, r) => sum + r.amount, 0);
+            const remainingFare = Math.max(0, targetAmount - totalFare);
+            const progressPct = Math.min(100, (totalFare / targetAmount) * 100);
+
+            // 更新儀表板文字
+            els.targetAmount.innerText = targetAmount.toFixed(0);
+            els.totalFare.innerText = totalFare.toFixed(1);
+            els.daysRemaining.innerText = daysRem;
+            
+            const expDateStr = `${expiry.getFullYear()}/${String(expiry.getMonth()+1).padStart(2,'0')}/${String(expiry.getDate()).padStart(2,'0')}`;
+            els.expiryDate.innerText = expDateStr;
+
+            // 更新進度條
+            els.progressBar.style.width = `${progressPct}%`;
+            
+            // --- 心理激勵與狀態邏輯 ---
+            els.dashboardSection.classList.remove('glow-success');
+            els.progressBar.className = 'h-3 rounded-full transition-all duration-700 ease-out';
+            els.statusAlert.className = 'mt-4 p-3 rounded-xl text-sm flex items-start gap-2 border';
+
+            if (totalFare >= targetAmount) {
+                // 已回本
+                els.dashboardSection.classList.add('glow-success');
+                els.progressBar.classList.add('bg-green-500');
+                
+                els.statusAlert.classList.add('bg-green-50', 'border-green-200');
+                els.statusIcon.innerText = '🥳';
+                els.statusMsg.innerText = '恭喜！已經成功回本啦！';
+                els.statusMsg.classList.add('text-green-800');
+                const profit = totalFare - targetAmount;
+                els.dailyTargetMsg.innerHTML = `而家每搭一程都係賺，目前賺咗 <span class="font-bold text-green-600">$${profit.toFixed(1)}</span>`;
+                els.dailyTargetMsg.className = 'text-green-600 text-xs mt-0.5';
+            } else if (isExpired) {
+                // 未回本且已過期
+                els.progressBar.classList.add('bg-gray-400');
+                els.statusAlert.classList.add('bg-gray-50', 'border-gray-200');
+                els.statusIcon.innerText = '🥲';
+                els.statusMsg.innerText = '月票已過期';
+                els.statusMsg.classList.add('text-gray-600');
+                els.dailyTargetMsg.innerText = `總共蝕咗 $${remainingFare.toFixed(1)}`;
+                els.dailyTargetMsg.className = 'text-gray-500 text-xs mt-0.5';
+            } else {
+                // 計算每日需搭目標
+                const dailyNeeded = remainingFare / Math.max(1, daysRem);
+                const currentDailyAvgTarget = targetAmount / totalDays;
+                
+                els.progressBar.classList.add('bg-red-500');
+
+                if (dailyNeeded <= currentDailyAvgTarget) {
+                    // 進度超前
+                    els.statusAlert.classList.add('bg-blue-50', 'border-blue-100');
+                    els.statusIcon.innerText = '💪';
+                    els.statusMsg.innerText = '進度良好，繼續保持！';
+                    els.statusMsg.classList.add('text-blue-800');
+                    els.dailyTargetMsg.innerHTML = `剩餘日子平均每日搭 <span class="font-bold">$${dailyNeeded.toFixed(1)}</span> 就回本。`;
+                    els.dailyTargetMsg.className = 'text-blue-600 text-xs mt-0.5';
+                } else {
+                    // 進度落後
+                    els.statusAlert.classList.add('bg-orange-50', 'border-orange-100');
+                    els.statusIcon.innerText = '🏃‍♂️';
+                    els.statusMsg.innerText = '要搭多啲啦，目前進度落後！';
+                    els.statusMsg.classList.add('text-orange-800');
+                    els.dailyTargetMsg.innerHTML = `剩餘日子平均每日要搭 <span class="font-bold">$${dailyNeeded.toFixed(1)}</span> 先回到本。`;
+                    els.dailyTargetMsg.className = 'text-orange-600 text-xs mt-0.5';
+                }
+            }
+
+            // 更新記錄列表
+            renderRecords();
+        }
+
+        // 渲染搭車記錄列表
+        function renderRecords() {
+            els.recordList.innerHTML = '';
+            els.recordCount.innerText = state.records.length;
+
+            if (state.records.length === 0) {
+                els.emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            els.emptyState.classList.add('hidden');
+
+            // 依時間由新到舊排序
+            const sortedRecords = [...state.records].sort((a, b) => b.timestamp - a.timestamp);
+
+            sortedRecords.forEach(record => {
+                const date = new Date(record.timestamp);
+                const timeStr = `${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+                
+                const li = document.createElement('li');
+                li.className = "flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100";
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center text-xs">🚌</div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">$${record.amount.toFixed(1)}</p>
+                            <p class="text-[10px] text-gray-400">${timeStr}</p>
+                        </div>
+                    </div>
+                    <button class="delete-btn text-gray-300 hover:text-red-500 p-2 transition" data-id="${record.id}" aria-label="刪除">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                `;
+                els.recordList.appendChild(li);
+            });
+        }
+
+        // 生成快捷輸入按鈕
+        function renderQuickButtons() {
+            els.quickButtons.innerHTML = '';
+            state.config.quickFares.forEach(fare => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = "px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg font-medium transition active:scale-95";
+                btn.innerText = `$${fare.toFixed(1)}`;
+                btn.onclick = () => {
+                    // 加入簡短的手機震動反饋 (如果裝置支援)
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    els.fareInput.value = fare;
+                    // 自動觸發提交
+                    els.addRecordForm.dispatchEvent(new Event('submit'));
+                };
+                els.quickButtons.appendChild(btn);
+            });
+        }
+
+        // --- 事件監聽器 (Event Listeners) ---
+        function setupEventListeners() {
+            // 切換配置區域顯示
+            els.toggleConfigBtn.addEventListener('click', () => {
+                els.configSection.classList.toggle('hidden');
+            });
+
+            // 設定變更監聽
+            const updateConfig = () => {
+                // 讀取自訂快捷車費
+                const newQuickFares = [];
+                els.qfCfgInputs.forEach(input => {
+                    const val = parseFloat(input.value);
+                    if (!isNaN(val) && val > 0) newQuickFares.push(val);
+                });
+
+                state.config = {
+                    price: parseFloat(els.passPrice.value) || 800,
+                    qty: parseInt(els.passQty.value) || 1,
+                    startDate: els.startDate.value,
+                    quickFares: newQuickFares // 儲存新的快捷車費
+                };
+                saveData();
+                renderQuickButtons(); // 即時更新主畫面按鈕
+            };
+
+            els.passPrice.addEventListener('change', updateConfig);
+            els.passQty.addEventListener('change', updateConfig);
+            els.startDate.addEventListener('change', updateConfig);
+            
+            // 為快捷車費設定框加入變更監聽
+            els.qfCfgInputs.forEach(input => {
+                input.addEventListener('change', updateConfig);
+            });
+
+            // 新增記錄
+            els.addRecordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const amount = parseFloat(els.fareInput.value);
+                if (isNaN(amount) || amount <= 0) return;
+
+                const newRecord = {
+                    id: Date.now(), // 用時間戳作為簡易唯一ID
+                    timestamp: Date.now(),
+                    amount: amount
+                };
+
+                state.records.push(newRecord);
+                els.fareInput.value = ''; // 清空輸入框
+                els.fareInput.blur(); // 收起鍵盤
+                saveData();
+            });
+
+            // 刪除記錄 (使用事件委派 Event Delegation)
+            els.recordList.addEventListener('click', (e) => {
+                const btn = e.target.closest('.delete-btn');
+                if (!btn) return;
+                
+                const id = parseInt(btn.dataset.id);
+                if (confirm('確定要刪除這筆車費記錄嗎？')) {
+                    state.records = state.records.filter(r => r.id !== id);
+                    saveData();
+                }
+            });
+
+            // 完整重置數據
+            els.resetBtn.addEventListener('click', () => {
+                if (confirm('⚠️ 警告：這將會清除所有車費記錄！確定要重新開始新一個月嗎？')) {
+                    state.records = [];
+                    // 將日期重置為今日
+                    state.config.startDate = new Date().toISOString().split('T')[0];
+                    els.startDate.value = state.config.startDate;
+                    saveData();
+                    els.configSection.classList.remove('hidden'); // 展開設定讓用戶確認
+                }
+            });
+        }
+
+        // 啟動程式
+        init();
+
+    </script>
+</body>
+</html>        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => self.skipWaiting());
+                self.addEventListener('activate', (e) => self.clients.claim());
+                self.addEventListener('fetch', (e) => {
+                    e.respondWith(fetch(e.request).catch(() => new Response('Offline Mode')));
+                });
+            `;
+            const swUrl = URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Setup failed', err));
+            });
+        }
+    </script>
+
+    <style>
+        /* 自定義滾動條以保持介面整潔 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* 隱藏數字輸入框的上下箭頭 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        
+        /* 目標達成時的發光特效 */
+        .glow-success {
+            box-shadow: 0 0 15px 5px rgba(34, 197, 94, 0.3);
+            transition: box-shadow 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen pb-10">
+
+    <!-- 手機版面置中容器 -->
+    <div class="max-w-md mx-auto w-full pt-4 px-4 space-y-4">
+        
+        <!-- 頂部標題 -->
+        <header class="flex items-center justify-between py-2">
+            <div>
+                <h1 class="text-2xl font-bold text-red-600 tracking-tight">🚌 九巴月票追蹤器</h1>
+                <p class="text-xs text-gray-500 mt-1">你的每日搭車回本好幫手</p>
+            </div>
+            <!-- 設定按鈕，用來展開/收起配置 -->
+            <button id="toggleConfigBtn" class="p-2 bg-white rounded-full shadow text-gray-600 hover:text-red-600 transition" aria-label="設定">
+                ⚙️
+            </button>
+        </header>
+
+        <!-- 配置區域 (預設隱藏，點擊齒輪展開) -->
+        <section id="configSection" class="bg-white rounded-2xl shadow-sm p-4 hidden transition-all border border-gray-100">
+            <h2 class="text-sm font-bold text-gray-700 mb-3 border-b pb-2">基本設定</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col">
+                    <label class="text-xs text-gray-500 mb-1">月票單價 ($)</label>
+                    <input type="number" id="passPrice" class="border rounded-lg p-2 text-sm focus:ring-2 focus:ring-red-400 outline-none" value="800">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-xs text-gray-500 mb-1">購買數量 (張)</label>
+                    <select id="passQty" class="border rounded-lg p-2 text-sm focus:ring-2 focus:ring-red-400 outline-none bg-white">
+                        <option value="1">1 張 (30日)</option>
+                        <option value="2">2 張 (60日)</option>
+                    </select>
+                </div>
+                <div class="flex flex-col col-span-2">
+                    <label class="text-xs text-gray-500 mb-1">啟用日期</label>
+                    <input type="date" id="startDate" class="border rounded-lg p-2 text-sm focus:ring-2 focus:ring-red-400 outline-none">
+                </div>
             </div>
         </section>
 
