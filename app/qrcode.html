@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時 QR Code 生成器 | 專業版</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 設定 Tailwind CSS -->
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        primaryHover: '#2563eb',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 引入 QRious 函式庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center p-4 sm:p-8 transition-colors duration-300">
+
+    <main class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden transition-colors duration-300">
+        
+        <!-- 標題區塊 -->
+        <header class="bg-primary p-6 text-white text-center sm:text-left flex items-center justify-center sm:justify-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/>
+                <path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>
+            </svg>
+            <div>
+                <h1 class="text-2xl font-bold tracking-wide">即時 QR Code 生成器</h1>
+                <p class="text-sm text-blue-100 mt-1">支援 Logo 嵌入、高畫質輸出與即時預覽</p>
+            </div>
+        </header>
+
+        <!-- 內容佈局 -->
+        <div class="flex flex-col p-6 sm:p-8 gap-6">
+            
+            <!-- 上方：輸入與設定區塊 -->
+            <section class="w-full flex flex-col gap-4">
+                
+                <!-- 輸入框 -->
+                <div>
+                    <label for="textInput" class="text-gray-700 dark:text-gray-200 font-semibold text-lg flex justify-between items-center">
+                        <span>輸入內容</span>
+                        <span id="lengthWarning" class="text-xs text-red-500 hidden font-normal bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">⚠️ 內容過長，可能降低掃描成功率</span>
+                    </label>
+                    <textarea 
+                        id="textInput" 
+                        rows="3" 
+                        class="w-full mt-2 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none shadow-inner"
+                        placeholder="例如：https://google.com 或任何文字訊息..."
+                    ></textarea>
+                </div>
+
+                <!-- 設定面板 (Grid 佈局) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                    
+                    <!-- 容錯等級 -->
+                    <div class="flex flex-col gap-1">
+                        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">容錯等級 (Error Correction)</label>
+                        <select id="levelSelect" class="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5">
+                            <option value="L">L - 低 (7% 容錯)</option>
+                            <option value="M">M - 中 (15% 容錯)</option>
+                            <option value="Q">Q - 高 (25% 容錯)</option>
+                            <option value="H" selected>H - 最高 (30% 容錯，適合放 Logo)</option>
+                        </select>
+                    </div>
+
+                    <!-- 圖片解析度 -->
+                    <div class="flex flex-col gap-1">
+                        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">輸出解析度 (Size)</label>
+                        <select id="sizeSelect" class="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5">
+                            <option value="300">一般 (300x300)</option>
+                            <option value="500">清晰 (500x500)</option>
+                            <option value="1000" selected>超清 (1000x1000)</option>
+                        </select>
+                    </div>
+
+                    <!-- Logo 上傳 -->
+                    <div class="flex flex-col gap-1 sm:col-span-2">
+                        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">嵌入中間 Logo</label>
+                        <div class="flex items-center gap-2">
+                            <input type="file" id="logoInput" accept="image/*" class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primaryHover transition-all cursor-pointer bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                            <button id="clearLogoBtn" class="hidden px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors whitespace-nowrap border border-red-200 dark:border-red-800">
+                                移除 Logo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 分隔線 -->
+            <hr class="border-gray-200 dark:border-gray-700 border-dashed">
+
+            <!-- 下方：預覽與操作區塊 -->
+            <section class="w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-6 border border-gray-100 dark:border-gray-700">
+                
+                <!-- QR Code 顯示區域 (改為顯示 img 標籤，徹底解決模糊與長按下載問題) -->
+                <div id="qrContainer" class="relative bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 aspect-square w-full max-w-[65vw] sm:max-w-[320px] flex items-center justify-center mb-6">
+                    
+                    <!-- 隱藏的 Canvas 負責繪圖演算 -->
+                    <canvas id="hiddenCanvas" class="hidden"></canvas>
+
+                    <!-- 預設佔位提示 -->
+                    <div id="placeholder" class="text-gray-400 text-center flex flex-col items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                        <span id="placeholderText" class="text-sm">等待輸入內容...</span>
+                    </div>
+                    
+                    <!-- 實際展示給用戶看的圖片 -->
+                    <img id="qrImage" alt="Generated QR Code" class="hidden mx-auto w-full h-full object-contain drop-shadow-sm select-none" style="image-rendering: pixelated; pointer-events: auto;">
+                </div>
+
+                <p class="text-xs text-gray-400 dark:text-gray-500 mb-4 text-center">
+                    提示：手機可直接「長按圖片」儲存，電腦可「右鍵另存圖片」
+                </p>
+
+                <!-- 操作按鈕群組 -->
+                <div class="w-full flex flex-wrap justify-center gap-3">
+                    <button id="clearBtn" class="flex-1 min-w-[120px] bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 font-medium py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2">
+                        清除全部
+                    </button>
+                    
+                    <button id="copyBtn" disabled class="flex-1 min-w-[140px] bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        複製圖片
+                    </button>
+
+                    <button id="downloadBtn" disabled class="flex-1 min-w-[140px] bg-primary hover:bg-primaryHover disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        下載 PNG
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 核心邏輯腳本 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM 元素
+            const textInput = document.getElementById('textInput');
+            const levelSelect = document.getElementById('levelSelect');
+            const sizeSelect = document.getElementById('sizeSelect');
+            const logoInput = document.getElementById('logoInput');
+            const clearLogoBtn = document.getElementById('clearLogoBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            const hiddenCanvas = document.getElementById('hiddenCanvas');
+            const qrImage = document.getElementById('qrImage');
+            const placeholder = document.getElementById('placeholder');
+            const placeholderText = document.getElementById('placeholderText');
+            const lengthWarning = document.getElementById('lengthWarning');
+
+            let qr = null;
+            let loadedLogoImg = null;
+
+            // 1. 防呆檢查：確保函式庫已載入
+            if (typeof QRious === 'undefined') {
+                placeholderText.innerHTML = '<span class="text-red-500">核心套件載入失敗<br>請檢查網路或重新整理網頁。</span>';
+                textInput.disabled = true;
+                return;
+            }
+
+            // 初始化 QRious (設定較大的 padding: 16 讓視覺更舒適)
+            qr = new QRious({
+                element: hiddenCanvas,
+                size: parseInt(sizeSelect.value, 10),
+                level: levelSelect.value,
+                background: '#ffffff',
+                foreground: '#000000',
+                padding: 16
+            });
+
+            // 工具：將 DataURL 轉 Blob (用於複製與下載)
+            const dataURLToBlob = (dataURL) => {
+                const parts = dataURL.split(';base64,');
+                const contentType = parts[0].split(':')[1];
+                const raw = window.atob(parts[1]);
+                const rawLength = raw.length;
+                const uInt8Array = new Uint8Array(rawLength);
+                for (let i = 0; i < rawLength; ++i) {
+                    uInt8Array[i] = raw.charCodeAt(i);
+                }
+                return new Blob([uInt8Array], { type: contentType });
+            };
+
+            // 核心：生成與渲染邏輯
+            const renderQRCode = () => {
+                const text = textInput.value.trim();
+
+                // 長度防護提示 (大約 300 字元以上開始警告)
+                if (text.length > 300) {
+                    lengthWarning.classList.remove('hidden');
+                } else {
+                    lengthWarning.classList.add('hidden');
+                }
+
+                if (!text) {
+                    qrImage.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                    downloadBtn.disabled = true;
+                    copyBtn.disabled = true;
+                    return;
+                }
+
+                try {
+                    // 同步設定值並讓 QRious 繪製到 hiddenCanvas
+                    qr.size = parseInt(sizeSelect.value, 10);
+                    qr.level = levelSelect.value;
+                    qr.value = text; // 這會觸發繪製
+
+                    // 如果有 Logo，在 QRious 繪製完後，將 Logo 蓋在 Canvas 中心
+                    if (loadedLogoImg) {
+                        const ctx = hiddenCanvas.getContext('2d');
+                        const canvasSize = hiddenCanvas.width;
+                        const logoSize = canvasSize * 0.25; // Logo 佔比 25%
+                        const x = (canvasSize - logoSize) / 2;
+                        const y = (canvasSize - logoSize) / 2;
+                        
+                        // 繪製白色底色避免 Logo 與條碼交錯影響識別
+                        ctx.fillStyle = '#ffffff';
+                        const padding = canvasSize * 0.02;
+                        ctx.fillRect(x - padding, y - padding, logoSize + padding*2, logoSize + padding*2);
+                        
+                        // 繪製 Logo 圖片
+                        ctx.drawImage(loadedLogoImg, x, y, logoSize, logoSize);
+                    }
+
+                    // 將合成後的 Canvas 轉換為圖片顯示在畫面上
+                    qrImage.src = hiddenCanvas.toDataURL('image/png');
+                    
+                    placeholder.classList.add('hidden');
+                    qrImage.classList.remove('hidden');
+                    downloadBtn.disabled = false;
+                    copyBtn.disabled = false;
+
+                } catch (error) {
+                    console.error('QR Code 生成失敗:', error);
+                    // 捕捉內容過長導致的演算法崩潰
+                    qrImage.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                    placeholderText.innerHTML = '<span class="text-red-500">生成失敗：內容過長或包含不支援的字元。</span>';
+                    downloadBtn.disabled = true;
+                    copyBtn.disabled = true;
+                }
+            };
+
+            // 事件：處理 Logo 上傳
+            logoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            loadedLogoImg = img;
+                            clearLogoBtn.classList.remove('hidden');
+                            
+                            // 強制切換到 H 級別以確保加了 Logo 後仍可掃描
+                            if(levelSelect.value !== 'H') {
+                                levelSelect.value = 'H';
+                                alert('已自動將容錯等級調整為「H (最高)」，以確保含有 Logo 的條碼能成功掃描。');
+                            }
+                            renderQRCode();
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // 事件：移除 Logo
+            clearLogoBtn.addEventListener('click', () => {
+                loadedLogoImg = null;
+                logoInput.value = '';
+                clearLogoBtn.classList.add('hidden');
+                renderQRCode();
+            });
+
+            // 事件：複製圖片到剪貼簿 (使用 Clipboard API)
+            copyBtn.addEventListener('click', async () => {
+                if (qrImage.classList.contains('hidden')) return;
+                
+                // 視覺回饋
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 已複製';
+                
+                try {
+                    const blob = dataURLToBlob(qrImage.src);
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                } catch (err) {
+                    console.error('複製失敗:', err);
+                    alert('複製失敗，您的瀏覽器環境可能不支援此功能。您可以嘗試直接對圖片點擊「右鍵 -> 複製圖片」。');
+                }
+                
+                setTimeout(() => { copyBtn.innerHTML = originalText; }, 2000);
+            });
+
+            // 事件：下載按鈕
+            downloadBtn.addEventListener('click', () => {
+                if (qrImage.classList.contains('hidden')) return;
+
+                try {
+                    const blob = dataURLToBlob(qrImage.src);
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    
+                    const shortText = textInput.value.trim().substring(0, 10).replace(/[^a-zA-Z0-9]/g, '_');
+                    const fileName = shortText ? `QR_${shortText}.png` : 'QRCode.png';
+                    link.download = fileName;
+
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+                } catch (err) {
+                    console.error('下載觸發失敗:', err);
+                    // 由於我們改用了 img 標籤顯示，使用者仍然可以直接長按或右鍵存擋
+                }
+            });
+
+            // 事件：清除全部
+            clearBtn.addEventListener('click', () => {
+                textInput.value = '';
+                loadedLogoImg = null;
+                logoInput.value = '';
+                clearLogoBtn.classList.add('hidden');
+                levelSelect.value = 'H'; // 重置為預設
+                sizeSelect.value = '1000'; // 重置為預設
+                renderQRCode(); 
+                textInput.focus();
+            });
+
+            // 綁定輸入與變更事件
+            textInput.addEventListener('input', renderQRCode);
+            sizeSelect.addEventListener('change', renderQRCode);
+            levelSelect.addEventListener('change', renderQRCode);
+
+            // 初始化
+            textInput.focus();
+        });
+    </script>
+</body>
+</html>
