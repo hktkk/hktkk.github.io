@@ -29,6 +29,23 @@
         }
     </script>
 
+    <!-- Prevent FOUC: apply theme before paint -->
+    <script>
+        (function() {
+            const stored = localStorage.getItem('theme');
+            if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches) || stored === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            } else if (stored === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                // system
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,9 +55,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        /* Force dark mode */
-        html { color-scheme: dark; }
-
         /* Gradient text */
         .gradient-text {
             background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
@@ -50,19 +64,21 @@
         }
 
         /* Card hover glow */
-        .card-glow {
-            transition: all 0.3s ease;
-        }
-        .card-glow:hover {
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
-            transform: translateY(-4px);
-        }
+        .card-glow { transition: all 0.3s ease; }
+        .dark .card-glow:hover { box-shadow: 0 0 30px rgba(99, 102, 241, 0.15); }
+        .card-glow:hover { box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12); transform: translateY(-4px); }
 
         /* Subtle grid background */
-        .bg-grid {
-            background-image: 
+        .dark .bg-grid {
+            background-image:
                 linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
             background-size: 60px 60px;
         }
 
@@ -71,29 +87,49 @@
             from { opacity: 0; transform: translateY(30px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in-up {
-            animation: fadeInUp 0.6s ease-out forwards;
-        }
+        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
         .delay-100 { animation-delay: 0.1s; }
         .delay-200 { animation-delay: 0.2s; }
         .delay-300 { animation-delay: 0.3s; }
-        .delay-400 { animation-delay: 0.4s; }
-        .delay-500 { animation-delay: 0.5s; }
+
+        /* Theme switcher dropdown */
+        .theme-menu { display: none; }
+        .theme-menu.active { display: flex; }
     </style>
 </head>
 
-<body class="dark bg-gray-950 text-gray-100 font-sans antialiased">
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 font-sans antialiased transition-colors duration-300">
 
     <!-- Navigation -->
-    <nav class="fixed top-0 w-full z-50 bg-gray-950/80 backdrop-blur-lg border-b border-gray-800/50">
+    <nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <a href="#" class="text-xl font-bold gradient-text">hktkk</a>
-                <div class="flex items-center gap-6">
-                    <a href="#projects" class="text-sm text-gray-400 hover:text-white transition-colors">作品</a>
-                    <a href="#about" class="text-sm text-gray-400 hover:text-white transition-colors">關於</a>
+                <div class="flex items-center gap-4 sm:gap-6">
+                    <a href="#projects" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">作品</a>
+                    <a href="#about" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">關於</a>
+
+                    <!-- Theme Switcher -->
+                    <div class="relative">
+                        <button id="themeToggleBtn" aria-label="切換主題"
+                            class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors">
+                            <i id="themeIcon" class="fa-solid fa-circle-half-stroke"></i>
+                        </button>
+                        <div id="themeMenu" class="theme-menu absolute right-0 mt-2 w-40 flex-col rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+                            <button data-theme="system" class="theme-option flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <i class="fa-solid fa-desktop w-4 text-center"></i> 跟隨系統
+                            </button>
+                            <button data-theme="light" class="theme-option flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <i class="fa-solid fa-sun w-4 text-center"></i> 淺色模式
+                            </button>
+                            <button data-theme="dark" class="theme-option flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <i class="fa-solid fa-moon w-4 text-center"></i> 深色模式
+                            </button>
+                        </div>
+                    </div>
+
                     <a href="https://github.com/hktkk" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-medium transition-colors">
+                       class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm font-medium transition-colors">
                         <i class="fa-brands fa-github"></i> GitHub
                     </a>
                 </div>
@@ -120,7 +156,7 @@
                     嗨，我是 <span class="gradient-text">hktkk</span>
                 </h1>
 
-                <p class="text-lg sm:text-xl text-gray-400 leading-relaxed mb-8 max-w-2xl animate-fade-in-up opacity-0 delay-200">
+                <p class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 leading-relaxed mb-8 max-w-2xl animate-fade-in-up opacity-0 delay-200">
                     一位熱衷於打造實用 Web 工具的開發者。專注於地圖應用、數據追蹤與日常效率工具，用程式碼解決生活中的真實問題。
                 </p>
 
@@ -130,7 +166,7 @@
                         <i class="fa-solid fa-rocket"></i> 瀏覽作品
                     </a>
                     <a href="https://github.com/hktkk" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium transition-colors border border-gray-700">
+                       class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors border border-gray-300 dark:border-gray-700">
                         <i class="fa-brands fa-github"></i> 查看 GitHub
                     </a>
                 </div>
@@ -143,110 +179,110 @@
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-4">精選<span class="gradient-text">作品</span></h2>
-                <p class="text-gray-400 max-w-xl mx-auto">以下是我開發的實用工具與專案，涵蓋地圖定位、交通追蹤、QR Code 生成等領域。</p>
+                <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">以下是我開發的實用工具與專案，涵蓋地圖定位、交通追蹤、QR Code 生成等領域。</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                 <!-- Card 1: KMB Tracker -->
-                <div class="card-glow group rounded-2xl bg-gray-900/60 border border-gray-800/60 p-6 flex flex-col">
+                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
                     <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-4">
                         <i class="fa-solid fa-bus text-red-400 text-xl"></i>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-400 transition-colors">九巴月票回本追蹤器</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">九巴月票回本追蹤器</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
                         追蹤九巴月票使用情況，計算每日搭乘費用與回本進度。支援 PWA 安裝，可加到手機主畫面使用。
                     </p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Tailwind CSS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">PWA</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">LocalStorage</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">PWA</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">LocalStorage</span>
                     </div>
                     <a href="https://hktkk.github.io/app/kmb.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-50 font-medium transition-colors">
+                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
                     </a>
                 </div>
 
                 <!-- Card 2: GPS Plus Code -->
-                <div class="card-glow group rounded-2xl bg-gray-900/60 border border-gray-800/60 p-6 flex flex-col">
+                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
                     <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4">
                         <i class="fa-solid fa-location-dot text-blue-400 text-xl"></i>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-400 transition-colors">Google Maps Plus Code 轉換器</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">Google Maps Plus Code 轉換器</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
                         香港專用的 Plus Code 與座標轉換工具，支援地圖視覺化顯示與即時定位功能。
                     </p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Leaflet.js</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Geolocation API</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Leaflet.js</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Geolocation API</span>
                     </div>
                     <a href="https://hktkk.github.io/app/gps.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-50 font-medium transition-colors">
+                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
                     </a>
                 </div>
 
                 <!-- Card 3: GPX Processor -->
-                <div class="card-glow group rounded-2xl bg-gray-900/60 border border-gray-800/60 p-6 flex flex-col">
+                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
                     <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-4">
                         <i class="fa-solid fa-route text-green-400 text-xl"></i>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-400 transition-colors">GPX Plus Code 專業加工器</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">GPX Plus Code 專業加工器</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
                         GPX 檔案處理工具，可批量轉換路徑點為 Plus Code，支援拖曳排序與地圖預覽。香港優先版本。
                     </p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Leaflet.js</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">SortableJS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Open Location Code</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Leaflet.js</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">SortableJS</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Open Location Code</span>
                     </div>
                     <a href="https://hktkk.github.io/app/gpx.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-50 font-medium transition-colors">
+                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
                     </a>
                 </div>
 
                 <!-- Card 4: QR Code Generator -->
-                <div class="card-glow group rounded-2xl bg-gray-900/60 border border-gray-800/60 p-6 flex flex-col">
+                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
                     <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4">
                         <i class="fa-solid fa-qrcode text-purple-400 text-xl"></i>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-400 transition-colors">即時 QR Code 生成器</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">即時 QR Code 生成器</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
                         專業版 QR Code 生成工具，支援即時預覽、自訂樣式與一鍵下載功能。簡潔直覺的操作介面。
                     </p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Tailwind CSS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">JavaScript</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">JavaScript</span>
                     </div>
                     <a href="https://hktkk.github.io/app/qrcode.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-50 font-medium transition-colors">
+                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
                     </a>
                 </div>
 
                 <!-- Card 5: Open Day Portfolio -->
-                <div class="card-glow group rounded-2xl bg-gray-900/60 border border-gray-800/60 p-6 flex flex-col">
+                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
                     <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
                         <i class="fa-solid fa-school text-amber-400 text-xl"></i>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-400 transition-colors">開放日專案作品集</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">開放日專案作品集</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
                         學校開放日互動展示系統，包含多樓層導覽頁面與即時串流功能，為訪客提供沉浸式體驗。
                     </p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Tailwind CSS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Streaming</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 text-xs font-medium">Multi-page</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Streaming</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Multi-page</span>
                     </div>
                     <a href="https://hktkk.github.io/openday/" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-400 hover:text-brand-50 font-medium transition-colors">
+                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
                     </a>
                 </div>
@@ -256,36 +292,36 @@
     </section>
 
     <!-- About Section -->
-    <section id="about" class="py-24 border-t border-gray-800/50">
+    <section id="about" class="py-24 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="max-w-3xl mx-auto text-center">
                 <h2 class="text-3xl sm:text-4xl font-bold mb-6">關於<span class="gradient-text">我</span></h2>
-                <p class="text-gray-400 leading-relaxed mb-8">
+                <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-8">
                     我是一位專注於前端開發的創作者，喜歡利用 HTML5、Tailwind CSS 和 JavaScript 等技術，
                     打造解決日常問題的實用工具。從交通追蹤到地圖應用，每個專案都源自真實的使用需求。
                     目前持續探索更多有趣的 Web 技術與應用場景。
                 </p>
 
                 <div class="flex flex-wrap justify-center gap-4 mb-12">
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 border border-gray-800">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                         <i class="fa-brands fa-html5 text-orange-400"></i>
-                        <span class="text-sm text-gray-300">HTML5</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">HTML5</span>
                     </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 border border-gray-800">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                         <i class="fa-brands fa-css3-alt text-blue-400"></i>
-                        <span class="text-sm text-gray-300">Tailwind CSS</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Tailwind CSS</span>
                     </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 border border-gray-800">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                         <i class="fa-brands fa-js text-yellow-400"></i>
-                        <span class="text-sm text-gray-300">JavaScript</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">JavaScript</span>
                     </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 border border-gray-800">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                         <i class="fa-solid fa-map text-green-400"></i>
-                        <span class="text-sm text-gray-300">Leaflet.js</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Leaflet.js</span>
                     </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 border border-gray-800">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
                         <i class="fa-solid fa-mobile-screen text-purple-400"></i>
-                        <span class="text-sm text-gray-300">PWA</span>
+                        <span class="text-sm text-gray-600 dark:text-gray-300">PWA</span>
                     </div>
                 </div>
 
@@ -298,15 +334,110 @@
     </section>
 
     <!-- Footer -->
-    <footer class="py-8 border-t border-gray-800/50">
+    <footer class="py-8 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-gray-500 text-sm">
+            <p class="text-gray-400 dark:text-gray-500 text-sm">
                 &copy; 2026 hktkk. Built with
                 <i class="fa-solid fa-heart text-red-400 mx-1"></i>
                 using HTML5 &amp; Tailwind CSS.
             </p>
         </div>
     </footer>
+
+    <!-- Theme Switcher Script -->
+    <script>
+        (function() {
+            const btn = document.getElementById('themeToggleBtn');
+            const menu = document.getElementById('themeMenu');
+            const icon = document.getElementById('themeIcon');
+            const options = document.querySelectorAll('.theme-option');
+            const html = document.documentElement;
+
+            function getStoredTheme() {
+                return localStorage.getItem('theme') || 'system';
+            }
+
+            function applyTheme(mode) {
+                if (mode === 'dark') {
+                    html.classList.add('dark');
+                } else if (mode === 'light') {
+                    html.classList.remove('dark');
+                } else {
+                    // system
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        html.classList.add('dark');
+                    } else {
+                        html.classList.remove('dark');
+                    }
+                }
+            }
+
+            function updateIcon(mode) {
+                icon.className = '';
+                if (mode === 'dark') {
+                    icon.className = 'fa-solid fa-moon';
+                } else if (mode === 'light') {
+                    icon.className = 'fa-solid fa-sun';
+                } else {
+                    icon.className = 'fa-solid fa-desktop';
+                }
+            }
+
+            function highlightActive(mode) {
+                options.forEach(function(opt) {
+                    const isActive = opt.getAttribute('data-theme') === mode;
+                    opt.classList.toggle('text-brand-500', isActive);
+                    opt.classList.toggle('font-semibold', isActive);
+                });
+            }
+
+            function setTheme(mode) {
+                if (mode === 'system') {
+                    localStorage.removeItem('theme');
+                } else {
+                    localStorage.setItem('theme', mode);
+                }
+                applyTheme(mode);
+                updateIcon(mode);
+                highlightActive(mode);
+            }
+
+            // Toggle menu
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.toggle('active');
+            });
+
+            // Close menu on outside click
+            document.addEventListener('click', function() {
+                menu.classList.remove('active');
+            });
+            menu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Option click
+            options.forEach(function(opt) {
+                opt.addEventListener('click', function() {
+                    setTheme(this.getAttribute('data-theme'));
+                    menu.classList.remove('active');
+                });
+            });
+
+            // Listen for system theme change
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+                if (getStoredTheme() === 'system') {
+                    applyTheme('system');
+                }
+            });
+
+            // Init
+            var current = getStoredTheme();
+            applyTheme(current);
+            updateIcon(current);
+            highlightActive(current);
+        })();
+    </script>
 
 </body>
 </html>
