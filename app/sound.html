@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小嘴巴，要安靜 🤫</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+
+        :root {
+            --pink:    #FF8FAB;
+            --purple:  #C084FC;
+            --blue:    #60C8F5;
+            --yellow:  #FFD166;
+            --green:   #6EE7B7;
+            --red:     #FF6B6B;
+            --bg:      #FFF5FB;
+            --card:    #FFFFFF;
+            --shadow:  rgba(200, 150, 200, 0.18);
+            --text:    #4A3F5C;
+            --muted:   #9B8BAD;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Nunito', 'Arial', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ===== 彩色圓形裝飾背景 ===== */
+        .deco {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(60px);
+            opacity: 0.35;
+        }
+        .deco-1 { width: 320px; height: 320px; background: #FFB3C6; top: -80px; left: -80px; }
+        .deco-2 { width: 260px; height: 260px; background: #BDE0FE; bottom: -60px; right: -60px; }
+        .deco-3 { width: 200px; height: 200px; background: #CAFFBF; top: 40%; left: -60px; }
+        .deco-4 { width: 180px; height: 180px; background: #FFD6A5; bottom: 20%; right: -40px; }
+
+        /* ===== 浮動小圖案 ===== */
+        .floaties {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .floaty {
+            position: absolute;
+            font-size: var(--fs, 24px);
+            opacity: 0.18;
+            animation: floatUp var(--d, 10s) ease-in-out infinite;
+            animation-delay: var(--delay, 0s);
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(0px) rotate(0deg); opacity: 0.18; }
+            50%  { transform: translateY(-20px) rotate(8deg); opacity: 0.28; }
+            100% { transform: translateY(0px) rotate(0deg); opacity: 0.18; }
+        }
+
+        /* ===== 主容器 ===== */
+        .container {
+            position: relative;
+            z-index: 10;
+            background: var(--card);
+            border-radius: 36px;
+            padding: 36px 44px 44px;
+            max-width: 860px;
+            width: 100%;
+            box-shadow: 0 8px 40px var(--shadow), 0 2px 8px rgba(0,0,0,0.06);
+            border: 2px solid rgba(255,255,255,0.9);
+        }
+
+        /* ===== 標題 ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 34px;
+        }
+        .header h1 {
+            font-size: 44px;
+            font-weight: 900;
+            color: var(--text);
+            letter-spacing: 2px;
+            line-height: 1.2;
+        }
+        .header h1 .title-emoji {
+            display: inline-block;
+            animation: shush 2.5s ease-in-out infinite;
+        }
+        @keyframes shush {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            20%       { transform: scale(1.15) rotate(-8deg); }
+            40%       { transform: scale(1.1) rotate(5deg); }
+            60%       { transform: scale(1); }
+        }
+
+        /* ===== 能量條區域 ===== */
+        .energy-section {
+            margin-bottom: 24px;
+        }
+        .energy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .energy-label {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .energy-number {
+            font-size: 30px;
+            font-weight: 900;
+            color: var(--text);
+            min-width: 56px;
+            text-align: right;
+            transition: color 0.3s;
+        }
+
+        /* 外框 */
+        .energy-bar-outer {
+            width: 100%;
+            height: 52px;
+            background: #F3EEF8;
+            border-radius: 26px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 3px 8px rgba(150,120,180,0.12);
+            border: 2px solid #EDE5F5;
+        }
+
+        /* 填充條 */
+        .energy-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 26px;
+            transition: width 0.15s ease-out;
+            position: relative;
+            background: linear-gradient(90deg, #6EE7B7 0%, #FFD166 40%, #FF9F43 70%, #FF6B6B 100%);
+            background-size: 400% 100%;
+        }
+        /* 光澤 */
+        .energy-bar-fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 55%);
+            border-radius: 26px;
+        }
+        /* 掃光 */
+        .energy-bar-fill::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 50px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+            animation: shimmer 2.2s linear infinite;
+            border-radius: 26px;
+        }
+        @keyframes shimmer {
+            0%   { left: -50px; }
+            100% { left: 110%; }
+        }
+
+        /* 門檻線 */
+        .threshold-line {
+            position: absolute;
+            top: 4px; bottom: 4px;
+            width: 3px;
+            background: rgba(100, 60, 140, 0.4);
+            border-radius: 2px;
+            z-index: 5;
+            transition: left 0.2s;
+        }
+        .threshold-line::after {
+            content: '🤫';
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+        }
+
+        /* ===== 緩衝倒數整合在主能量條 ===== */
+        /* 紅色覆蓋層：直接疊在能量條內部 */
+        .buffer-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg,
+                rgba(255,150,50,0.35) 0%,
+                rgba(255,80,80,0.55) 100%);
+            border-radius: 26px;
+            z-index: 4;
+            transition: width 0.1s linear;
+            pointer-events: none;
+        }
+        /* 倒數文字橫布於能量條中央 */
+        .buffer-countdown-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 1px 6px rgba(200,80,0,0.6);
+            z-index: 6;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            letter-spacing: 1px;
+        }
+        .buffer-countdown-text.visible { opacity: 1; }
+        /* 能量條外框警告樣式 */
+        .energy-bar-outer.warning {
+            border-color: #FFAA55;
+            box-shadow: 0 0 0 3px rgba(255,150,50,0.25), inset 0 3px 8px rgba(150,120,180,0.12);
+        }
+        /* 倒數文字在能量條下方 */
+        .buffer-label {
+            font-size: 14px;
+            color: #E05A00;
+            font-weight: 900;
+            min-height: 22px;
+            text-align: center;
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+            transition: opacity 0.2s;
+        }
+        /* 緩衝包裝層（保留但簡化） */
+        .buffer-wrap {
+            min-height: 22px;
+            margin-top: 4px;
+        }
+        @keyframes barShake {
+            0%, 100% { transform: translateX(0); }
+            25%       { transform: translateX(-5px); }
+            75%       { transform: translateX(5px); }
+        }
+        @keyframes warningPulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(255,150,50,0.25), inset 0 3px 8px rgba(150,120,180,0.12); }
+            50%       { box-shadow: 0 0 0 6px rgba(255,100,30,0.35), inset 0 3px 8px rgba(150,120,180,0.12); }
+        }
+        .energy-bar-outer.warning {
+            border-color: #FFAA55;
+            animation: warningPulse 0.6s ease-in-out infinite;
+        }
+
+        /* ===== 心心區 ===== */
+        .hearts-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .hearts-label {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--muted);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+        .hearts-display {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            min-height: 90px;
+            align-items: center;
+        }
+        .heart-item {
+            font-size: 72px;
+            line-height: 1;
+            display: inline-block;
+            filter: drop-shadow(0 4px 10px rgba(255,100,130,0.35));
+            animation: heartBeat 2s ease-in-out infinite;
+        }
+        .heart-item:nth-child(2) { animation-delay: 0.25s; }
+        .heart-item:nth-child(3) { animation-delay: 0.5s; }
+        .heart-item:nth-child(4) { animation-delay: 0.75s; }
+        .heart-item:nth-child(5) { animation-delay: 1s; }
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            15%       { transform: scale(1.12); }
+            30%       { transform: scale(1); }
+            45%       { transform: scale(1.06); }
+            60%       { transform: scale(1); }
+        }
+        .heart-item.lost {
+            filter: grayscale(1) opacity(0.2);
+            animation: none;
+        }
+        .heart-item.popping {
+            animation: heartPop 0.5s ease-out forwards;
+        }
+        @keyframes heartPop {
+            0%   { transform: scale(1); }
+            30%  { transform: scale(1.4) rotate(-12deg); }
+            60%  { transform: scale(0.5) rotate(12deg); }
+            100% { transform: scale(1); filter: grayscale(1) opacity(0.2); }
+        }
+
+        .game-over-text {
+            font-size: 40px;
+            font-weight: 900;
+            color: #FF6B6B;
+            display: none;
+            animation: gameOverPulse 1s ease-in-out infinite;
+        }
+        @keyframes gameOverPulse {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.06); }
+        }
+
+        /* ===== 控制按鈕 ===== */
+        .controls-section {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* 重置按鈕 */
+        .reset-button {
+            position: relative;
+            padding: 0 40px;
+            height: 68px;
+            background: linear-gradient(135deg, #FF8FAB 0%, #FF6B9D 100%);
+            border: none;
+            border-radius: 34px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(255,107,157,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+            transition: all 0.18s ease;
+            letter-spacing: 2px;
+            overflow: hidden;
+        }
+        .reset-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%);
+            border-radius: 34px;
+        }
+        .reset-button:hover {
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 10px 28px rgba(255,107,157,0.5);
+        }
+        .reset-button:active {
+            transform: scale(0.96);
+            box-shadow: 0 3px 10px rgba(255,107,157,0.3);
+        }
+        .reset-button .btn-emoji {
+            margin-right: 6px;
+            display: inline-block;
+            animation: spin 4s linear infinite;
+        }
+        @keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 麥克風按鈕 */
+        .mic-button {
+            position: relative;
+            padding: 0 32px;
+            height: 68px;
+            background: linear-gradient(135deg, #60C8F5 0%, #38B2E8 100%);
+            border: none;
+            border-radius: 34px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(56,178,232,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+            transition: all 0.18s ease;
+            letter-spacing: 1px;
+            overflow: hidden;
+        }
+        .mic-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%);
+            border-radius: 34px;
+        }
+        .mic-button:hover {
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 10px 28px rgba(56,178,232,0.5);
+        }
+        .mic-button:active { transform: scale(0.96); }
+        .mic-button.active {
+            background: linear-gradient(135deg, #6EE7B7 0%, #34C99A 100%);
+            box-shadow: 0 6px 20px rgba(52,201,154,0.4);
+            animation: micPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes micPulse {
+            0%, 100% { box-shadow: 0 6px 20px rgba(52,201,154,0.4); }
+            50%       { box-shadow: 0 8px 30px rgba(52,201,154,0.7); }
+        }
+
+        /* ===== 狀態徽章 ===== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: #F3EEF8;
+            color: var(--muted);
+            border: 1.5px solid #EDE5F5;
+            transition: all 0.3s;
+            position: absolute;
+            top: 20px;
+            right: 24px;
+        }
+        .status-badge.recording {
+            background: #ECFDF5;
+            color: #059669;
+            border-color: #A7F3D0;
+        }
+        .status-badge.warning {
+            background: #FFFBEB;
+            color: #D97706;
+            border-color: #FDE68A;
+            animation: badgePulse 0.5s ease-in-out infinite;
+        }
+        .status-badge.invincible {
+            background: #F5F3FF;
+            color: #7C3AED;
+            border-color: #DDD6FE;
+        }
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.06); }
+        }
+
+        /* ===== 無敵時間邊框 ===== */
+        .invincible-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            border: 6px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .invincible-overlay.active {
+            animation: borderFlash 0.5s ease-in-out infinite;
+        }
+        @keyframes borderFlash {
+            0%, 100% { border-color: #C084FC; box-shadow: inset 0 0 30px rgba(192,132,252,0.1); }
+            50%       { border-color: #60C8F5; box-shadow: inset 0 0 30px rgba(96,200,245,0.1); }
+        }
+
+        /* ===== 受傷紅閃 ===== */
+        .damage-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 49;
+            background: rgba(255,107,107,0);
+        }
+        .damage-overlay.flash {
+            animation: redFlash 0.4s ease-out forwards;
+        }
+        @keyframes redFlash {
+            0%   { background: rgba(255,107,107,0.28); }
+            100% { background: rgba(255,107,107,0); }
+        }
+
+        /* ===== 粒子 ===== */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            border-radius: 50%;
+            animation: particleFly var(--dur, 0.8s) ease-out forwards;
+        }
+        @keyframes particleFly {
+            0%   { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx,0px), var(--ty,-80px)) scale(0); opacity: 0; }
+        }
+
+        /* ===== 設定浮動按鈕 ===== */
+        .settings-fab {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #C084FC, #A855F7);
+            border: none;
+            border-radius: 50%;
+            font-size: 26px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(168,85,247,0.35);
+            transition: all 0.3s ease;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .settings-fab:hover {
+            transform: scale(1.12) rotate(20deg);
+            box-shadow: 0 8px 24px rgba(168,85,247,0.5);
+        }
+        .settings-fab:active { transform: scale(0.95); }
+
+        /* ===== 設定面板 ===== */
+        .settings-panel {
+            position: fixed;
+            bottom: 100px;
+            right: 28px;
+            background: white;
+            border: 1.5px solid transparent;
+            border-radius: 24px;
+            padding: 0 24px;
+            z-index: 199;
+            width: 280px;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.35s, opacity 0.25s, border-color 0.35s;
+            box-shadow: none;
+            transform-origin: bottom right;
+        }
+        .settings-panel.open {
+            max-height: 520px;
+            padding: 24px;
+            opacity: 1;
+            pointer-events: auto;
+            border-color: #EDE5F5;
+            box-shadow: 0 12px 40px rgba(150,100,200,0.15);
+        }
+        .settings-panel h3 {
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #EDE5F5;
+            letter-spacing: 1px;
+        }
+        .setting-item { margin-bottom: 16px; }
+        .setting-item label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+        .setting-item label span.val {
+            color: #A855F7;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #EDE5F5;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #C084FC, #A855F7);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(168,85,247,0.4);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #C084FC, #A855F7);
+            cursor: pointer;
+            border: none;
+        }
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toggle-row span {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--muted);
+        }
+        .toggle {
+            position: relative;
+            width: 44px; height: 24px;
+        }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: #EDE5F5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            left: 3px; top: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .toggle input:checked + .toggle-slider {
+            background: linear-gradient(135deg, #C084FC, #A855F7);
+        }
+        .toggle input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        /* ===== 設定面板 select ===== */
+        #micSelect {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1.5px solid #EDE5F5;
+            background: #FAF5FF;
+            color: var(--text);
+            font-family: 'Nunito', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A855F7' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 32px;
+        }
+        #micSelect:focus {
+            border-color: #C084FC;
+            box-shadow: 0 0 0 3px rgba(192,132,252,0.15);
+        }
+
+        /* ===== 響應式 ===== */
+        @media (max-width: 640px) {
+            .container { padding: 24px 20px 28px; border-radius: 24px; }
+            .header h1 { font-size: 30px; }
+            .energy-bar-outer { height: 42px; }
+            .energy-number { font-size: 22px; }
+            .heart-item { font-size: 52px; }
+            .reset-button { font-size: 22px; height: 58px; padding: 0 26px; }
+            .mic-button { font-size: 17px; height: 58px; padding: 0 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 背景裝飾 -->
+<div class="deco deco-1"></div>
+<div class="deco deco-2"></div>
+<div class="deco deco-3"></div>
+<div class="deco deco-4"></div>
+
+<!-- 浮動小圖案 -->
+<div class="floaties" id="floaties"></div>
+
+<!-- 無敵邊框 -->
+<div class="invincible-overlay" id="invincibleOverlay"></div>
+<!-- 受傷紅閃 -->
+<div class="damage-overlay" id="damageOverlay"></div>
+
+<div class="container">
+    <!-- 狀態徽章 -->
+    <div class="status-badge" id="statusBadge">⚪ 就緒</div>
+
+    <!-- 標題 -->
+    <div class="header">
+        <h1><span class="title-emoji">🤫</span> 小嘴巴，要安靜</h1>
+    </div>
+
+    <!-- 聲浪能量條 -->
+    <div class="energy-section">
+        <div class="energy-header">
+            <div class="energy-label">🔊 聲浪能量</div>
+            <div class="energy-number" id="energyNumber">0</div>
+        </div>
+        <div class="energy-bar-outer" id="energyBarOuter">
+            <div class="energy-bar-fill" id="energyBarFill"></div>
+            <div class="buffer-overlay" id="bufferOverlay"></div>
+            <div class="buffer-countdown-text" id="bufferCountdownText"></div>
+            <div class="threshold-line" id="thresholdLine" style="left:50%"></div>
+        </div>
+        <div class="buffer-wrap">
+            <div class="buffer-label" id="bufferLabel"></div>
+        </div>
+    </div>
+
+    <!-- 心心生命值 -->
+    <div class="hearts-section">
+        <div class="hearts-label">❤️ 班級生命值</div>
+        <div class="hearts-display" id="heartsDisplay"></div>
+        <div class="game-over-text" id="gameOverText">💔 全部扣完啦！</div>
+    </div>
+
+    <!-- 控制按鈕 -->
+    <div class="controls-section">
+        <button class="mic-button" id="micButton">🎤 開始監測</button>
+        <button class="reset-button" id="resetButton">
+            <span class="btn-emoji">✨</span>重置
+        </button>
+    </div>
+</div>
+
+<!-- 設定浮動按鈕 -->
+<button class="settings-fab" id="settingsFab">⚙️</button>
+
+<!-- 設定面板 -->
+<div class="settings-panel" id="settingsPanel">
+    <h3>⚙️ 設定</h3>
+
+    <div class="setting-item">
+        <label>🔊 音量門檻 <span class="val" id="thresholdVal">50</span></label>
+        <input type="range" id="thresholdSlider" min="5" max="95" value="50">
+    </div>
+
+    <div class="setting-item">
+        <label>❤️ 初始心心數 <span class="val" id="heartsVal">3</span></label>
+        <input type="range" id="heartsSlider" min="1" max="5" value="3">
+    </div>
+
+    <div class="setting-item">
+        <label>⏱️ 緩衝時間 (秒) <span class="val" id="bufferVal">2</span></label>
+        <input type="range" id="bufferSlider" min="1" max="5" value="2">
+    </div>
+
+    <div class="setting-item">
+        <label>🎙️ 麥克風裝置 <span class="val" id="micVal">預設</span></label>
+        <select id="micSelect"></select>
+    </div>
+
+    <div class="setting-item">
+        <div class="toggle-row">
+            <span>🔔 音效</span>
+            <label class="toggle">
+                <input type="checkbox" id="soundToggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  狀態
+// ============================================================
+const state = {
+    energy: 0,
+    smoothedEnergy: 0,          // 平滑後的能量值
+    maxHearts: 3,
+    hearts: 3,
+    threshold: 50,
+    soundEnabled: true,
+    isInvincible: false,
+    invincibleTimer: null,
+    bufferTimer: null,
+    bufferStart: null,
+    bufferDuration: 2000,
+    invincibleDuration: 3000,
+    audioCtx: null,
+    analyser: null,
+    micStream: null,
+    rafId: null,
+    isMonitoring: false,
+    selectedDeviceId: null,     // 選定的麥克風裝置 ID
+    // RMS 校正參數
+    rmsFloor: 0,                // 環境底噪（自動校正）
+    rmsCalibrating: false,
+    rmsCalibSamples: [],
+    rmsCeiling: 80,             // 對應 100% 的 RMS 值（可動態調整）
+    smoothAlpha: 0.25           // 平滑係數（0=完全平滑, 1=即時）
+};
+
+// ============================================================
+//  DOM
+// ============================================================
+const el = {
+    energyBarFill:     document.getElementById('energyBarFill'),
+    energyNumber:      document.getElementById('energyNumber'),
+    heartsDisplay:     document.getElementById('heartsDisplay'),
+    gameOverText:      document.getElementById('gameOverText'),
+    resetButton:       document.getElementById('resetButton'),
+    micButton:         document.getElementById('micButton'),
+    settingsFab:       document.getElementById('settingsFab'),
+    settingsPanel:     document.getElementById('settingsPanel'),
+    thresholdSlider:   document.getElementById('thresholdSlider'),
+    thresholdVal:      document.getElementById('thresholdVal'),
+    thresholdLine:     document.getElementById('thresholdLine'),
+    heartsSlider:      document.getElementById('heartsSlider'),
+    heartsVal:         document.getElementById('heartsVal'),
+    bufferSlider:      document.getElementById('bufferSlider'),
+    bufferVal:         document.getElementById('bufferVal'),
+    soundToggle:       document.getElementById('soundToggle'),
+    statusBadge:       document.getElementById('statusBadge'),
+    bufferOverlay:     document.getElementById('bufferOverlay'),
+    bufferCountdownText: document.getElementById('bufferCountdownText'),
+    bufferLabel:       document.getElementById('bufferLabel'),
+    energyBarOuter:    document.getElementById('energyBarOuter'),
+    invincibleOverlay: document.getElementById('invincibleOverlay'),
+    damageOverlay:     document.getElementById('damageOverlay'),
+    micSelect:         document.getElementById('micSelect'),
+    micVal:            document.getElementById('micVal')
+};
+
+// ============================================================
+//  浮動小圖案
+// ============================================================
+function buildFloaties() {
+    const emojis = ['🤫','🌸','⭐','🌈','🎀','💫','🌟','🍭','🎈','🌺'];
+    const container = document.getElementById('floaties');
+    for (let i = 0; i < 14; i++) {
+        const d = document.createElement('div');
+        d.className = 'floaty';
+        d.textContent = emojis[i % emojis.length];
+        d.style.cssText = `
+            left:${Math.random()*95}%;
+            top:${Math.random()*90}%;
+            --fs:${Math.floor(Math.random()*18+16)}px;
+            --d:${(Math.random()*5+6).toFixed(1)}s;
+            --delay:${(Math.random()*6).toFixed(1)}s;
+        `;
+        container.appendChild(d);
+    }
+}
+
+// ============================================================
+//  心心渲染
+// ============================================================
+function renderHearts() {
+    el.heartsDisplay.innerHTML = '';
+    for (let i = 0; i < state.maxHearts; i++) {
+        const span = document.createElement('span');
+        span.className = 'heart-item' + (i >= state.hearts ? ' lost' : '');
+        span.textContent = '❤️';
+        span.id = `heart-${i}`;
+        el.heartsDisplay.appendChild(span);
+    }
+    el.gameOverText.style.display = state.hearts <= 0 ? 'block' : 'none';
+}
+
+// ============================================================
+//  能量條更新
+// ============================================================
+function updateEnergyBar(value) {
+    const pct = Math.min(100, Math.max(0, value));
+    el.energyBarFill.style.width = pct + '%';
+    el.energyNumber.textContent = Math.round(pct);
+
+    if (pct < 30)      el.energyNumber.style.color = '#059669';
+    else if (pct < 60) el.energyNumber.style.color = '#D97706';
+    else if (pct < 80) el.energyNumber.style.color = '#EA580C';
+    else               el.energyNumber.style.color = '#DC2626';
+}
+
+// ============================================================
+//  緩衝倒數（整合在能量條內）
+// ============================================================
+let bufferRafId = null;
+function startBufferBar() {
+    state.bufferStart = Date.now();
+    el.statusBadge.className = 'status-badge warning';
+    el.statusBadge.textContent = '⚠️ 警告';
+    // 能量條外框警告閃爍
+    el.energyBarOuter.classList.add('warning');
+    // 能量條震動
+    el.energyBarFill.style.animation = 'barShake 0.35s ease-in-out infinite';
+    // 顯示倒數文字
+    el.bufferCountdownText.classList.add('visible');
+
+    function tick() {
+        if (!state.bufferStart) return;
+        const elapsed = Date.now() - state.bufferStart;
+        const pct = Math.min(100, (elapsed / state.bufferDuration) * 100);
+
+        // 覆蓋層寬度跟隨倒數進度
+        el.bufferOverlay.style.width = pct + '%';
+
+        // 倒數文字（如果剩不到 1 秒顯示小數）
+        const remainingMs = state.bufferDuration - elapsed;
+        const remainingSec = Math.ceil(remainingMs / 1000);
+        if (remainingMs > 500) {
+            el.bufferCountdownText.textContent = `⚠️ ${remainingSec}秒後扣心`;
+        } else {
+            el.bufferCountdownText.textContent = '💥 扣心！';
+        }
+
+        // 下方提示文字
+        el.bufferLabel.textContent = `🔊 聲浪持續過高！請同學保持安靜🤫`;
+
+        if (pct < 100) bufferRafId = requestAnimationFrame(tick);
+    }
+    bufferRafId = requestAnimationFrame(tick);
+}
+
+function stopBufferBar() {
+    if (bufferRafId) { cancelAnimationFrame(bufferRafId); bufferRafId = null; }
+    state.bufferStart = null;
+    // 清除覆蓋層
+    el.bufferOverlay.style.width = '0%';
+    // 隱藏倒數文字
+    el.bufferCountdownText.classList.remove('visible');
+    el.bufferCountdownText.textContent = '';
+    // 清除警告樣式
+    el.energyBarOuter.classList.remove('warning');
+    el.bufferLabel.textContent = '';
+    el.energyBarFill.style.animation = '';
+    if (!state.isInvincible && state.isMonitoring) {
+        el.statusBadge.className = 'status-badge recording';
+        el.statusBadge.textContent = '🎤 監測中';
+    }
+}
+
+// ============================================================
+//  扣心
+// ============================================================
+function deductHeart() {
+    if (state.isInvincible || state.hearts <= 0) return;
+
+    state.hearts--;
+
+    // 心心爆炸動畫
+    const heartEl = document.getElementById(`heart-${state.hearts}`);
+    if (heartEl) {
+        heartEl.classList.add('popping');
+    }
+
+    // 全屏紅閃
+    el.damageOverlay.classList.remove('flash');
+    void el.damageOverlay.offsetWidth;
+    el.damageOverlay.classList.add('flash');
+
+    // 粒子爆炸
+    spawnParticles();
+
+    // 音效
+    if (state.soundEnabled) playAlarm();
+
+    if (state.hearts <= 0) {
+        // 游戲結束狀態
+        handleGameOver();
+    } else {
+        // 進入無敋時間
+        activateInvincible();
+    }
+
+    renderHearts();
+}
+
+// ============================================================
+//  無敋時間（含倒數顯示）
+// ============================================================
+let invincibleCountdownId = null;
+function activateInvincible() {
+    state.isInvincible = true;
+    el.invincibleOverlay.classList.add('active');
+
+    clearTimeout(state.invincibleTimer);
+    if (invincibleCountdownId) clearInterval(invincibleCountdownId);
+
+    // 倒數顯示
+    let remaining = Math.ceil(state.invincibleDuration / 1000);
+    el.statusBadge.className = 'status-badge invincible';
+    el.statusBadge.textContent = `⚡ 無敋 ${remaining}秒`;
+
+    invincibleCountdownId = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+            el.statusBadge.textContent = `⚡ 無敋 ${remaining}秒`;
+        } else {
+            clearInterval(invincibleCountdownId);
+        }
+    }, 1000);
+
+    state.invincibleTimer = setTimeout(() => {
+        state.isInvincible = false;
+        el.invincibleOverlay.classList.remove('active');
+        clearInterval(invincibleCountdownId);
+        if (state.isMonitoring) {
+            el.statusBadge.className = 'status-badge recording';
+            el.statusBadge.textContent = '🎤 監測中';
+        } else {
+            el.statusBadge.className = 'status-badge';
+            el.statusBadge.textContent = '⚪ 就緒';
+        }
+    }, state.invincibleDuration);
+}
+
+// ============================================================
+//  游戲結束
+// ============================================================
+function handleGameOver() {
+    // 先播放音效（停止監測前）
+    if (state.soundEnabled) playGameOverSound();
+
+    // 停止監測
+    stopMonitoring();
+
+    // 狀態顯示
+    el.statusBadge.className = 'status-badge';
+    el.statusBadge.style.background = '#FEE2E2';
+    el.statusBadge.style.color = '#DC2626';
+    el.statusBadge.style.borderColor = '#FECACA';
+    el.statusBadge.textContent = '💔 全部扣完';
+
+    // 大量粒子
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => spawnParticles(), i * 200);
+    }
+}
+
+// ============================================================
+//  粒子爆炸
+// ============================================================
+function spawnParticles() {
+    const colors = ['#FF8FAB','#FFD166','#C084FC','#60C8F5','#FF6B6B','#6EE7B7'];
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 10 + 6;
+        const angle = (Math.PI * 2 * i) / 18;
+        const dist = Math.random() * 120 + 60;
+        p.style.cssText = `
+            width:${size}px; height:${size}px;
+            left:${cx}px; top:${cy}px;
+            background:${colors[i % colors.length]};
+            --tx:${Math.cos(angle)*dist}px;
+            --ty:${Math.sin(angle)*dist}px;
+            --dur:${(Math.random()*0.4+0.6).toFixed(2)}s;
+        `;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1200);
+    }
+}
+
+// ============================================================
+//  音效工具
+// ============================================================
+function getAudioCtx() {
+    if (!state.audioCtx) {
+        state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return state.audioCtx;
+}
+
+// 扣心警示音：三声短鳴（如魈魔遊戲警示音）
+function playAlarm() {
+    try {
+        const ctx = getAudioCtx();
+        const t = ctx.currentTime;
+        // 三次下降音調：高 → 中 → 低
+        [
+            { freq: 880, start: 0,    dur: 0.12 },
+            { freq: 660, start: 0.16, dur: 0.12 },
+            { freq: 440, start: 0.32, dur: 0.20 }
+        ].forEach(({ freq, start, dur }) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, t + start);
+            gain.gain.setValueAtTime(0.18, t + start);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + start + dur);
+            osc.start(t + start);
+            osc.stop(t + start + dur + 0.01);
+        });
+    } catch(e) { console.warn('音效錯誤:', e); }
+}
+
+// 游戲結束音：下滑音階
+// 停止監測前先播放，不需要 audioCtx 已連接麥克風
+function playGameOverSound() {
+    try {
+        const ctx = getAudioCtx();
+        const t = ctx.currentTime;
+        [523, 415, 330, 262].forEach((freq, i) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t + i * 0.18);
+            gain.gain.setValueAtTime(0.2, t + i * 0.18);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.18 + 0.16);
+            osc.start(t + i * 0.18);
+            osc.stop(t + i * 0.18 + 0.18);
+        });
+    } catch(e) { console.warn('音效錯誤:', e); }
+}
+
+// 重置成功音：上升音階
+function playResetSound() {
+    try {
+        const ctx = getAudioCtx();
+        const t = ctx.currentTime;
+        [330, 415, 523, 659].forEach((freq, i) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t + i * 0.1);
+            gain.gain.setValueAtTime(0.15, t + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.12);
+            osc.start(t + i * 0.1);
+            osc.stop(t + i * 0.1 + 0.14);
+        });
+    } catch(e) { console.warn('音效錯誤:', e); }
+}
+
+// ============================================================
+//  重置
+// ============================================================
+function handleReset() {
+    // 停止所有計時器
+    clearTimeout(state.invincibleTimer);
+    clearTimeout(state.bufferTimer);
+    if (invincibleCountdownId) clearInterval(invincibleCountdownId);
+    state.bufferTimer = null;
+    state.isInvincible = false;
+    state.smoothedEnergy = 0;
+
+    // 恢復狀態
+    state.hearts = state.maxHearts;
+    state.energy = 0;
+
+    // 停止緩衝進度條和能量條震動
+    stopBufferBar();
+    el.energyBarFill.style.animation = '';
+    el.energyBarOuter.classList.remove('warning');
+    el.invincibleOverlay.classList.remove('active');
+
+    // 清除 game-over 樣式
+    el.statusBadge.removeAttribute('style');
+
+    // 更新畫面
+    renderHearts();
+    updateEnergyBar(0);
+
+    // 重置音效 + 粒子
+    if (state.soundEnabled) playResetSound();
+    spawnParticles();
+
+    if (state.isMonitoring) {
+        el.statusBadge.className = 'status-badge recording';
+        el.statusBadge.textContent = '🎤 監測中';
+    } else {
+        el.statusBadge.className = 'status-badge';
+        el.statusBadge.textContent = '⚪ 就緒';
+    }
+}
+
+// ============================================================
+//  麥克風
+// ============================================================
+async function toggleMic() {
+    if (state.isMonitoring) {
+        stopMonitoring();
+    } else {
+        await startMonitoring();
+    }
+}
+
+// ============================================================
+//  麥克風裝置列表枚舉
+// ============================================================
+async function enumerateMics() {
+    try {
+        // 需要先請求權限才能枚舉裝置名稱
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tempStream.getTracks().forEach(t => t.stop());
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const mics = devices.filter(d => d.kind === 'audioinput');
+
+        el.micSelect.innerHTML = '';
+        mics.forEach((mic, i) => {
+            const opt = document.createElement('option');
+            opt.value = mic.deviceId;
+            opt.textContent = mic.label || `麥克風 ${i + 1}`;
+            el.micSelect.appendChild(opt);
+        });
+
+        // 預設選第一個
+        if (mics.length > 0) {
+            state.selectedDeviceId = mics[0].deviceId;
+        }
+    } catch(e) {
+        const opt = document.createElement('option');
+        opt.textContent = '預設麥克風';
+        el.micSelect.appendChild(opt);
+    }
+}
+
+async function startMonitoring() {
+    try {
+        // 根據選定裝置建立香訊流
+        const constraints = {
+            audio: {
+                deviceId: state.selectedDeviceId ? { exact: state.selectedDeviceId } : undefined,
+                echoCancellation: false,   // 關閉回音消除，保留原始音量
+                noiseSuppression: false,   // 關閉降噪，避免影響測量準確度
+                autoGainControl: false     // 關閉自動增益，避免影響測量準確度
+            },
+            video: false
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        state.micStream = stream;
+
+        if (!state.audioCtx) {
+            state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } else if (state.audioCtx.state === 'suspended') {
+            await state.audioCtx.resume();
+        }
+
+        const src = state.audioCtx.createMediaStreamSource(stream);
+        state.analyser = state.audioCtx.createAnalyser();
+        state.analyser.fftSize = 2048;         // 更高精度
+        state.analyser.smoothingTimeConstant = 0; // 我們自己做平滑
+        src.connect(state.analyser);
+
+        // 開始自動校正底噪（2 秒內取樣）
+        startCalibration();
+
+        state.isMonitoring = true;
+        el.micButton.textContent = '⏹ 停止監測';
+        el.micButton.classList.add('active');
+        el.statusBadge.className = 'status-badge recording';
+        el.statusBadge.textContent = '🎤 校正中…';
+
+        // 枚舉裝置（可能需要權限後才能取得名稱）
+        enumerateMics();
+
+        monitorLoop();
+    } catch(e) {
+        alert('無法存取麥克風，請確認瀏覽器權限。\n' + e.message);
+    }
+}
+
+function stopMonitoring() {
+    state.isMonitoring = false;
+    if (state.rafId) { cancelAnimationFrame(state.rafId); state.rafId = null; }
+    if (state.micStream) {
+        state.micStream.getTracks().forEach(t => t.stop());
+        state.micStream = null;
+    }
+    // 保留 audioCtx 以便播放音效
+    if (state.analyser) { state.analyser.disconnect(); state.analyser = null; }
+    clearTimeout(state.bufferTimer);
+    state.bufferTimer = null;
+    state.smoothedEnergy = 0;
+    stopBufferBar();
+    el.energyBarFill.style.animation = '';
+    el.micButton.textContent = '🎤 開始監測';
+    el.micButton.classList.remove('active');
+    el.statusBadge.className = 'status-badge';
+    el.statusBadge.textContent = '⚪ 就緒';
+    updateEnergyBar(0);
+}
+
+// ============================================================
+//  底噪自動校正（2 秒取樣）
+// ============================================================
+function startCalibration() {
+    state.rmsCalibrating = true;
+    state.rmsCalibSamples = [];
+    setTimeout(() => {
+        if (state.rmsCalibSamples.length > 0) {
+            // 取 90百分位數作為底噪基準
+            const sorted = [...state.rmsCalibSamples].sort((a, b) => a - b);
+            const p90 = sorted[Math.floor(sorted.length * 0.9)];
+            state.rmsFloor = p90 * 1.1; // 多加 10% 容错
+            console.log(`✅ 底噪校正完成： floor=${state.rmsFloor.toFixed(2)}`);
+        }
+        state.rmsCalibrating = false;
+        if (state.isMonitoring) {
+            el.statusBadge.className = 'status-badge recording';
+            el.statusBadge.textContent = '🎤 監測中';
+        }
+    }, 2000);
+}
+
+// ============================================================
+//  精確 RMS 映射：原始音訊 → 0-100
+// ============================================================
+function computeEnergy(data) {
+    // 步驟一：計算時域 RMS
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
+    const rms = Math.sqrt(sum / data.length);
+
+    // 步驟二：校正期取樣
+    if (state.rmsCalibrating) {
+        state.rmsCalibSamples.push(rms);
+    }
+
+    // 步驟三：扣除底噪，將剩餘線性映射至 0-100
+    const adjusted = Math.max(0, rms - state.rmsFloor);
+    const range = Math.max(1, state.rmsCeiling - state.rmsFloor);
+    const linear = (adjusted / range) * 100;
+
+    // 步驟四：加入加權曲線（低音更靈敏）—— sqrt 曲線
+    const curved = Math.sqrt(Math.min(linear / 100, 1)) * 100;
+
+    // 步驟五：指數移動平滑（EMA）
+    state.smoothedEnergy = state.smoothAlpha * curved +
+                           (1 - state.smoothAlpha) * state.smoothedEnergy;
+
+    // 動態調整上限：如果原始值持續超過天花板，適度提高 ceiling
+    if (rms > state.rmsCeiling * 1.2) {
+        state.rmsCeiling = rms * 1.1;
+    }
+
+    return Math.min(100, state.smoothedEnergy);
+}
+
+function monitorLoop() {
+    const data = new Uint8Array(state.analyser.frequencyBinCount);
+
+    function tick() {
+        if (!state.isMonitoring) return;
+        state.analyser.getByteFrequencyData(data);
+
+        const energy = computeEnergy(data);
+        state.energy = energy;
+        updateEnergyBar(energy);
+
+        if (energy > state.threshold && !state.isInvincible) {
+            if (!state.bufferTimer) {
+                startBufferBar();
+                state.bufferTimer = setTimeout(() => {
+                    deductHeart();
+                    state.bufferTimer = null;
+                    stopBufferBar();
+                }, state.bufferDuration);
+            }
+        } else {
+            if (state.bufferTimer && energy <= state.threshold) {
+                clearTimeout(state.bufferTimer);
+                state.bufferTimer = null;
+                stopBufferBar();
+            }
+        }
+
+        state.rafId = requestAnimationFrame(tick);
+    }
+
+    tick();
+}
+
+// ============================================================
+//  設定面板事件
+// ============================================================
+el.settingsFab.addEventListener('click', () => el.settingsPanel.classList.toggle('open'));
+
+el.thresholdSlider.addEventListener('input', e => {
+    state.threshold = parseInt(e.target.value);
+    el.thresholdVal.textContent = state.threshold;
+    el.thresholdLine.style.left = state.threshold + '%';
+});
+
+el.heartsSlider.addEventListener('input', e => {
+    state.maxHearts = parseInt(e.target.value);
+    state.hearts = state.maxHearts;
+    el.heartsVal.textContent = state.maxHearts;
+    renderHearts();
+});
+
+el.bufferSlider.addEventListener('input', e => {
+    state.bufferDuration = parseInt(e.target.value) * 1000;
+    el.bufferVal.textContent = e.target.value;
+});
+
+el.soundToggle.addEventListener('change', e => {
+    state.soundEnabled = e.target.checked;
+});
+
+el.micSelect.addEventListener('change', e => {
+    state.selectedDeviceId = e.target.value;
+    const label = e.target.options[e.target.selectedIndex]?.text || '預設';
+    el.micVal.textContent = label.length > 8 ? label.slice(0, 8) + '…' : label;
+    // 如果監測中，重新啟動以切換裝置
+    if (state.isMonitoring) {
+        stopMonitoring();
+        setTimeout(() => startMonitoring(), 300);
+    }
+});
+
+el.resetButton.addEventListener('click', handleReset);
+el.micButton.addEventListener('click', toggleMic);
+
+// ============================================================
+//  初始化
+// ============================================================
+buildFloaties();
+renderHearts();
+updateEnergyBar(0);
+el.thresholdLine.style.left = state.threshold + '%';
+
+// 預先填入預設選項，待權限後再更新
+const defaultOpt = document.createElement('option');
+defaultOpt.textContent = '點擊「開始監測」後可選擇';
+defaultOpt.disabled = true;
+defaultOpt.selected = true;
+el.micSelect.appendChild(defaultOpt);
+
+window.addEventListener('beforeunload', () => {
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+    if (state.audioCtx) state.audioCtx.close();
+    if (state.micStream) state.micStream.getTracks().forEach(t => t.stop());
+});
+</script>
+</body>
+</html>
