@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-HK" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL 縮短工具 | hktkk</title>
+    <meta name="description" content="快速將長網址縮短，支援 TinyURL、is.gd、v.gd 等多個免費縮短服務，並提供 QR Code 即時預覽。">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', '"Inter"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50:  '#eef2ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Prevent FOUC -->
+    <script>
+        (function() {
+            const stored = localStorage.getItem('theme');
+            if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card-glow { transition: all 0.3s ease; }
+        .dark .card-glow:hover { box-shadow: 0 0 30px rgba(99, 102, 241, 0.15); }
+        .card-glow:hover { box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12); }
+
+        .dark .bg-grid {
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeInUp 0.4s ease-out forwards; }
+
+        .theme-menu { display: none; }
+        .theme-menu.active { display: flex; }
+
+        /* Result row hover */
+        .result-row { transition: background 0.2s; }
+        .result-row:hover { background: rgba(99,102,241,0.05); }
+
+        /* Spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
+
+        /* Copy feedback */
+        .copy-btn.copied { color: #22c55e; }
+
+        /* Input focus ring */
+        .url-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,0.25); }
+
+        /* Service badge */
+        .service-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 9999px;
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 font-sans antialiased transition-colors duration-300 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="https://hktkk.github.io" class="text-xl font-bold gradient-text">hktkk</a>
+                <div class="flex items-center gap-4">
+                    <a href="https://hktkk.github.io#projects" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                        <i class="fa-solid fa-arrow-left mr-1"></i>返回作品集
+                    </a>
+                    <!-- Theme Switcher -->
+                    <div class="relative">
+                        <button id="themeToggleBtn" aria-label="切換主題"
+                            class="w-9 h-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors">
+                            <i id="themeIcon" class="fa-solid fa-circle-half-stroke"></i>
+                        </button>
+                        <div id="themeMenu" class="theme-menu absolute right-0 mt-2 w-40 flex-col rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-xl overflow-hidden">
+                            <button data-theme="system" class="theme-option flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <i class="fa-solid fa-desktop w-4 text-center"></i> 跟隨系統
+                            </button>
+                            <button data-theme="light" class="theme-option flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <i class="fa-solid fa-sun w-4 text-center"></i> 淺色模式
+                            </button>
+                            <button data-theme="dark" class="theme-option flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <i class="fa-solid fa-moon w-4 text-center"></i> 深色模式
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero / Input Section -->
+    <main class="pt-24 pb-16 bg-grid min-h-screen">
+        <!-- Gradient orbs -->
+        <div class="fixed top-20 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="fixed bottom-20 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+            <!-- Title -->
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-500/10 mb-4">
+                    <i class="fa-solid fa-link text-indigo-400 text-2xl"></i>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-bold mb-3">URL <span class="gradient-text">縮短工具</span></h1>
+                <p class="text-gray-500 dark:text-gray-400 text-sm sm:text-base max-w-lg mx-auto">
+                    一鍵將長網址縮短，同時取得多個服務的短連結與 QR Code，方便分享。
+                </p>
+            </div>
+
+            <!-- Input Card -->
+            <div class="card-glow rounded-2xl bg-white dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800/60 p-6 sm:p-8 mb-6 transition-colors duration-300">
+                <label for="urlInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fa-solid fa-globe mr-1.5 text-indigo-400"></i>輸入長網址
+                </label>
+                <div class="flex gap-3 flex-col sm:flex-row">
+                    <input
+                        id="urlInput"
+                        type="url"
+                        placeholder="https://example.com/very/long/url/that/needs/shortening"
+                        class="url-input flex-1 px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm transition-colors duration-200"
+                    >
+                    <button
+                        id="shortenBtn"
+                        onclick="shortenAll()"
+                        class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium text-sm transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <i class="fa-solid fa-scissors"></i>
+                        <span id="btnText">立即縮短</span>
+                    </button>
+                </div>
+                <p id="errorMsg" class="mt-2 text-xs text-red-500 hidden">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>請輸入有效的網址（需包含 https:// 或 http://）
+                </p>
+
+                <!-- Service selector -->
+                <div class="mt-4">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">選擇縮短服務：</p>
+                    <div class="flex flex-wrap gap-2" id="serviceSelector">
+                        <label class="service-toggle cursor-pointer">
+                            <input type="checkbox" value="tinyurl" checked class="hidden">
+                            <span class="service-badge bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-700 cursor-pointer select-none">
+                                <i class="fa-solid fa-check-circle text-xs"></i> TinyURL
+                            </span>
+                        </label>
+                        <label class="service-toggle cursor-pointer">
+                            <input type="checkbox" value="isgd" checked class="hidden">
+                            <span class="service-badge bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-300 border border-green-200 dark:border-green-700 cursor-pointer select-none">
+                                <i class="fa-solid fa-check-circle text-xs"></i> is.gd
+                            </span>
+                        </label>
+                        <label class="service-toggle cursor-pointer">
+                            <input type="checkbox" value="vgd" checked class="hidden">
+                            <span class="service-badge bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 border border-purple-200 dark:border-purple-700 cursor-pointer select-none">
+                                <i class="fa-solid fa-check-circle text-xs"></i> v.gd
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Card (hidden by default) -->
+            <div id="resultsCard" class="hidden card-glow rounded-2xl bg-white dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800/60 p-6 sm:p-8 mb-6 transition-colors duration-300 animate-fade-in">
+                <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle text-green-400"></i> 縮短結果
+                </h2>
+                <div id="resultsList" class="divide-y divide-gray-100 dark:divide-gray-800"></div>
+            </div>
+
+            <!-- QR Code Card (hidden by default) -->
+            <div id="qrCard" class="hidden card-glow rounded-2xl bg-white dark:bg-gray-900/70 border border-gray-200 dark:border-gray-800/60 p-6 sm:p-8 mb-6 transition-colors duration-300 animate-fade-in">
+                <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-qrcode text-indigo-400"></i> QR Code 預覽
+                    <span class="text-xs text-gray-400 font-normal ml-1">（點擊結果列的 QR 圖示切換）</span>
+                </h2>
+                <div class="flex flex-col sm:flex-row items-center gap-6">
+                    <div id="qrContainer" class="w-48 h-48 flex items-center justify-center bg-white rounded-xl border border-gray-200 dark:border-gray-700 p-2 flex-shrink-0">
+                        <img id="qrImage" src="" alt="QR Code" class="w-full h-full object-contain rounded-lg">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">目前預覽的短網址：</p>
+                        <p id="qrUrlLabel" class="text-sm font-medium text-brand-500 break-all mb-4"></p>
+                        <a id="qrDownloadBtn" href="#" download="qrcode.png"
+                           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 dark:text-indigo-300 text-sm font-medium transition-colors">
+                            <i class="fa-solid fa-download"></i> 下載 QR Code
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info / Tips -->
+            <div class="rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 p-5 text-sm text-indigo-700 dark:text-indigo-300">
+                <p class="font-semibold mb-2"><i class="fa-solid fa-circle-info mr-1.5"></i>使用說明</p>
+                <ul class="space-y-1 text-xs leading-relaxed text-indigo-600 dark:text-indigo-400">
+                    <li><i class="fa-solid fa-check mr-1.5 text-indigo-400"></i>支援 TinyURL、is.gd、v.gd 三個免費縮短服務，無需註冊。</li>
+                    <li><i class="fa-solid fa-check mr-1.5 text-indigo-400"></i>點擊短網址右側的複製圖示，即可一鍵複製到剪貼簿。</li>
+                    <li><i class="fa-solid fa-check mr-1.5 text-indigo-400"></i>點擊 QR 圖示可即時預覽並下載對應的 QR Code。</li>
+                    <li><i class="fa-solid fa-check mr-1.5 text-indigo-400"></i>所有縮短操作均透過各服務的公開 API 完成，本工具不儲存任何資料。</li>
+                </ul>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 dark:border-gray-800/50 py-6 transition-colors duration-300">
+        <div class="max-w-5xl mx-auto px-4 text-center text-xs text-gray-400 dark:text-gray-500">
+            <a href="https://hktkk.github.io" class="hover:text-brand-500 transition-colors">hktkk.github.io</a>
+            <span class="mx-2">·</span>
+            URL 縮短工具
+        </div>
+    </footer>
+
+    <script>
+    // ── Theme switcher ──────────────────────────────────────────────
+    const themeBtn  = document.getElementById('themeToggleBtn');
+    const themeMenu = document.getElementById('themeMenu');
+
+    themeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        themeMenu.classList.toggle('active');
+    });
+    document.addEventListener('click', () => themeMenu.classList.remove('active'));
+
+    document.querySelectorAll('.theme-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const t = btn.dataset.theme;
+            localStorage.setItem('theme', t);
+            if (t === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else if (t === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+            themeMenu.classList.remove('active');
+        });
+    });
+
+    // ── Service toggle badges ────────────────────────────────────────
+    document.querySelectorAll('.service-toggle').forEach(label => {
+        const cb   = label.querySelector('input[type="checkbox"]');
+        const span = label.querySelector('span');
+        updateBadge(cb, span);
+        label.addEventListener('click', () => {
+            cb.checked = !cb.checked;
+            updateBadge(cb, span);
+        });
+    });
+
+    function updateBadge(cb, span) {
+        const icon = span.querySelector('i');
+        if (cb.checked) {
+            icon.className = 'fa-solid fa-check-circle text-xs';
+            span.style.opacity = '1';
+        } else {
+            icon.className = 'fa-regular fa-circle text-xs';
+            span.style.opacity = '0.45';
+        }
+    }
+
+    // ── URL validation ───────────────────────────────────────────────
+    function isValidUrl(str) {
+        try {
+            const u = new URL(str);
+            return u.protocol === 'http:' || u.protocol === 'https:';
+        } catch { return false; }
+    }
+
+    // ── Shorten via CORS-friendly APIs ───────────────────────────────
+    const SERVICES = {
+        tinyurl: {
+            name: 'TinyURL',
+            color: 'blue',
+            icon: 'fa-solid fa-link',
+            shorten: async (url) => {
+                const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
+                if (!r.ok) throw new Error('TinyURL failed');
+                return await r.text();
+            }
+        },
+        isgd: {
+            name: 'is.gd',
+            color: 'green',
+            icon: 'fa-solid fa-compress',
+            shorten: async (url) => {
+                const r = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(url)}`);
+                if (!r.ok) throw new Error('is.gd failed');
+                const t = await r.text();
+                if (t.startsWith('Error:')) throw new Error(t);
+                return t;
+            }
+        },
+        vgd: {
+            name: 'v.gd',
+            color: 'purple',
+            icon: 'fa-solid fa-bolt',
+            shorten: async (url) => {
+                const r = await fetch(`https://v.gd/create.php?format=simple&url=${encodeURIComponent(url)}`);
+                if (!r.ok) throw new Error('v.gd failed');
+                const t = await r.text();
+                if (t.startsWith('Error:')) throw new Error(t);
+                return t;
+            }
+        }
+    };
+
+    // ── QR Code (using goqr.me public API) ──────────────────────────
+    function getQrUrl(shortUrl, size = 200) {
+        return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(shortUrl)}`;
+    }
+
+    function showQr(shortUrl) {
+        const card  = document.getElementById('qrCard');
+        const img   = document.getElementById('qrImage');
+        const label = document.getElementById('qrUrlLabel');
+        const dlBtn = document.getElementById('qrDownloadBtn');
+
+        const qrSrc = getQrUrl(shortUrl, 300);
+        img.src = qrSrc;
+        label.textContent = shortUrl;
+        dlBtn.href = getQrUrl(shortUrl, 600);
+        dlBtn.download = 'qrcode.png';
+        card.classList.remove('hidden');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ── Build result row ─────────────────────────────────────────────
+    function buildRow(serviceKey, shortUrl, isError) {
+        const svc = SERVICES[serviceKey];
+        const colorMap = {
+            blue:   { bg: 'bg-blue-50 dark:bg-blue-900/20',   text: 'text-blue-600 dark:text-blue-300',   border: 'border-blue-100 dark:border-blue-800/40' },
+            green:  { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-300', border: 'border-green-100 dark:border-green-800/40' },
+            purple: { bg: 'bg-purple-50 dark:bg-purple-900/20',text: 'text-purple-600 dark:text-purple-300',border: 'border-purple-100 dark:border-purple-800/40' },
+        };
+        const c = colorMap[svc.color];
+
+        const row = document.createElement('div');
+        row.className = 'result-row flex items-center gap-3 py-3 px-2 rounded-lg';
+
+        if (isError) {
+            row.innerHTML = `
+                <span class="service-badge ${c.bg} ${c.text} border ${c.border} flex-shrink-0">
+                    <i class="${svc.icon} text-xs"></i> ${svc.name}
+                </span>
+                <span class="text-xs text-red-400 flex-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>縮短失敗，請稍後再試</span>
+            `;
+        } else {
+            row.innerHTML = `
+                <span class="service-badge ${c.bg} ${c.text} border ${c.border} flex-shrink-0">
+                    <i class="${svc.icon} text-xs"></i> ${svc.name}
+                </span>
+                <a href="${shortUrl}" target="_blank" rel="noopener noreferrer"
+                   class="flex-1 text-sm font-medium text-brand-500 hover:text-brand-600 truncate transition-colors">
+                    ${shortUrl}
+                </a>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="copyUrl('${shortUrl}', this)" title="複製"
+                        class="copy-btn w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                        <i class="fa-regular fa-copy text-sm"></i>
+                    </button>
+                    <button onclick="showQr('${shortUrl}')" title="顯示 QR Code"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-indigo-500 transition-colors">
+                        <i class="fa-solid fa-qrcode text-sm"></i>
+                    </button>
+                </div>
+            `;
+        }
+        return row;
+    }
+
+    // ── Copy to clipboard ────────────────────────────────────────────
+    async function copyUrl(url, btn) {
+        try {
+            await navigator.clipboard.writeText(url);
+            btn.classList.add('copied');
+            btn.innerHTML = '<i class="fa-solid fa-check text-sm"></i>';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = '<i class="fa-regular fa-copy text-sm"></i>';
+            }, 1800);
+        } catch {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+    }
+
+    // ── Main shorten function ────────────────────────────────────────
+    async function shortenAll() {
+        const input   = document.getElementById('urlInput');
+        const errMsg  = document.getElementById('errorMsg');
+        const btn     = document.getElementById('shortenBtn');
+        const btnText = document.getElementById('btnText');
+        const url     = input.value.trim();
+
+        // Validate
+        errMsg.classList.add('hidden');
+        if (!isValidUrl(url)) {
+            errMsg.classList.remove('hidden');
+            input.focus();
+            return;
+        }
+
+        // Get selected services
+        const selected = [...document.querySelectorAll('.service-toggle input:checked')].map(cb => cb.value);
+        if (selected.length === 0) {
+            alert('請至少選擇一個縮短服務。');
+            return;
+        }
+
+        // Loading state
+        btn.disabled = true;
+        btnText.textContent = '縮短中…';
+        btn.querySelector('i').className = 'fa-solid fa-spinner spinner';
+
+        // Clear previous results
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsList = document.getElementById('resultsList');
+        const qrCard      = document.getElementById('qrCard');
+        resultsList.innerHTML = '';
+        resultsCard.classList.add('hidden');
+        qrCard.classList.add('hidden');
+
+        // Call all selected services in parallel
+        const promises = selected.map(key =>
+            SERVICES[key].shorten(url)
+                .then(short => ({ key, short, error: false }))
+                .catch(() => ({ key, short: null, error: true }))
+        );
+
+        const results = await Promise.all(promises);
+
+        // Render results
+        results.forEach(({ key, short, error }) => {
+            resultsList.appendChild(buildRow(key, short, error));
+        });
+
+        resultsCard.classList.remove('hidden');
+        resultsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Auto-show QR for first successful result
+        const first = results.find(r => !r.error);
+        if (first) showQr(first.short);
+
+        // Reset button
+        btn.disabled = false;
+        btnText.textContent = '立即縮短';
+        btn.querySelector('i').className = 'fa-solid fa-scissors';
+    }
+
+    // ── Enter key support ────────────────────────────────────────────
+    document.getElementById('urlInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') shortenAll();
+    });
+    </script>
+</body>
+</html>
