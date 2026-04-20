@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hktkk | Portfolio</title>
-    <meta name="description" content="hktkk 的個人作品集 — 實用 Web 工具與專案展示">
+    <title>hktkk | 作品集</title>
+    <meta name="description" content="hktkk 的個人作品集 — 地圖定位、交通追蹤、效率工具等實用 Web 應用。">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,12 +33,11 @@
     <script>
         (function() {
             const stored = localStorage.getItem('theme');
-            if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches) || stored === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             } else if (stored === 'light') {
                 document.documentElement.classList.remove('dark');
             } else {
-                // system
                 if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
                     document.documentElement.classList.add('dark');
                 }
@@ -55,7 +54,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
-        /* Gradient text */
         .gradient-text {
             background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
             -webkit-background-clip: text;
@@ -63,12 +61,10 @@
             background-clip: text;
         }
 
-        /* Card hover glow */
         .card-glow { transition: all 0.3s ease; }
         .dark .card-glow:hover { box-shadow: 0 0 30px rgba(99, 102, 241, 0.15); }
         .card-glow:hover { box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12); transform: translateY(-4px); }
 
-        /* Subtle grid background */
         .dark .bg-grid {
             background-image:
                 linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
@@ -82,7 +78,6 @@
             background-size: 60px 60px;
         }
 
-        /* Fade-in animation */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -92,9 +87,20 @@
         .delay-200 { animation-delay: 0.2s; }
         .delay-300 { animation-delay: 0.3s; }
 
-        /* Theme switcher dropdown */
         .theme-menu { display: none; }
         .theme-menu.active { display: flex; }
+
+        /* Category divider */
+        .category-label {
+            display: flex; align-items: center; gap: 12px;
+            font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+            text-transform: uppercase; color: #9ca3af;
+            margin-bottom: 1.25rem;
+        }
+        .category-label::after {
+            content: ''; flex: 1; height: 1px;
+            background: currentColor; opacity: 0.25;
+        }
     </style>
 </head>
 
@@ -106,7 +112,8 @@
             <div class="flex items-center justify-between h-16">
                 <a href="#" class="text-xl font-bold gradient-text">hktkk</a>
                 <div class="flex items-center gap-4 sm:gap-6">
-                    <a href="#projects" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">作品</a>
+                    <a href="#tools" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">工具</a>
+                    <a href="#projects" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">專案</a>
                     <a href="#about" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">關於</a>
 
                     <!-- Theme Switcher -->
@@ -138,8 +145,7 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="relative min-h-[85vh] flex items-center bg-grid">
-        <!-- Gradient orbs -->
+    <section class="relative min-h-[85vh] flex items-center bg-grid overflow-hidden">
         <div class="absolute top-20 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute bottom-20 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -148,7 +154,7 @@
                 <div class="animate-fade-in-up opacity-0">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm mb-6">
                         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                        Open to collaborate
+                        持續開發中 · Open to collaborate
                     </div>
                 </div>
 
@@ -157,13 +163,32 @@
                 </h1>
 
                 <p class="text-lg sm:text-xl text-gray-600 dark:text-gray-400 leading-relaxed mb-8 max-w-2xl animate-fade-in-up opacity-0 delay-200">
-                    一位熱衷於打造實用 Web 工具的開發者。專注於地圖應用、數據追蹤與日常效率工具，用程式碼解決生活中的真實問題。
+                    香港前端開發者，專注於打造解決真實問題的實用 Web 工具。<br class="hidden sm:block">
+                    從交通追蹤、地圖定位到日常效率，每個作品都源自生活需求。
                 </p>
 
+                <!-- Stats row -->
+                <div class="flex flex-wrap gap-6 mb-8 animate-fade-in-up opacity-0 delay-200">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold gradient-text">5+</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">實用工具</div>
+                    </div>
+                    <div class="w-px bg-gray-200 dark:bg-gray-700 self-stretch"></div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold gradient-text">100%</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">純前端，無需後端</div>
+                    </div>
+                    <div class="w-px bg-gray-200 dark:bg-gray-700 self-stretch"></div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold gradient-text">免費</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">開放使用</div>
+                    </div>
+                </div>
+
                 <div class="flex flex-wrap gap-4 animate-fade-in-up opacity-0 delay-300">
-                    <a href="#projects"
+                    <a href="#tools"
                        class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium transition-colors">
-                        <i class="fa-solid fa-rocket"></i> 瀏覽作品
+                        <i class="fa-solid fa-rocket"></i> 瀏覽工具
                     </a>
                     <a href="https://github.com/hktkk" target="_blank" rel="noopener noreferrer"
                        class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors border border-gray-300 dark:border-gray-700">
@@ -174,137 +199,170 @@
         </div>
     </section>
 
-    <!-- Projects Section -->
-    <section id="projects" class="py-24">
+    <!-- Tools Section -->
+    <section id="tools" class="py-24">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
             <div class="text-center mb-16">
-                <h2 class="text-3xl sm:text-4xl font-bold mb-4">精選<span class="gradient-text">作品</span></h2>
-                <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">以下是我開發的實用工具與專案，涵蓋地圖定位、交通追蹤、QR Code 生成等領域。</p>
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">實用<span class="gradient-text">工具</span></h2>
+                <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto text-sm sm:text-base">
+                    以下工具均可直接在瀏覽器使用，無需安裝、無需登入、完全免費。
+                </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                <!-- Card 1: KMB Tracker -->
-                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
-                    <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-bus text-red-400 text-xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">九巴月票回本追蹤器</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
-                        追蹤九巴月票使用情況，計算每日搭乘費用與回本進度。支援 PWA 安裝，可加到手機主畫面使用。
-                    </p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">PWA</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">LocalStorage</span>
-                    </div>
-                    <a href="https://hktkk.github.io/app/kmb.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
-                    </a>
+            <!-- Category: 地圖 & 定位 -->
+            <div class="mb-10">
+                <div class="category-label">
+                    <i class="fa-solid fa-map-location-dot text-blue-400"></i> 地圖 &amp; 定位
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                <!-- Card 2: GPS Plus Code -->
-                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
-                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-location-dot text-blue-400 text-xl"></i>
+                    <!-- GPS Plus Code -->
+                    <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-location-dot text-blue-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">Plus Code 轉換器</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                            在 Plus Code、GPS 座標與地圖之間互相轉換。針對香港座標偏移問題特別校準，支援即時定位與地圖視覺化。
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 text-xs font-medium">Leaflet.js</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Geolocation API</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Open Location Code</span>
+                        </div>
+                        <a href="https://hktkk.github.io/app/gps.html" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟工具
+                        </a>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">Google Maps Plus Code 轉換器</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
-                        香港專用的 Plus Code 與座標轉換工具，支援地圖視覺化顯示與即時定位功能。
-                    </p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Leaflet.js</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Geolocation API</span>
+
+                    <!-- GPX Processor -->
+                    <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-route text-green-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">GPX Plus Code 加工器</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                            匯入 GPX 路徑檔案，批量將路徑點轉換為 Plus Code。支援拖曳排序、地圖預覽與 XML 匯出，適合戶外活動規劃。
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 text-xs font-medium">Leaflet.js</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">SortableJS</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Open Location Code</span>
+                        </div>
+                        <a href="https://hktkk.github.io/app/gpx.html" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟工具
+                        </a>
                     </div>
-                    <a href="https://hktkk.github.io/app/gps.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
-                    </a>
+
                 </div>
+            </div>
 
-                <!-- Card 3: GPX Processor -->
-                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
-                    <div class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-route text-green-400 text-xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">GPX Plus Code 專業加工器</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
-                        GPX 檔案處理工具，可批量轉換路徑點為 Plus Code，支援拖曳排序與地圖預覽。香港優先版本。
-                    </p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Leaflet.js</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">SortableJS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Open Location Code</span>
-                    </div>
-                    <a href="https://hktkk.github.io/app/gpx.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
-                    </a>
+            <!-- Category: 效率 & 分享 -->
+            <div class="mb-10">
+                <div class="category-label">
+                    <i class="fa-solid fa-bolt text-yellow-400"></i> 效率 &amp; 分享
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                <!-- Card 4: QR Code Generator -->
-                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
-                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-qrcode text-purple-400 text-xl"></i>
+                    <!-- QR Code Generator -->
+                    <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-qrcode text-purple-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">QR Code 生成器</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                            即時生成高解析度 QR Code，支援自訂樣式、嵌入 Logo、調整容錯率，並可一鍵下載或複製到剪貼簿。
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 text-xs font-medium">QRious.js</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Canvas API</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">JavaScript</span>
+                        </div>
+                        <a href="https://hktkk.github.io/app/qrcode.html" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟工具
+                        </a>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">即時 QR Code 生成器</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
-                        專業版 QR Code 生成工具，支援即時預覽、自訂樣式與一鍵下載功能。簡潔直覺的操作介面。
-                    </p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">JavaScript</span>
+
+                    <!-- URL Shortener -->
+                    <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-link text-indigo-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">URL 縮短工具</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                            一鍵同時透過 TinyURL、is.gd、v.gd 縮短長網址，並即時生成對應 QR Code，方便線上線下分享。
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-300 text-xs font-medium">TinyURL API</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">is.gd API</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">QR Server API</span>
+                        </div>
+                        <a href="https://hktkk.github.io/app/urlshort.html" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟工具
+                        </a>
                     </div>
-                    <a href="https://hktkk.github.io/app/qrcode.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
-                    </a>
+
+                    <!-- KMB Tracker -->
+                    <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
+                        <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-bus text-red-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">九巴月票回本追蹤器</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
+                            記錄每次乘車，自動計算月票累計節省金額與回本進度。支援 PWA 安裝，可加到手機主畫面離線使用。
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 text-xs font-medium">PWA</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">LocalStorage</span>
+                            <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
+                        </div>
+                        <a href="https://hktkk.github.io/app/kmb.html" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟工具
+                        </a>
+                    </div>
+
                 </div>
+            </div>
 
-                <!-- Card 5: URL Shortener -->
-                <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
-                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
-                        <i class="fa-solid fa-link text-indigo-400 text-xl"></i>
-                    </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">URL 縮短工具</h3>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
-                        一鍵將長網址縮短，同時取得 TinyURL、is.gd、v.gd 三個服務的短連結，並提供即時 QR Code 預覽與下載。
-                    </p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">JavaScript</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Public API</span>
-                    </div>
-                    <a href="https://hktkk.github.io/app/urlshort.html" target="_blank" rel="noopener noreferrer"
-                       class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
-                    </a>
-                </div>
+        </div>
+    </section>
 
-                <!-- Card 6: Open Day Portfolio -->
+    <!-- Projects Section -->
+    <section id="projects" class="py-16 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="text-center mb-12">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">其他<span class="gradient-text">專案</span></h2>
+                <p class="text-gray-600 dark:text-gray-400 max-w-xl mx-auto text-sm sm:text-base">
+                    為特定場合或活動開發的互動展示系統。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+
+                <!-- Open Day Portfolio -->
                 <div class="card-glow group rounded-2xl bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800/60 p-6 flex flex-col transition-colors duration-300">
                     <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
                         <i class="fa-solid fa-school text-amber-400 text-xl"></i>
                     </div>
-                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">開放日專案作品集</h3>
+                    <h3 class="text-lg font-semibold mb-2 group-hover:text-brand-500 transition-colors">開放日互動展示系統</h3>
                     <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 flex-grow">
-                        學校開放日互動展示系統，包含多樓層導覽頁面與即時串流功能，為訪客提供沉浸式體驗。
+                        學校開放日專用的多頁面導覽系統，涵蓋各樓層展覽介紹與即時串流功能，為訪客提供清晰的場地指引與沉浸式體驗。
                     </p>
                     <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">HTML5</span>
+                        <span class="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-300 text-xs font-medium">Multi-page</span>
+                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Live Streaming</span>
                         <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Tailwind CSS</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Streaming</span>
-                        <span class="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-medium">Multi-page</span>
                     </div>
                     <a href="https://hktkk.github.io/openday/" target="_blank" rel="noopener noreferrer"
                        class="inline-flex items-center gap-2 text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟應用
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 開啟專案
                     </a>
                 </div>
 
@@ -315,64 +373,101 @@
     <!-- About Section -->
     <section id="about" class="py-24 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-3xl mx-auto text-center">
-                <h2 class="text-3xl sm:text-4xl font-bold mb-6">關於<span class="gradient-text">我</span></h2>
-                <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-8">
-                    我是一位專注於前端開發的創作者，喜歡利用 HTML5、Tailwind CSS 和 JavaScript 等技術，
-                    打造解決日常問題的實用工具。從交通追蹤到地圖應用，每個專案都源自真實的使用需求。
-                    目前持續探索更多有趣的 Web 技術與應用場景。
+            <div class="max-w-3xl mx-auto">
+
+                <h2 class="text-3xl sm:text-4xl font-bold mb-6 text-center">關於<span class="gradient-text">我</span></h2>
+                <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-10 text-center">
+                    我是一位來自香港、專注於前端開發的創作者，喜歡用 HTML5、Tailwind CSS 和 JavaScript
+                    打造解決日常問題的實用工具。每個專案都源自真實的使用需求，目標是讓工具簡單易用、開箱即用。
                 </p>
 
-                <div class="flex flex-wrap justify-center gap-4 mb-12">
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
-                        <i class="fa-brands fa-html5 text-orange-400"></i>
-                        <span class="text-sm text-gray-600 dark:text-gray-300">HTML5</span>
-                    </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
-                        <i class="fa-brands fa-css3-alt text-blue-400"></i>
-                        <span class="text-sm text-gray-600 dark:text-gray-300">Tailwind CSS</span>
-                    </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
-                        <i class="fa-brands fa-js text-yellow-400"></i>
-                        <span class="text-sm text-gray-600 dark:text-gray-300">JavaScript</span>
-                    </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
-                        <i class="fa-solid fa-map text-green-400"></i>
-                        <span class="text-sm text-gray-600 dark:text-gray-300">Leaflet.js</span>
-                    </div>
-                    <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
-                        <i class="fa-solid fa-mobile-screen text-purple-400"></i>
-                        <span class="text-sm text-gray-600 dark:text-gray-300">PWA</span>
+                <!-- Tech stack -->
+                <div class="mb-10">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4 text-center">技術棧</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                            <i class="fa-brands fa-html5 text-orange-400 text-lg w-5 text-center"></i>
+                            <div>
+                                <div class="text-sm font-medium">HTML5</div>
+                                <div class="text-xs text-gray-400">語意化結構</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                            <i class="fa-brands fa-css3-alt text-blue-400 text-lg w-5 text-center"></i>
+                            <div>
+                                <div class="text-sm font-medium">Tailwind CSS</div>
+                                <div class="text-xs text-gray-400">響應式設計</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                            <i class="fa-brands fa-js text-yellow-400 text-lg w-5 text-center"></i>
+                            <div>
+                                <div class="text-sm font-medium">JavaScript</div>
+                                <div class="text-xs text-gray-400">互動邏輯</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                            <i class="fa-solid fa-map text-green-400 text-lg w-5 text-center"></i>
+                            <div>
+                                <div class="text-sm font-medium">Leaflet.js</div>
+                                <div class="text-xs text-gray-400">地圖應用</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                            <i class="fa-solid fa-mobile-screen text-purple-400 text-lg w-5 text-center"></i>
+                            <div>
+                                <div class="text-sm font-medium">PWA</div>
+                                <div class="text-xs text-gray-400">離線安裝</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-colors duration-300">
+                            <i class="fa-solid fa-plug text-indigo-400 text-lg w-5 text-center"></i>
+                            <div>
+                                <div class="text-sm font-medium">Public APIs</div>
+                                <div class="text-xs text-gray-400">第三方整合</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <a href="https://github.com/hktkk" target="_blank" rel="noopener noreferrer"
-                   class="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-lg transition-colors shadow-lg shadow-brand-500/20">
-                    <i class="fa-brands fa-github text-xl"></i> 在 GitHub 上聯繫我
-                </a>
+                <div class="text-center">
+                    <a href="https://github.com/hktkk" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-base transition-colors shadow-lg shadow-brand-500/20">
+                        <i class="fa-brands fa-github text-xl"></i> 在 GitHub 上找到我
+                    </a>
+                </div>
+
             </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="py-8 border-t border-gray-200 dark:border-gray-800/50 transition-colors duration-300">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-gray-400 dark:text-gray-500 text-sm">
-                &copy; 2026 hktkk. Built with
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400 dark:text-gray-500">
+            <p>
+                &copy; <span id="footerYear"></span> hktkk. Built with
                 <i class="fa-solid fa-heart text-red-400 mx-1"></i>
                 using HTML5 &amp; Tailwind CSS.
             </p>
+            <div class="flex items-center gap-4">
+                <a href="#tools" class="hover:text-brand-500 transition-colors">工具</a>
+                <a href="#projects" class="hover:text-brand-500 transition-colors">專案</a>
+                <a href="#about" class="hover:text-brand-500 transition-colors">關於</a>
+                <a href="https://github.com/hktkk" target="_blank" rel="noopener noreferrer" class="hover:text-brand-500 transition-colors">
+                    <i class="fa-brands fa-github"></i>
+                </a>
+            </div>
         </div>
     </footer>
 
     <!-- Theme Switcher Script -->
     <script>
         (function() {
-            const btn = document.getElementById('themeToggleBtn');
-            const menu = document.getElementById('themeMenu');
-            const icon = document.getElementById('themeIcon');
+            const btn     = document.getElementById('themeToggleBtn');
+            const menu    = document.getElementById('themeMenu');
+            const icon    = document.getElementById('themeIcon');
             const options = document.querySelectorAll('.theme-option');
-            const html = document.documentElement;
+            const html    = document.documentElement;
 
             function getStoredTheme() {
                 return localStorage.getItem('theme') || 'system';
@@ -384,60 +479,43 @@
                 } else if (mode === 'light') {
                     html.classList.remove('dark');
                 } else {
-                    // system
-                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        html.classList.add('dark');
-                    } else {
-                        html.classList.remove('dark');
-                    }
+                    window.matchMedia('(prefers-color-scheme: dark)').matches
+                        ? html.classList.add('dark')
+                        : html.classList.remove('dark');
                 }
             }
 
             function updateIcon(mode) {
-                icon.className = '';
-                if (mode === 'dark') {
-                    icon.className = 'fa-solid fa-moon';
-                } else if (mode === 'light') {
-                    icon.className = 'fa-solid fa-sun';
-                } else {
-                    icon.className = 'fa-solid fa-desktop';
-                }
+                icon.className = mode === 'dark'
+                    ? 'fa-solid fa-moon'
+                    : mode === 'light'
+                        ? 'fa-solid fa-sun'
+                        : 'fa-solid fa-desktop';
             }
 
             function highlightActive(mode) {
                 options.forEach(function(opt) {
-                    const isActive = opt.getAttribute('data-theme') === mode;
-                    opt.classList.toggle('text-brand-500', isActive);
-                    opt.classList.toggle('font-semibold', isActive);
+                    const active = opt.getAttribute('data-theme') === mode;
+                    opt.classList.toggle('text-brand-500', active);
+                    opt.classList.toggle('font-semibold', active);
                 });
             }
 
             function setTheme(mode) {
-                if (mode === 'system') {
-                    localStorage.removeItem('theme');
-                } else {
-                    localStorage.setItem('theme', mode);
-                }
+                mode === 'system' ? localStorage.removeItem('theme') : localStorage.setItem('theme', mode);
                 applyTheme(mode);
                 updateIcon(mode);
                 highlightActive(mode);
             }
 
-            // Toggle menu
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 menu.classList.toggle('active');
             });
 
-            // Close menu on outside click
-            document.addEventListener('click', function() {
-                menu.classList.remove('active');
-            });
-            menu.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
+            document.addEventListener('click', function() { menu.classList.remove('active'); });
+            menu.addEventListener('click', function(e) { e.stopPropagation(); });
 
-            // Option click
             options.forEach(function(opt) {
                 opt.addEventListener('click', function() {
                     setTheme(this.getAttribute('data-theme'));
@@ -445,19 +523,18 @@
                 });
             });
 
-            // Listen for system theme change
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
-                if (getStoredTheme() === 'system') {
-                    applyTheme('system');
-                }
+                if (getStoredTheme() === 'system') applyTheme('system');
             });
 
-            // Init
             var current = getStoredTheme();
             applyTheme(current);
             updateIcon(current);
             highlightActive(current);
         })();
+
+        // Dynamic footer year
+        document.getElementById('footerYear').textContent = new Date().getFullYear();
     </script>
 
 </body>
