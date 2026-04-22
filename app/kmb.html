@@ -25,6 +25,41 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .glow-success { box-shadow: 0 0 15px 5px rgba(34, 197, 94, 0.3); }
+
+        /* Bottom Sheet 確認卡 */
+        #fareSheet {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+            z-index: 50;
+        }
+        #fareSheet.open { transform: translateY(0); }
+
+        /* 遮罩 */
+        #sheetOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+            z-index: 40;
+        }
+        #sheetOverlay.open { opacity: 1; pointer-events: auto; }
+
+        /* Toast 提示 */
+        #toast {
+            position: fixed;
+            bottom: 1.5rem; left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 60;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen pb-10">
@@ -49,6 +84,10 @@
                     <label class="text-xs text-gray-500 mb-2 block">自訂快捷車費 (最多6個，留白隱藏)</label>
                     <div id="qfInputs" class="grid grid-cols-3 gap-2"></div>
                 </div>
+            </div>
+            <!-- 儲存設定按鈕 -->
+            <div class="mt-4 pt-3 border-t">
+                <button id="saveConfigBtn" class="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-2.5 rounded-xl shadow-sm transition text-sm">儲存設定</button>
             </div>
         </section>
 
@@ -92,9 +131,29 @@
         <div class="text-center mt-6"><button id="resetBtn" class="text-xs text-red-400 underline">🗑️ 清空並開新月份</button></div>
     </div>
 
+    <!-- 遮罩 -->
+    <div id="sheetOverlay"></div>
+
+    <!-- Bottom Sheet：車費確認卡 -->
+    <div id="fareSheet" class="bg-white rounded-t-3xl shadow-2xl px-6 pt-5 pb-8 max-w-md mx-auto">
+        <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5"></div>
+        <p class="text-xs text-gray-400 text-center mb-1">確認加入車費</p>
+        <p class="text-4xl font-black text-center text-gray-800 mb-6">$<span id="sheetAmount">0.0</span></p>
+        <div class="flex gap-3">
+            <button id="sheetCancelBtn" class="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition">取消</button>
+            <button id="sheetConfirmBtn" class="flex-2 flex-grow-[2] py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-md active:scale-95 transition">✓ 確認加入</button>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast" class="bg-gray-800 text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg"></div>
+
     <script>
         const els = Object.fromEntries(['configSection','passPrice','passQty','startDate','qfInputs','totalFare','targetAmount','daysRemaining','expiryDate','progressBar','dashboardSection','statusAlert','statusIcon','statusMsg','dailyTargetMsg','addRecordForm','fareInput','quickButtons','recordList','recordCount','emptyState'].map(id => [id, document.getElementById(id)]));
         let state = { config: { price: 800, qty: 1, startDate: new Date().toISOString().split('T')[0], quickFares: [5.4, 7.5, 10.4, 14.2, 19.3, 20.8] }, records: [] };
+
+        // 暫存待確認的車費
+        let pendingFare = null;
 
         // 獨立的日期計算函數，處理跨月與邊界情況
         function calculateDates(startDateStr, qty) {
@@ -128,16 +187,20 @@
             // 動態生成快捷設定框 (加入 inputmode="decimal" 喚起數字鍵盤)
             els.qfInputs.innerHTML = Array(6).fill(0).map((_, i) => `<input type="number" step="0.1" inputmode="decimal" class="qf-cfg border rounded-lg p-2 text-center text-sm outline-none bg-gray-50 focus:ring-2" placeholder="+">`).join('');
             
-            // 綁定輸入同步
+            // 綁定輸入同步（移除即時 change 儲存，改由「儲存設定」按鈕觸發）
             els.passPrice.value = state.config.price; 
             els.passQty.value = state.config.qty; 
             els.startDate.value = state.config.startDate;
             
             document.querySelectorAll('.qf-cfg').forEach((el, i) => { 
                 el.value = state.config.quickFares[i] || ''; 
-                el.addEventListener('change', updateConfig); 
             });
-            ['passPrice', 'passQty', 'startDate'].forEach(id => els[id].addEventListener('change', updateConfig));
+
+            // 儲存設定按鈕
+            document.getElementById('saveConfigBtn').addEventListener('click', () => {
+                updateConfig();
+                showToast('✓ 設定已儲存');
+            });
             
             updateUI();
         }
@@ -215,7 +278,7 @@
 
             // 渲染快捷鍵與紀錄 (過濾 null，確保不顯示空白按鈕)
             const validFares = quickFares.filter(f => f !== null);
-            els.quickButtons.innerHTML = validFares.map(f => `<button type="button" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs rounded-lg font-medium active:scale-95 text-gray-700 transition" onclick="addFare(${f})">$${f.toFixed(1)}</button>`).join('');
+            els.quickButtons.innerHTML = validFares.map(f => `<button type="button" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs rounded-lg font-medium active:scale-95 text-gray-700 transition" onclick="requestAddFare(${f})">$${f.toFixed(1)}</button>`).join('');
             
             els.recordCount.innerText = state.records.length;
             els.emptyState.classList.toggle('hidden', state.records.length > 0);
@@ -228,11 +291,64 @@
         }
 
         const save = () => { localStorage.setItem('kmb_data', JSON.stringify(state)); updateUI(); };
-        const addFare = (amt) => { if(navigator.vibrate) navigator.vibrate(50); state.records.push({id: Date.now(), ts: Date.now(), amount: amt}); els.fareInput.value=''; els.fareInput.blur(); save(); };
+
+        // ── Bottom Sheet 確認機制 ──────────────────────────────────────
+        const sheetEl      = document.getElementById('fareSheet');
+        const overlayEl    = document.getElementById('sheetOverlay');
+        const sheetAmount  = document.getElementById('sheetAmount');
+        const sheetConfirm = document.getElementById('sheetConfirmBtn');
+        const sheetCancel  = document.getElementById('sheetCancelBtn');
+
+        function openSheet(amt) {
+            pendingFare = amt;
+            sheetAmount.innerText = amt.toFixed(1);
+            sheetEl.classList.add('open');
+            overlayEl.classList.add('open');
+            if (navigator.vibrate) navigator.vibrate(30);
+        }
+
+        function closeSheet() {
+            sheetEl.classList.remove('open');
+            overlayEl.classList.remove('open');
+            pendingFare = null;
+        }
+
+        sheetConfirm.addEventListener('click', () => {
+            if (pendingFare !== null) {
+                if (navigator.vibrate) navigator.vibrate(50);
+                state.records.push({ id: Date.now(), ts: Date.now(), amount: pendingFare });
+                els.fareInput.value = '';
+                els.fareInput.blur();
+                save();
+                closeSheet();
+                showToast(`✓ 已加入 $${pendingFare.toFixed(1)}`);
+            }
+        });
+
+        sheetCancel.addEventListener('click', closeSheet);
+        overlayEl.addEventListener('click', closeSheet);
+
+        // 取代原本的 addFare：先開確認卡
+        function requestAddFare(amt) {
+            openSheet(amt);
+        }
+
+        // ── Toast 提示 ─────────────────────────────────────────────────
+        let toastTimer = null;
+        const toastEl = document.getElementById('toast');
+
+        function showToast(msg) {
+            toastEl.innerText = msg;
+            toastEl.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+        }
+
+        // ── 刪除與重設（維持原有 confirm 彈窗）─────────────────────────
         const delFare = (id) => { if(confirm('刪除此紀錄？')) { state.records = state.records.filter(r => r.id !== id); save(); }};
 
         document.getElementById('toggleConfigBtn').onclick = () => els.configSection.classList.toggle('hidden');
-        els.addRecordForm.onsubmit = (e) => { e.preventDefault(); const v = +els.fareInput.value; if(v > 0) addFare(v); };
+        els.addRecordForm.onsubmit = (e) => { e.preventDefault(); const v = +els.fareInput.value; if(v > 0) requestAddFare(v); };
         document.getElementById('resetBtn').onclick = () => { if(confirm('⚠️ 將會清空所有紀錄，確定要開新月份嗎？')) { state.records=[]; state.config.startDate = new Date().toISOString().split('T')[0]; els.startDate.value = state.config.startDate; save(); els.configSection.classList.remove('hidden'); }};
 
         init();
