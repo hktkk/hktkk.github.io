@@ -142,6 +142,32 @@
           );
         };
 
+        const WinModal = ({ isVisible, onClose }) => (
+          <div className={`fixed inset-0 z-[200] flex items-center justify-center transition-all duration-500 ${isVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+            {/* 半透明背景 */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            {/* 彈窗主體 */}
+            <div className={`relative bg-amber-50 rounded-3xl border-[6px] border-amber-400 shadow-2xl px-10 py-10 md:px-16 md:py-14 flex flex-col items-center gap-6 mx-6 transition-all duration-500 ${isVisible ? 'scale-100 translate-y-0' : 'scale-75 translate-y-10'}`}>
+              {/* 標題 */}
+              <div className="text-5xl md:text-7xl">🎉</div>
+              <h2 className="text-3xl md:text-5xl font-black text-amber-700 tracking-widest text-center" style={{ fontFamily: "'Noto Serif TC', serif" }}>大成功！</h2>
+              {/* 密碼框 */}
+              <div className="bg-white rounded-2xl border-[5px] border-amber-400 px-8 py-5 md:px-12 md:py-6 flex flex-col items-center gap-2 shadow-inner">
+                <p className="text-lg md:text-2xl font-bold text-amber-600 tracking-widest">1樓密碼</p>
+                <p className="text-6xl md:text-8xl font-black text-amber-800" style={{ fontFamily: "'Noto Serif TC', serif" }}>1</p>
+              </div>
+              {/* 關閉按鈕 */}
+              <button
+                onClick={onClose}
+                className="mt-2 px-10 py-4 md:px-14 md:py-5 bg-amber-400 text-amber-900 font-bold rounded-full border-[4px] border-amber-600 hover:bg-amber-300 active:scale-95 transition-all text-xl md:text-2xl shadow-lg"
+                style={{ fontFamily: "'Noto Serif TC', serif" }}
+              >
+                知道了！
+              </button>
+            </div>
+          </div>
+        );
+
         const CutePanda = ({ isVisible }) => (
           <div className={`absolute bottom-[16vh] md:bottom-[14vh] right-4 md:right-10 transition-all duration-700 ease-out z-[45] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-[200%] opacity-0 pointer-events-none'}`}>
             <svg width="180" height="220" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-[120px] md:w-[180px] h-auto drop-shadow-xl">
@@ -189,11 +215,13 @@
           const [draggingId, setDraggingId] = useState(null);
           const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
           const [isWin, setIsWin] = useState(false);
+          const [showModal, setShowModal] = useState(false);
           
           useEffect(() => {
             if (pieces.length > 0 && pieces.every(p => p.isPlaced)) {
               setTimeout(() => {
                 setIsWin(true);
+                setShowModal(true);
                 playSuccessSound();
               }, 300);
             }
@@ -237,6 +265,7 @@
 
           const handleRestart = () => {
             setIsWin(false);
+            setShowModal(false);
             setPieces(getRandomPieces());
           };
 
@@ -314,6 +343,7 @@
               {/* 通關慶祝 */}
               {isWin && <Confetti />}
               <CutePanda isVisible={isWin} />
+              <WinModal isVisible={showModal} onClose={() => setShowModal(false)} />
               
               {/* 再玩一次按鈕 */}
               {isWin && (
