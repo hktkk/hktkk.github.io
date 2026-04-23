@@ -10,18 +10,79 @@
       background: linear-gradient(135deg, #a8d8f0 0%, #d0eeff 100%);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       font-family: sans-serif;
     }
-    .container {
+
+    /* ── 密碼畫面 ── */
+    #lock-screen {
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 40px 32px;
+      background: rgba(255,255,255,0.75);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      max-width: 340px;
+      width: 90%;
+    }
+    #lock-screen .lock-icon {
+      font-size: 48px;
+    }
+    #lock-screen h2 {
+      font-size: 1.3rem;
+      color: #2a6fa8;
+      text-align: center;
+    }
+    #lock-screen p {
+      font-size: 0.9rem;
+      color: #555;
+      text-align: center;
+    }
+    #password-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1.4rem;
+      letter-spacing: 0.3em;
+      text-align: center;
+      border: 2px solid #a8d8f0;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #password-input:focus {
+      border-color: #2a6fa8;
+    }
+    #submit-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(135deg, #2a6fa8, #4ab3e8);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    #submit-btn:hover { opacity: 0.88; }
+    #error-msg {
+      color: #e05050;
+      font-size: 0.88rem;
+      min-height: 1.2em;
+      text-align: center;
+    }
+
+    /* ── 證書畫面 ── */
+    #cert-screen {
+      display: none;
       flex-direction: column;
       align-items: center;
       padding: 24px 16px;
     }
-    img {
+    #cert-screen img {
       max-width: 480px;
       width: 100%;
       border-radius: 16px;
@@ -30,8 +91,49 @@
   </style>
 </head>
 <body>
-  <div class="container">
+
+  <!-- 密碼輸入畫面 -->
+  <div id="lock-screen">
+    <div class="lock-icon">🔒</div>
+    <h2>請輸入通關密碼</h2>
+    <p>輸入正確密碼後即可查看完成證書</p>
+    <input
+      id="password-input"
+      type="password"
+      inputmode="numeric"
+      maxlength="10"
+      placeholder="••••"
+      autocomplete="off"
+    />
+    <div id="error-msg"></div>
+    <button id="submit-btn" onclick="checkPassword()">確認</button>
+  </div>
+
+  <!-- 證書顯示畫面 -->
+  <div id="cert-screen">
     <img src="success.jpg" alt="恭喜你完成旅行家勳章計劃 完成證書">
   </div>
+
+  <script>
+    // 支援 Enter 鍵提交
+    document.getElementById('password-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkPassword();
+    });
+
+    function checkPassword() {
+      var input = document.getElementById('password-input').value.trim();
+      if (input === '1960') {
+        document.getElementById('lock-screen').style.display = 'none';
+        var cert = document.getElementById('cert-screen');
+        cert.style.display = 'flex';
+      } else {
+        var err = document.getElementById('error-msg');
+        err.textContent = '密碼錯誤，請再試一次。';
+        document.getElementById('password-input').value = '';
+        document.getElementById('password-input').focus();
+      }
+    }
+  </script>
+
 </body>
 </html>
