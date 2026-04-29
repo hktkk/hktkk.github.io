@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教育職位追蹤器 | Education Job Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Grid.js CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #111827; color: #f3f4f6; }
+            .gridjs-wrapper { background-color: #1f2937 !important; }
+            .gridjs-tr { background-color: #1f2937 !important; color: #f3f4f6 !important; }
+            .gridjs-th { background-color: #374151 !important; color: #f3f4f6 !important; }
+            .gridjs-td { border-color: #374151 !important; }
+            .gridjs-footer { background-color: #1f2937 !important; border-top: 1px solid #374151 !important; }
+            .gridjs-search-input { background-color: #374151 !important; color: white !important; border: 1px solid #4b5563 !important; }
+            .gridjs-pagination .gridjs-pages button { background-color: #374151 !important; color: #d1d5db !important; border-color: #4b5563 !important; }
+            .gridjs-pagination .gridjs-pages button:hover { background-color: #4b5563 !important; }
+            .gridjs-pagination .gridjs-pages button.gridjs-currentPage { background-color: #2563eb !important; color: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-600 dark:text-blue-400">教育職位追蹤器</h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">即時抓取明報 JUMP 教育類最新職位數據</p>
+            </div>
+            <div id="status-badge" class="px-4 py-2 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 text-sm font-medium self-start md:self-center">
+                載入數據中...
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loading-overlay" class="flex flex-col items-center justify-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p class="text-gray-500">正在處理數據檔案，請稍候...</p>
+        </div>
+
+        <!-- Table Container -->
+        <div id="table-wrapper" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div id="grid-container"></div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-400 text-sm">
+            <p>© 2026 Education Job Tracker. Powered by Manus & GitHub Pages.</p>
+            <p class="mt-1">數據更新日期：2026-04-29</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const csvUrl = "data.csv";
+            const loadingOverlay = document.getElementById("loading-overlay");
+            const tableWrapper = document.getElementById("table-wrapper");
+            const statusBadge = document.getElementById("status-badge");
+
+            // 使用 PapaParse 讀取 CSV
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const data = results.data;
+                    const rowCount = data.length;
+                    
+                    statusBadge.innerText = `今日更新：${rowCount} 個職位`;
+                    loadingOverlay.classList.add("hidden");
+                    tableWrapper.classList.remove("hidden");
+
+                    // 初始化 Grid.js
+                    new gridjs.Grid({
+                        columns: [
+                            { 
+                                name: "職位名稱",
+                                formatter: (cell, row) => {
+                                    return gridjs.html(`<a href="${row.cells[3].data}" target="_blank" class="text-blue-600 dark:text-blue-400 font-medium hover:underline">${cell}</a>`);
+                                }
+                            },
+                            { name: "公司名稱" },
+                            { name: "發布日期", width: "120px" },
+                            { name: "連結", hidden: true }
+                        ],
+                        data: data.map(item => [
+                            item["職位名稱"],
+                            item["公司名稱"],
+                            item["發布日期"],
+                            item["職位詳情連結"]
+                        ]),
+                        search: true,
+                        sort: true,
+                        pagination: {
+                            limit: 15
+                        },
+                        language: {
+                            search: { placeholder: "搜尋職位或學校..." },
+                            pagination: {
+                                previous: "上一頁",
+                                next: "下一頁",
+                                showing: "顯示",
+                                results: () => "筆紀錄",
+                                of: "之於",
+                                to: "到"
+                            }
+                        },
+                        className: {
+                            table: 'w-full text-sm text-left',
+                            th: 'px-6 py-4 font-semibold',
+                            td: 'px-6 py-4'
+                        }
+                    }).render(document.getElementById("grid-container"));
+                },
+                error: function(err) {
+                    console.error("CSV Load Error:", err);
+                    statusBadge.innerText = "數據載入失敗";
+                    statusBadge.className = "px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-medium";
+                    loadingOverlay.innerHTML = `<p class="text-red-500 font-medium">無法讀取數據檔案 (data.csv)，請確保檔案已正確上傳。</p>`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
