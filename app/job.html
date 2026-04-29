@@ -131,9 +131,12 @@ function renderGrid(data) {
             { name: '公司名稱' },
             {
                 name: '發布日期',
-                width: '120px',
-                // 強制以純文字輸出，防止 Grid.js 自動解析為 Date 物件
-                formatter: cell => gridjs.html(`<span class="tabular-nums">${cell}</span>`)
+                width: '130px',
+                // 用 \u200B (零寬字元) 前綴阻止 Grid.js 自動解析日期為 Date 物件
+                formatter: cell => {
+                    const clean = String(cell).replace(/^\u200B/, '');
+                    return gridjs.html(`<span class="tabular-nums font-mono">${clean}</span>`);
+                }
             },
             { name: '_url', hidden: true }
         ],
@@ -162,7 +165,12 @@ function applyFilters() {
             row[1].toLowerCase().includes(keyword);
         return matchDate && matchKeyword;
     });
-    renderGrid(filteredData);
+    renderGrid(prepareGridData(filteredData));
+}
+
+function prepareGridData(data) {
+    // 在日期欄位前加入零寬字元 (\u200B)，阻止 Grid.js 自動解析為 Date 物件
+    return data.map(row => [row[0], row[1], '\u200B' + row[2], row[3]]);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -184,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             buildSummary(allData);
             buildDateOptions(allData);
-            renderGrid(allData);
+            renderGrid(prepareGridData(allData));
 
             // 事件綁定
             document.getElementById('search-input').addEventListener('input', applyFilters);
