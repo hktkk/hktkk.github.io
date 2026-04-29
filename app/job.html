@@ -4,129 +4,203 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教育職位追蹤器 | Education Job Tracker</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Grid.js CSS & JS -->
     <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
-    <!-- PapaParse for CSV parsing -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <style>
+        /* 修正 Grid.js 日期欄位不被自動轉換 */
+        .gridjs-td, .gridjs-th { font-family: inherit; }
+        .gridjs-search { margin-bottom: 0 !important; }
+        .gridjs-search-input {
+            border-radius: 0.5rem !important;
+            border: 1px solid #d1d5db !important;
+            padding: 0.5rem 1rem !important;
+            width: 100% !important;
+        }
+        .gridjs-wrapper { border-radius: 0 !important; box-shadow: none !important; border: none !important; }
+        .gridjs-footer { border-top: 1px solid #e5e7eb !important; }
+        .gridjs-pagination .gridjs-pages button.gridjs-currentPage {
+            background-color: #2563eb !important;
+            color: white !important;
+        }
         @media (prefers-color-scheme: dark) {
             body { background-color: #111827; color: #f3f4f6; }
-            .gridjs-wrapper { background-color: #1f2937 !important; }
-            .gridjs-tr { background-color: #1f2937 !important; color: #f3f4f6 !important; }
-            .gridjs-th { background-color: #374151 !important; color: #f3f4f6 !important; }
-            .gridjs-td { border-color: #374151 !important; }
-            .gridjs-footer { background-color: #1f2937 !important; border-top: 1px solid #374151 !important; }
-            .gridjs-search-input { background-color: #374151 !important; color: white !important; border: 1px solid #4b5563 !important; }
+            .card { background-color: #1f2937 !important; border-color: #374151 !important; }
+            .gridjs-th { background-color: #374151 !important; color: #f3f4f6 !important; border-color: #4b5563 !important; }
+            .gridjs-td { background-color: #1f2937!important; color: #f3f4f6 !important; border-color: #374151 !important; }
+            .gridjs-footer { background-color: #1f2937 !important; border-color: #374151 !important; }
+            .gridjs-search-input { background-color: #374151 !important; color: white !important; border-color: #4b5563 !important; }
             .gridjs-pagination .gridjs-pages button { background-color: #374151 !important; color: #d1d5db !important; border-color: #4b5563 !important; }
-            .gridjs-pagination .gridjs-pages button:hover { background-color: #4b5563 !important; }
-            .gridjs-pagination .gridjs-pages button.gridjs-currentPage { background-color: #2563eb !important; color: white !important; }
+            select, input[type="date"] { background-color: #374151; color: #f3f4f6; border-color: #4b5563; }
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 transition-colors duration-200 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <header class="mb-6">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
             <div>
                 <h1 class="text-3xl font-bold text-blue-600 dark:text-blue-400">教育職位追蹤器</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-1">即時抓取明報 JUMP 教育類最新職位數據</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">明報 JUMP 教育類職位歷史數據庫</p>
             </div>
-            <div id="status-badge" class="px-4 py-2 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 text-sm font-medium self-start md:self-center">
-                載入數據中...
-            </div>
-        </header>
-
-        <!-- Loading State -->
-        <div id="loading-overlay" class="flex flex-col items-center justify-center py-20">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p class="text-gray-500">正在處理數據檔案，請稍候...</p>
+            <div id="summary-bar" class="flex gap-3 flex-wrap text-sm"></div>
         </div>
+    </header>
 
-        <!-- Table Container -->
-        <div id="table-wrapper" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div id="grid-container"></div>
+    <!-- Filter Bar -->
+    <div class="card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+        <div class="flex-1 min-w-0">
+            <label class="block text-xs font-medium text-gray-500 mb-1">全文搜尋</label>
+            <input id="search-input" type="text" placeholder="搜尋職位名稱或學校..."
+                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700">
         </div>
-
-        <!-- Footer -->
-        <footer class="mt-12 text-center text-gray-400 text-sm">
-            <p>© 2026 Education Job Tracker. Powered by Manus & GitHub Pages.</p>
-            <p class="mt-1">數據更新日期：2026-04-29</p>
-        </footer>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">發布日期</label>
+            <select id="date-filter" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700">
+                <option value="">全部日期</option>
+            </select>
+        </div>
+        <button id="reset-btn" class="px-4 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition">
+            重置篩選
+        </button>
     </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const csvUrl = "data.csv";
-            const loadingOverlay = document.getElementById("loading-overlay");
-            const tableWrapper = document.getElementById("table-wrapper");
-            const statusBadge = document.getElementById("status-badge");
+    <!-- Loading -->
+    <div id="loading" class="flex items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mr-3"></div>
+        <span class="text-gray-500">載入數據中...</span>
+    </div>
 
-            // 使用 PapaParse 讀取 CSV
-            Papa.parse(csvUrl, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const data = results.data;
-                    const rowCount = data.length;
-                    
-                    statusBadge.innerText = `今日更新：${rowCount} 個職位`;
-                    loadingOverlay.classList.add("hidden");
-                    tableWrapper.classList.remove("hidden");
+    <!-- Table -->
+    <div id="table-wrapper" class="hidden card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        <div id="grid-container"></div>
+    </div>
 
-                    // 初始化 Grid.js
-                    new gridjs.Grid({
-                        columns: [
-                            { 
-                                name: "職位名稱",
-                                formatter: (cell, row) => {
-                                    return gridjs.html(`<a href="${row.cells[3].data}" target="_blank" class="text-blue-600 dark:text-blue-400 font-medium hover:underline">${cell}</a>`);
-                                }
-                            },
-                            { name: "公司名稱" },
-                            { name: "發布日期", width: "120px" },
-                            { name: "連結", hidden: true }
-                        ],
-                        data: data.map(item => [
-                            item["職位名稱"],
-                            item["公司名稱"],
-                            item["發布日期"],
-                            item["職位詳情連結"]
-                        ]),
-                        search: true,
-                        sort: true,
-                        pagination: {
-                            limit: 15
-                        },
-                        language: {
-                            search: { placeholder: "搜尋職位或學校..." },
-                            pagination: {
-                                previous: "上一頁",
-                                next: "下一頁",
-                                showing: "顯示",
-                                results: () => "筆紀錄",
-                                of: "之於",
-                                to: "到"
-                            }
-                        },
-                        className: {
-                            table: 'w-full text-sm text-left',
-                            th: 'px-6 py-4 font-semibold',
-                            td: 'px-6 py-4'
-                        }
-                    }).render(document.getElementById("grid-container"));
-                },
-                error: function(err) {
-                    console.error("CSV Load Error:", err);
-                    statusBadge.innerText = "數據載入失敗";
-                    statusBadge.className = "px-4 py-2 rounded-full bg-red-100 text-red-700 text-sm font-medium";
-                    loadingOverlay.innerHTML = `<p class="text-red-500 font-medium">無法讀取數據檔案 (data.csv)，請確保檔案已正確上傳。</p>`;
-                }
+    <footer class="mt-10 text-center text-gray-400 text-xs">
+        © 2026 Education Job Tracker · Powered by Manus &amp; GitHub Pages
+    </footer>
+</div>
+
+<script>
+let allData = [];
+let grid = null;
+let filteredData = [];
+
+function buildSummary(data) {
+    const dates = [...new Set(data.map(r => r[2]))].sort().reverse();
+    const bar = document.getElementById('summary-bar');
+    bar.innerHTML = `
+        <span class="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 font-medium">
+            共 ${data.length} 筆職位
+        </span>
+        <span class="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 font-medium">
+            涵蓋 ${dates.length} 個日期
+        </span>
+        <span class="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200 font-medium">
+            最新：${dates[0] || '-'}
+        </span>`;
+}
+
+function buildDateOptions(data) {
+    const dates = [...new Set(data.map(r => r[2]))].sort().reverse();
+    const sel = document.getElementById('date-filter');
+    dates.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        sel.appendChild(opt);
+    });
+}
+
+function renderGrid(data) {
+    if (grid) { grid.destroy(); grid = null; }
+    document.getElementById('grid-container').innerHTML = '';
+
+    grid = new gridjs.Grid({
+        columns: [
+            {
+                name: '職位名稱',
+                formatter: (cell, row) => gridjs.html(
+                    `<a href="${row.cells[3].data}" target="_blank" rel="noopener"
+                        class="text-blue-600 dark:text-blue-400 hover:underline font-medium">${cell}</a>`
+                )
+            },
+            { name: '公司名稱' },
+            {
+                name: '發布日期',
+                width: '120px',
+                // 強制以純文字輸出，防止 Grid.js 自動解析為 Date 物件
+                formatter: cell => gridjs.html(`<span class="tabular-nums">${cell}</span>`)
+            },
+            { name: '_url', hidden: true }
+        ],
+        data: data,
+        pagination: { limit: 20 },
+        sort: true,
+        language: {
+            search: { placeholder: '搜尋...' },
+            pagination: {
+                previous: '上一頁', next: '下一頁',
+                showing: '顯示', results: () => '筆紀錄', of: '之於', to: '到'
+            },
+            noRecordsFound: '找不到符合條件的職位'
+        },
+        className: { table: 'w-full text-sm', th: 'px-4 py-3', td: 'px-4 py-3' }
+    }).render(document.getElementById('grid-container'));
+}
+
+function applyFilters() {
+    const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+    const date = document.getElementById('date-filter').value;
+    filteredData = allData.filter(row => {
+        const matchDate = !date || row[2] === date;
+        const matchKeyword = !keyword ||
+            row[0].toLowerCase().includes(keyword) ||
+            row[1].toLowerCase().includes(keyword);
+        return matchDate && matchKeyword;
+    });
+    renderGrid(filteredData);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    Papa.parse('all_jobs.csv', {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: results => {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('table-wrapper').classList.remove('hidden');
+
+            allData = results.data.map(r => [
+                r['職位名稱'] || '',
+                r['公司名稱'] || '',
+                r['發布日期'] || '',   // 保留原始字串，不做任何轉換
+                r['職位詳情連結'] || ''
+            ]);
+            filteredData = allData;
+
+            buildSummary(allData);
+            buildDateOptions(allData);
+            renderGrid(allData);
+
+            // 事件綁定
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            document.getElementById('date-filter').addEventListener('change', applyFilters);
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                document.getElementById('search-input').value = '';
+                document.getElementById('date-filter').value = '';
+                applyFilters();
             });
-        });
-    </script>
+        },
+        error: err => {
+            document.getElementById('loading').innerHTML =
+                `<p class="text-red-500">數據載入失敗：${err}</p>`;
+        }
+    });
+});
+</script>
 </body>
 </html>
