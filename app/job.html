@@ -5,65 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教育職位追蹤器 | Education Job Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <style>
-        /* 修正 Grid.js 日期欄位不被自動轉換 */
-        .gridjs-td, .gridjs-th { font-family: inherit; }
-        .gridjs-search { margin-bottom: 0 !important; }
-        .gridjs-search-input {
-            border-radius: 0.5rem !important;
-            border: 1px solid #d1d5db !important;
-            padding: 0.5rem 1rem !important;
-            width: 100% !important;
-        }
-        .gridjs-wrapper { border-radius: 0 !important; box-shadow: none !important; border: none !important; }
-        .gridjs-footer { border-top: 1px solid #e5e7eb !important; }
-        .gridjs-pagination .gridjs-pages button.gridjs-currentPage {
-            background-color: #2563eb !important;
-            color: white !important;
-        }
-        @media (prefers-color-scheme: dark) {
-            body { background-color: #111827; color: #f3f4f6; }
-            .card { background-color: #1f2937 !important; border-color: #374151 !important; }
-            .gridjs-th { background-color: #374151 !important; color: #f3f4f6 !important; border-color: #4b5563 !important; }
-            .gridjs-td { background-color: #1f2937!important; color: #f3f4f6 !important; border-color: #374151 !important; }
-            .gridjs-footer { background-color: #1f2937 !important; border-color: #374151 !important; }
-            .gridjs-search-input { background-color: #374151 !important; color: white !important; border-color: #4b5563 !important; }
-            .gridjs-pagination .gridjs-pages button { background-color: #374151 !important; color: #d1d5db !important; border-color: #4b5563 !important; }
-            select, input[type="date"] { background-color: #374151; color: #f3f4f6; border-color: #4b5563; }
-        }
+        .sort-btn { cursor: pointer; user-select: none; }
+        .sort-btn:hover { opacity: 0.7; }
+        .sort-asc::after  { content: ' ▲'; font-size: 0.7em; }
+        .sort-desc::after { content: ' ▼'; font-size: 0.7em; }
+        tr:hover td { background-color: rgba(59,130,246,0.05); }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+<body class="bg-gray-50 text-gray-900 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-8">
 
     <!-- Header -->
     <header class="mb-6">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
             <div>
-                <h1 class="text-3xl font-bold text-blue-600 dark:text-blue-400">教育職位追蹤器</h1>
-                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">明報 JUMP 教育類職位歷史數據庫</p>
+                <h1 class="text-3xl font-bold text-blue-600">教育職位追蹤器</h1>
+                <p class="text-gray-500 text-sm mt-1">明報 JUMP 教育類職位歷史數據庫</p>
             </div>
-            <div id="summary-bar" class="flex gap-3 flex-wrap text-sm"></div>
+            <div id="summary-bar" class="flex gap-2 flex-wrap text-sm"></div>
         </div>
     </header>
 
     <!-- Filter Bar -->
-    <div class="card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+    <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-col sm:flex-row gap-3 items-start sm:items-end shadow-sm">
         <div class="flex-1 min-w-0">
             <label class="block text-xs font-medium text-gray-500 mb-1">全文搜尋</label>
             <input id="search-input" type="text" placeholder="搜尋職位名稱或學校..."
-                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700">
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">發布日期</label>
-            <select id="date-filter" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700">
+            <select id="date-filter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                 <option value="">全部日期</option>
             </select>
         </div>
-        <button id="reset-btn" class="px-4 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition">
+        <button id="reset-btn" class="px-4 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition">
             重置篩選
         </button>
     </div>
@@ -74,9 +52,25 @@
         <span class="text-gray-500">載入數據中...</span>
     </div>
 
-    <!-- Table -->
-    <div id="table-wrapper" class="hidden card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div id="grid-container"></div>
+    <!-- Table Container -->
+    <div id="table-wrapper" class="hidden bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="jobs-table">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 sort-btn" data-col="0">職位名稱</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 sort-btn" data-col="1">公司名稱</th>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-700 sort-btn w-32" data-col="2">發布日期</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        <!-- Pagination -->
+        <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
+            <span id="page-info" class="text-sm text-gray-500"></span>
+            <div class="flex gap-1" id="pagination"></div>
+        </div>
     </div>
 
     <footer class="mt-10 text-center text-gray-400 text-xs">
@@ -85,114 +79,146 @@
 </div>
 
 <script>
-let allData = [];
-let grid = null;
-let filteredData = [];
+// ── 狀態變數 ──────────────────────────────────────────
+let allData = [];       // 原始數據 [title, company, date, url]
+let filtered = [];      // 篩選後數據
+let sortCol = 2;        // 預設按日期排序
+let sortDir = 'desc';   // 降序（最新在前）
+let currentPage = 1;
+const PAGE_SIZE = 20;
 
-function buildSummary(data) {
-    const dates = [...new Set(data.map(r => r[2]))].sort().reverse();
-    const bar = document.getElementById('summary-bar');
-    bar.innerHTML = `
-        <span class="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 font-medium">
-            共 ${data.length} 筆職位
-        </span>
-        <span class="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 font-medium">
-            涵蓋 ${dates.length} 個日期
-        </span>
-        <span class="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200 font-medium">
-            最新：${dates[0] || '-'}
-        </span>`;
+// ── 工具函數 ──────────────────────────────────────────
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function buildDateOptions(data) {
-    const dates = [...new Set(data.map(r => r[2]))].sort().reverse();
+// ── 渲染表格 ──────────────────────────────────────────
+function renderTable() {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const page  = filtered.slice(start, start + PAGE_SIZE);
+    const tbody = document.getElementById('table-body');
+
+    tbody.innerHTML = page.map(row => `
+        <tr class="hover:bg-blue-50 transition-colors">
+            <td class="px-4 py-3">
+                <a href="${escHtml(row[3])}" target="_blank" rel="noopener"
+                   class="text-blue-600 hover:underline font-medium">${escHtml(row[0])}</a>
+            </td>
+            <td class="px-4 py-3 text-gray-700">${escHtml(row[1])}</td>
+            <td class="px-4 py-3 font-mono text-gray-600 tabular-nums">${escHtml(row[2])}</td>
+        </tr>`).join('');
+
+    // 頁碼資訊
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+    document.getElementById('page-info').textContent =
+        `顯示 ${Math.min(start+1, total)}–${Math.min(start+PAGE_SIZE, total)} 之於 ${total} 筆`;
+
+    // 頁碼按鈕
+    const pg = document.getElementById('pagination');
+    pg.innerHTML = '';
+    const btnClass = 'px-3 py-1 text-sm rounded border border-gray-300 hover:bg-gray-100 transition';
+    const activeCls = 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700';
+
+    const addBtn = (label, page, disabled=false, active=false) => {
+        const b = document.createElement('button');
+        b.textContent = label;
+        b.className = btnClass + (active ? ' '+activeCls : '') + (disabled ? ' opacity-40 cursor-not-allowed' : '');
+        if (!disabled) b.onclick = () => { currentPage = page; renderTable(); };
+        pg.appendChild(b);
+    };
+
+    addBtn('上一頁', currentPage-1, currentPage<=1);
+    const range = buildPageRange(currentPage, totalPages);
+    range.forEach(p => {
+        if (p === '…') {
+            const s = document.createElement('span');
+            s.textContent = '…'; s.className = 'px-2 py-1 text-gray-400';
+            pg.appendChild(s);
+        } else {
+            addBtn(p, p, false, p===currentPage);
+        }
+    });
+    addBtn('下一頁', currentPage+1, currentPage>=totalPages);
+}
+
+function buildPageRange(cur, total) {
+    if (total <= 7) return Array.from({length: total}, (_,i)=>i+1);
+    const r = [1];
+    if (cur > 3) r.push('…');
+    for (let i=Math.max(2,cur-1); i<=Math.min(total-1,cur+1); i++) r.push(i);
+    if (cur < total-2) r.push('…');
+    r.push(total);
+    return r;
+}
+
+// ── 排序 ──────────────────────────────────────────────
+function sortData() {
+    filtered.sort((a, b) => {
+        const va = a[sortCol] || '', vb = b[sortCol] || '';
+        const cmp = va.localeCompare(vb, 'zh-Hant');
+        return sortDir === 'asc' ? cmp : -cmp;
+    });
+    // 更新表頭樣式
+    document.querySelectorAll('.sort-btn').forEach(th => {
+        th.classList.remove('sort-asc','sort-desc');
+        if (parseInt(th.dataset.col) === sortCol)
+            th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    });
+}
+
+// ── 篩選 ──────────────────────────────────────────────
+function applyFilters() {
+    const kw   = document.getElementById('search-input').value.trim().toLowerCase();
+    const date = document.getElementById('date-filter').value;
+    filtered = allData.filter(row => {
+        const matchDate = !date || row[2] === date;
+        const matchKw   = !kw || row[0].toLowerCase().includes(kw) || row[1].toLowerCase().includes(kw);
+        return matchDate && matchKw;
+    });
+    sortData();
+    currentPage = 1;
+    renderTable();
+}
+
+// ── 初始化摘要與篩選器 ────────────────────────────────
+function buildUI() {
+    const dates = [...new Set(allData.map(r=>r[2]))].sort().reverse();
+    // 摘要
+    document.getElementById('summary-bar').innerHTML = `
+        <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">共 ${allData.length} 筆職位</span>
+        <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">涵蓋 ${dates.length} 個日期</span>
+        <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">最新：${dates[0]||'-'}</span>`;
+    // 日期下拉
     const sel = document.getElementById('date-filter');
     dates.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d;
-        opt.textContent = d;
-        sel.appendChild(opt);
+        const o = document.createElement('option');
+        o.value = d; o.textContent = d; sel.appendChild(o);
     });
 }
 
-function renderGrid(data) {
-    if (grid) { grid.destroy(); grid = null; }
-    document.getElementById('grid-container').innerHTML = '';
-
-    grid = new gridjs.Grid({
-        columns: [
-            {
-                name: '職位名稱',
-                formatter: (cell, row) => gridjs.html(
-                    `<a href="${row.cells[3].data}" target="_blank" rel="noopener"
-                        class="text-blue-600 dark:text-blue-400 hover:underline font-medium">${cell}</a>`
-                )
-            },
-            { name: '公司名稱' },
-            {
-                name: '發布日期',
-                width: '130px',
-                // 用 \u200B (零寬字元) 前綴阻止 Grid.js 自動解析日期為 Date 物件
-                formatter: cell => {
-                    const clean = String(cell).replace(/^\u200B/, '');
-                    return gridjs.html(`<span class="tabular-nums font-mono">${clean}</span>`);
-                }
-            },
-            { name: '_url', hidden: true }
-        ],
-        data: data,
-        pagination: { limit: 20 },
-        sort: true,
-        language: {
-            search: { placeholder: '搜尋...' },
-            pagination: {
-                previous: '上一頁', next: '下一頁',
-                showing: '顯示', results: () => '筆紀錄', of: '之於', to: '到'
-            },
-            noRecordsFound: '找不到符合條件的職位'
-        },
-        className: { table: 'w-full text-sm', th: 'px-4 py-3', td: 'px-4 py-3' }
-    }).render(document.getElementById('grid-container'));
-}
-
-function applyFilters() {
-    const keyword = document.getElementById('search-input').value.trim().toLowerCase();
-    const date = document.getElementById('date-filter').value;
-    filteredData = allData.filter(row => {
-        const matchDate = !date || row[2] === date;
-        const matchKeyword = !keyword ||
-            row[0].toLowerCase().includes(keyword) ||
-            row[1].toLowerCase().includes(keyword);
-        return matchDate && matchKeyword;
-    });
-    renderGrid(prepareGridData(filteredData));
-}
-
-function prepareGridData(data) {
-    // 在日期欄位前加入零寬字元 (\u200B)，阻止 Grid.js 自動解析為 Date 物件
-    return data.map(row => [row[0], row[1], '\u200B' + row[2], row[3]]);
-}
-
+// ── 主程式 ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     Papa.parse('all_jobs.csv', {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: results => {
+        download: true, header: true, skipEmptyLines: true,
+        complete: res => {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('table-wrapper').classList.remove('hidden');
 
-            allData = results.data.map(r => [
-                r['職位名稱'] || '',
-                r['公司名稱'] || '',
-                r['發布日期'] || '',   // 保留原始字串，不做任何轉換
+            // 日期欄位以純字串存入，不做任何轉換
+            allData = res.data.map(r => [
+                r['職位名稱']     || '',
+                r['公司名稱']     || '',
+                r['發布日期']     || '',   // ← 純字串，永不轉換
                 r['職位詳情連結'] || ''
             ]);
-            filteredData = allData;
+            filtered = [...allData];
 
-            buildSummary(allData);
-            buildDateOptions(allData);
-            renderGrid(prepareGridData(allData));
+            buildUI();
+            sortData();
+            renderTable();
 
             // 事件綁定
             document.getElementById('search-input').addEventListener('input', applyFilters);
@@ -202,10 +228,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('date-filter').value = '';
                 applyFilters();
             });
+            // 表頭排序
+            document.querySelectorAll('.sort-btn').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = parseInt(th.dataset.col);
+                    if (sortCol === col) sortDir = sortDir==='asc'?'desc':'asc';
+                    else { sortCol = col; sortDir = 'asc'; }
+                    sortData(); currentPage = 1; renderTable();
+                });
+            });
         },
         error: err => {
             document.getElementById('loading').innerHTML =
-                `<p class="text-red-500">數據載入失敗：${err}</p>`;
+                `<p class="text-red-500 font-medium">數據載入失敗：${err}</p>`;
         }
     });
 });
