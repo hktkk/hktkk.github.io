@@ -190,7 +190,6 @@ function buildUI() {
     const latestCount = allData.filter(r => r[2] === latestDate).length;
     // 摘要
     document.getElementById('summary-bar').innerHTML = `
-        <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">涵蓋 ${dates.length} 個日期</span>
         <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">最新：${latestDate} (${latestCount} 筆)</span>`;
     // 日期下拉
     const sel = document.getElementById('date-filter');
