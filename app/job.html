@@ -186,11 +186,13 @@ function applyFilters() {
 // ── 初始化摘要與篩選器 ────────────────────────────────
 function buildUI() {
     const dates = [...new Set(allData.map(r=>r[2]))].sort().reverse();
+    const latestDate = dates[0] || '-';
+    const latestCount = allData.filter(r => r[2] === latestDate).length;
     // 摘要
     document.getElementById('summary-bar').innerHTML = `
         <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">共 ${allData.length} 筆職位</span>
         <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium">涵蓋 ${dates.length} 個日期</span>
-        <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">最新：${dates[0]||'-'}</span>`;
+        <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">最新：${latestDate} (${latestCount} 筆)</span>`;
     // 日期下拉
     const sel = document.getElementById('date-filter');
     dates.forEach(d => {
