@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分數大冒險 - 智多星老師</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React 18 CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel (讓瀏覽器直接讀取 JSX) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // ── 工具函數 ──────────────────────────────────────────────
+    // 隨機整數生成器 (包含 min 及 max)
+    const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    // ── 遊戲場景設定 ──────────────────────────────────────────
+    // 共 5 關：同分母 x2、同分子 x2、終極三分數比較 x1
+    const scenes = [
+      {
+        type: 'same_denom',
+        scene: "第一關：海洋公園 🐼",
+        descPrefix: "飼養員哥哥準備咗兩盆一模一樣嘅竹葉。熊貓安安食咗其中一盆嘅",
+        midText: "，而熊貓佳佳就食咗另一盆嘅",
+        askMostText: "。請問邊隻熊貓食嘅竹葉比較多呢？🌿",
+        askLeastText: "。請問邊隻熊貓食嘅竹葉比較少呢？🌿",
+        opt1Label: "安安",
+        opt2Label: "佳佳"
+      },
+      {
+        type: 'same_num',
+        scene: "第二關：旺角小食店 🧇",
+        descPrefix: "放學啦！智多星老師買咗兩底一樣大嘅雞蛋仔。小明食咗",
+        midText: "底，小紅食咗",
+        askMostText: "底。邊個食得比較多呢？😋",
+        askLeastText: "底。邊個食得比較少呢？😋",
+        opt1Label: "小明",
+        opt2Label: "小紅"
+      },
+      {
+        type: 'same_denom',
+        scene: "第三關：學校陸運會 🍉",
+        descPrefix: "天氣好熱呀！老師切西瓜請大家食。同學A分到",
+        midText: "個西瓜，同學B分到",
+        askMostText: "個西瓜。請問邊個食嘅西瓜比較多？💦",
+        askLeastText: "個西瓜。請問邊個食嘅西瓜比較少？💦",
+        opt1Label: "同學A",
+        opt2Label: "同學B"
+      },
+      {
+        type: 'same_num',
+        scene: "第四關：茶餐廳下午茶 🧋",
+        descPrefix: "茶餐廳新鮮出爐咗兩個一樣大嘅蛋撻！哥哥食咗",
+        midText: "個，妹妹食咗",
+        askMostText: "個。請問邊個食嘅蛋撻比較多？🤤",
+        askLeastText: "個。請問邊個食嘅蛋撻比較少？🤤",
+        opt1Label: "哥哥",
+        opt2Label: "妹妹"
+      },
+      {
+        type: 'three_fractions',
+        scene: "第五關（終極挑戰）：太平山頂餐廳 🍕",
+        descPrefix: "大家一齊去山頂睇風景兼食薄餅！媽媽食咗",
+        midText: "個，爸爸食咗",
+        midText2: "個，智多星老師食咗",
+        askMostText: "個。請問邊個食得最多呢？⛰️",
+        askLeastText: "個。請問邊個食得最少呢？⛰️",
+        opt1Label: "媽媽",
+        opt2Label: "爸爸",
+        opt3Label: "老師"
+      }
+    ];
+
+    // ── 分數顯示組件 ─────────────────────────────────────────
+    // 將分子/分母疊起來顯示，更適合小學生閱讀
+    const Fraction = ({ n, d }) => (
+      <span className="inline-flex flex-col items-center justify-center align-middle mx-1 font-bold text-2xl text-blue-800 bg-white px-2 py-1 rounded shadow-sm border border-blue-200">
+        <span className="leading-none">{n}</span>
+        <span className="w-full border-t-[3px] border-blue-800 my-[2px]"></span>
+        <span className="leading-none">{d}</span>
+      </span>
+    );
+
+    // ── 主程式 App ───────────────────────────────────────────
+    const App = () => {
+      const [gameState, setGameState] = useState('intro'); // 'intro' | 'playing' | 'completed'
+      const [currentLevel, setCurrentLevel] = useState(0);
+      const [feedback, setFeedback] = useState(null);     // { type: 'success'|'error', text: string }
+      const [questions, setQuestions] = useState([]);
+
+      // ── 動態生成隨機題目 ──────────────────────────────────
+      const generateQuestions = () => {
+        return scenes.map((s, index) => {
+          const askMost = Math.random() > 0.5; // 隨機決定問「最多」定「最少」
+          const compareWord = askMost ? "多" : "少";
+
+          // 同分母題型
+          if (s.type === 'same_denom') {
+            const d = getRandomInt(3, 10);
+            let n1 = getRandomInt(1, d - 1);
+            let n2;
+            do { n2 = getRandomInt(1, d - 1); } while (n1 === n2);
+
+            const answer = askMost ? (n1 > n2 ? "A" : "B") : (n1 < n2 ? "A" : "B");
+            const targetN = askMost ? Math.max(n1, n2) : Math.min(n1, n2);
+            const otherN  = askMost ? Math.min(n1, n2) : Math.max(n1, n2);
+
+            return {
+              id: index + 1, scene: s.scene,
+              description: s.descPrefix,
+              fraction1: { n: n1, d }, midText: s.midText,
+              fraction2: { n: n2, d },
+              question: askMost ? s.askMostText : s.askLeastText,
+              options: [
+                { label: s.opt1Label, value: "A", frac: { n: n1, d } },
+                { label: s.opt2Label, value: "B", frac: { n: n2, d } }
+              ],
+              answer,
+              hint:    `🤔 想像下呀：大家都分成 ${d} 份（分母一樣）。${s.opt1Label}有 ${n1} 份，${s.opt2Label}有 ${n2} 份。我哋要搵比較「${compareWord}」嗰個，邊個數字${compareWord}啲呢？`,
+              success: `🎉 答得啱！分成一樣嘅 ${d} 份，要搵比較${compareWord}嘅，${targetN} 份當然${compareWord}過 ${otherN} 份啦！`
+            };
+
+          // 同分子題型
+          } else if (s.type === 'same_num') {
+            const n = getRandomInt(1, 5);
+            let d1 = getRandomInt(n + 1, 10);
+            let d2;
+            do { d2 = getRandomInt(n + 1, 10); } while (d1 === d2);
+
+            const answer = askMost ? (d1 < d2 ? "A" : "B") : (d1 > d2 ? "A" : "B");
+            const targetD = askMost ? Math.min(d1, d2) : Math.max(d1, d2);
+            const otherD  = askMost ? Math.max(d1, d2) : Math.min(d1, d2);
+
+            return {
+              id: index + 1, scene: s.scene,
+              description: s.descPrefix,
+              fraction1: { n, d: d1 }, midText: s.midText,
+              fraction2: { n, d: d2 },
+              question: askMost ? s.askMostText : s.askLeastText,
+              options: [
+                { label: s.opt1Label, value: "A", frac: { n, d: d1 } },
+                { label: s.opt2Label, value: "B", frac: { n, d: d2 } }
+              ],
+              answer,
+              hint:    `🤔 諗下呀：大家都係食 ${n} 份。我哋要搵比較「${compareWord}」嗰個！切做 ${d1} 份同 ${d2} 份，切得越少份，每一份會越大... 邊個會${compareWord}啲呢？`,
+              success: `🎉 叻仔/叻女！切得越${askMost ? '少' : '多'}份（${targetD}份），每一份就越${askMost ? '大' : '細'}嚿！所以 ${n}/${targetD} 係${compareWord}過 ${n}/${otherD} 㗎！`
+            };
+
+          // 終極三分數比較題型
+          } else if (s.type === 'three_fractions') {
+            // 確保三個真分數：d1 > d2 > n2 > n1 >= 1
+            const d1 = getRandomInt(5, 10);
+            const n2 = getRandomInt(2, d1 - 2);
+            const n1 = getRandomInt(1, n2 - 1);
+            const d2 = getRandomInt(n2 + 1, d1 - 1);
+
+            // 三個分數：n1/d1（最小）、n2/d1（中間）、n2/d2（最大），隨機打亂順序
+            const fracs = [
+              { n: n1, d: d1, val: n1 / d1 },
+              { n: n2, d: d1, val: n2 / d1 },
+              { n: n2, d: d2, val: n2 / d2 }
+            ].sort(() => Math.random() - 0.5);
+
+            const targetVal   = askMost ? Math.max(...fracs.map(f => f.val)) : Math.min(...fracs.map(f => f.val));
+            const targetIndex = fracs.findIndex(f => f.val === targetVal);
+            const answer      = ["A", "B", "C"][targetIndex];
+            const superWord   = askMost ? "最多" : "最少";
+            const targetFrac  = fracs[targetIndex];
+            const winnerLabel = answer === "A" ? s.opt1Label : (answer === "B" ? s.opt2Label : s.opt3Label);
+
+            return {
+              id: index + 1, scene: s.scene,
+              description: s.descPrefix,
+              fraction1: { n: fracs[0].n, d: fracs[0].d }, midText: s.midText,
+              fraction2: { n: fracs[1].n, d: fracs[1].d }, midText2: s.midText2,
+              fraction3: { n: fracs[2].n, d: fracs[2].d },
+              question: askMost ? s.askMostText : s.askLeastText,
+              options: [
+                { label: s.opt1Label, value: "A", frac: { n: fracs[0].n, d: fracs[0].d } },
+                { label: s.opt2Label, value: "B", frac: { n: fracs[1].n, d: fracs[1].d } },
+                { label: s.opt3Label, value: "C", frac: { n: fracs[2].n, d: fracs[2].d } }
+              ],
+              answer,
+              hint:    `🤔 終極挑戰呀！要搵食得「${superWord}」嘅人。試下分兩步諗：先搵出兩個分母一樣嘅分數比大小，然後再攞個結果同最後一個分數（分子一樣）比較！`,
+              success: `🏆 太犀利啦！呢題考你綜合運用「同分母」同「同分子」嘅秘訣，食得${superWord}嘅係食咗 ${targetFrac.n}/${targetFrac.d} 嘅 ${winnerLabel}！你真係無敵嘅「分數大師」！`
+            };
+          }
+        });
+      };
+
+      // ── 事件處理 ─────────────────────────────────────────
+      const handleStart = () => {
+        setQuestions(generateQuestions());
+        setGameState('playing');
+        setCurrentLevel(0);
+        setFeedback(null);
+      };
+
+      const handleAnswer = (selectedValue) => {
+        const q = questions[currentLevel];
+        setFeedback(selectedValue === q.answer
+          ? { type: 'success', text: q.success }
+          : { type: 'error',   text: q.hint    }
+        );
+      };
+
+      const handleNextLevel = () => {
+        if (currentLevel < questions.length - 1) {
+          setCurrentLevel(currentLevel + 1);
+          setFeedback(null);
+        } else {
+          setGameState('completed');
+        }
+      };
+
+      // ── 開始畫面 ─────────────────────────────────────────
+      if (gameState === 'intro') return (
+        <div className="min-h-screen bg-gradient-to-b from-blue-100 to-green-100 flex flex-col items-center justify-center p-4 font-sans text-gray-800">
+          <div className="max-w-md w-full bg-white rounded-3xl shadow-xl text-center p-8 border-4 border-yellow-300">
+            <div className="text-8xl mb-4 animate-bounce">👨‍🏫</div>
+            <h1 className="text-3xl font-extrabold text-blue-600 mb-4 tracking-wider">分數大冒險</h1>
+            <p className="text-lg mb-8 leading-relaxed text-gray-600 font-medium">
+              哈囉同學仔！我係你嘅數學老師<strong className="text-orange-500">「智多星老師」🌟</strong>！<br/><br/>
+              今日我哋要一齊去香港唔同嘅地方，挑戰分數謎題！準備好平分美食同挑戰自己未呀？
+            </p>
+            <button onClick={handleStart}
+              className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 text-xl">
+              開始冒險 🚀
+            </button>
+          </div>
+        </div>
+      );
+
+      // ── 通關畫面 ─────────────────────────────────────────
+      if (gameState === 'completed') return (
+        <div className="min-h-screen bg-gradient-to-b from-yellow-100 to-orange-100 flex flex-col items-center justify-center p-4 font-sans text-gray-800">
+          <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl text-center p-8 border-4 border-yellow-400">
+            <div className="text-9xl mb-4">🏆</div>
+            <h1 className="text-4xl font-extrabold text-red-500 mb-4 drop-shadow-sm">挑戰成功！</h1>
+            <p className="text-xl mb-6 text-gray-700 font-bold">恭喜你完成咗所有嘅分數挑戰！</p>
+            <p className="text-lg mb-8 leading-relaxed text-gray-600">
+              你依家已經係<strong className="text-blue-600 text-2xl mx-1">分數大師</strong>啦！無論係同分母定同分子，都難你唔到！智多星老師為你感到驕傲！🌟
+            </p>
+            <button onClick={handleStart}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 text-xl">
+              再玩一次 🔄
+            </button>
+          </div>
+        </div>
+      );
+
+      // ── 遊戲畫面 ─────────────────────────────────────────
+      if (questions.length === 0) return null;
+      const currentQ = questions[currentLevel];
+
+      return (
+        <div className="min-h-screen bg-[#f0f9ff] flex flex-col items-center py-8 px-4 font-sans text-gray-800">
+
+          {/* 進度條 */}
+          <div className="w-full max-w-2xl mb-6">
+            <div className="flex justify-between mb-2 px-2 font-bold text-blue-800">
+              <span>進度</span>
+              <span>{currentLevel + 1} / {questions.length}</span>
+            </div>
+            <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden shadow-inner">
+              <div className="h-full bg-green-500 transition-all duration-500 ease-out"
+                style={{ width: `${(currentLevel / questions.length) * 100}%` }}></div>
+            </div>
+          </div>
+
+          <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl overflow-hidden border-2 border-blue-100">
+
+            {/* 關卡標題 */}
+            <div className="bg-blue-500 text-white p-6 rounded-t-2xl">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <span className="text-3xl">📍</span> {currentQ.scene}
+              </h2>
+            </div>
+
+            <div className="p-6 md:p-8">
+
+              {/* 老師對話框 */}
+              <div className="flex flex-col md:flex-row items-start gap-4 mb-8">
+                <div className="text-6xl hidden md:block">👨‍🏫</div>
+                <div className="bg-blue-50 rounded-2xl p-6 border-2 border-blue-200 relative flex-1">
+                  <div className="absolute top-6 -left-3 w-4 h-4 bg-blue-50 border-l-2 border-b-2 border-blue-200 transform rotate-45 hidden md:block"></div>
+                  <div className="text-xl leading-loose text-gray-700">
+                    {currentQ.description}
+                    <Fraction n={currentQ.fraction1.n} d={currentQ.fraction1.d} />
+                    {currentQ.midText}
+                    <Fraction n={currentQ.fraction2.n} d={currentQ.fraction2.d} />
+                    {currentQ.fraction3 && (
+                      <>{currentQ.midText2}<Fraction n={currentQ.fraction3.n} d={currentQ.fraction3.d} /></>
+                    )}
+                    <span className="font-bold text-black">{currentQ.question}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 選擇按鈕（答錯後仍可重選） */}
+              {(!feedback || feedback.type === 'error') && (
+                <div className={`grid gap-4 mt-6 ${currentQ.options.length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
+                  {currentQ.options.map((opt) => (
+                    <button key={opt.value} onClick={() => handleAnswer(opt.value)}
+                      className="group flex flex-col items-center justify-center p-6 bg-white border-4 border-gray-200 rounded-2xl hover:border-orange-400 hover:bg-orange-50 transition-all active:scale-95 cursor-pointer shadow-sm hover:shadow-md">
+                      <span className="text-2xl font-bold text-gray-700 group-hover:text-orange-600 mb-3">{opt.label}</span>
+                      <Fraction n={opt.frac.n} d={opt.frac.d} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 答題反饋 */}
+              {feedback && (
+                <div className={`mt-8 p-6 rounded-2xl border-2 animate-fadeIn ${feedback.type === 'success' ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+                  <div className="flex items-start gap-4">
+                    <div className="text-4xl mt-1">{feedback.type === 'success' ? '✨' : '💡'}</div>
+                    <div className="flex-1">
+                      <p className={`text-xl font-medium leading-relaxed ${feedback.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
+                        {feedback.text}
+                      </p>
+                      {feedback.type === 'success' && (
+                        <button onClick={handleNextLevel}
+                          className="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow transition hover:scale-105 active:scale-95 text-lg w-full md:w-auto">
+                          {currentLevel < questions.length - 1 ? '下一關 ➡️' : '領取獎牌 🏆'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ── 掛載 React App ────────────────────────────────────────
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
