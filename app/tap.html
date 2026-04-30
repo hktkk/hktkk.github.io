@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>QuickTap 團隊破冰遊戲</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* 防止選取文字與預設觸控行為，確保點擊反應最快 */
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: flex;
+    }
+  </style>
+</head>
+<body class="bg-black text-white font-mono min-h-screen">
+
+  <!-- 1. 登入畫面 -->
+  <div id="screen-login" class="screen flex-col items-center justify-center min-h-screen p-6 active">
+    <div class="max-w-md w-full space-y-8">
+      <div class="text-center space-y-4">
+        <!-- Zap Icon -->
+        <svg class="w-20 h-20 text-[#39ff14] mx-auto animate-pulse" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <h1 class="text-5xl font-black tracking-tighter text-[#39ff14]">QuickTap</h1>
+        <p class="text-gray-400">極速團隊破冰挑戰</p>
+      </div>
+      
+      <form id="login-form" class="space-y-6 mt-12">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-bold text-[#39ff14] mb-2 uppercase tracking-widest">你的暱稱</label>
+            <input type="text" id="input-player-name" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-4 rounded-sm focus:outline-none focus:border-[#39ff14] focus:ring-1 focus:ring-[#39ff14] transition-colors text-lg" placeholder="輸入名稱...">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-[#39ff14] mb-2 uppercase tracking-widest">會議 / 團隊代碼</label>
+            <input type="text" id="input-meeting-id" required class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-4 rounded-sm focus:outline-none focus:border-[#39ff14] focus:ring-1 focus:ring-[#39ff14] transition-colors text-lg" placeholder="例如: Q3-AllHands">
+          </div>
+        </div>
+        <button type="submit" class="w-full relative inline-flex items-center justify-center px-8 py-4 font-bold text-black bg-[#39ff14] rounded-sm transition-all hover:bg-white hover:shadow-[0_0_20px_#39ff14] active:scale-95 text-xl mt-4">
+          <!-- Users Icon -->
+          <svg class="w-6 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          加入會議
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. 主選單畫面 -->
+  <div id="screen-menu" class="screen flex-col items-center justify-center min-h-screen p-6">
+    <div class="max-w-md w-full text-center space-y-12">
+      <div class="space-y-4">
+         <h2 class="text-3xl font-bold text-[#39ff14]">準備好了嗎，<span id="display-player-name"></span>？</h2>
+         <p class="text-gray-400 text-lg">當螢幕變成<span class="text-[#39ff14] font-bold">霓虹綠色</span>時，請用最快的速度點擊螢幕任何地方。</p>
+         <div class="inline-block border border-gray-700 bg-gray-900 px-4 py-2 rounded-sm text-sm text-gray-400 mt-4">
+           目前會議室: <span id="display-meeting-id" class="text-white font-bold"></span>
+         </div>
+      </div>
+      
+      <div class="flex flex-col space-y-4">
+        <button id="btn-start" class="w-full relative inline-flex items-center justify-center px-8 py-6 font-bold text-black bg-[#39ff14] rounded-sm transition-all hover:bg-white hover:shadow-[0_0_20px_#39ff14] active:scale-95 text-2xl">
+          <!-- Play Icon -->
+          <svg class="w-8 h-8 mr-2 fill-current" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          開始測試
+        </button>
+        
+        <button id="btn-menu-leaderboard" class="w-full relative inline-flex items-center justify-center px-6 py-3 font-bold text-[#39ff14] border-2 border-[#39ff14] rounded-sm transition-all hover:bg-[#39ff14] hover:text-black active:scale-95 text-lg">
+          <!-- Trophy Icon -->
+          <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+          查看團隊排行榜
+        </button>
+
+        <button id="btn-change-room" class="text-gray-500 hover:text-white transition-colors text-sm mt-8 underline underline-offset-4">
+          更換暱稱或會議室
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 等待畫面 (觸控區) -->
+  <div id="screen-waiting" class="screen fixed inset-0 bg-black flex-col items-center justify-center cursor-pointer touch-none">
+    <div class="text-4xl font-black text-white animate-pulse pointer-events-none">
+      準備...
+    </div>
+    <p class="text-gray-500 mt-4 pointer-events-none">等待綠色畫面出現</p>
+  </div>
+
+  <!-- 4. 目標畫面 (觸控區) -->
+  <div id="screen-target" class="screen fixed inset-0 bg-[#39ff14] flex-col items-center justify-center cursor-pointer touch-none">
+    <div class="text-7xl font-black text-black pointer-events-none">
+      點擊！
+    </div>
+  </div>
+
+  <!-- 5. 太早點擊畫面 -->
+  <div id="screen-early" class="screen fixed inset-0 bg-black flex-col items-center justify-center p-6">
+    <div class="text-center space-y-8">
+      <!-- Alert Icon -->
+      <svg class="w-24 h-24 text-red-500 mx-auto" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <div>
+        <h2 class="text-4xl font-black text-red-500 mb-2">太早了！</h2>
+        <p class="text-xl text-gray-400">必須等畫面變成綠色才能點擊。</p>
+      </div>
+      <button id="btn-early-retry" class="w-full relative inline-flex items-center justify-center px-8 py-4 font-bold text-black bg-[#39ff14] rounded-sm transition-all hover:bg-white hover:shadow-[0_0_20px_#39ff14] active:scale-95 text-xl">
+        <svg class="w-6 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+        重新嘗試
+      </button>
+    </div>
+  </div>
+
+  <!-- 6. 結果畫面 -->
+  <div id="screen-result" class="screen fixed inset-0 bg-black flex-col items-center justify-center p-6">
+    <div class="text-center space-y-8 w-full max-w-md">
+      <div class="space-y-2">
+        <h2 class="text-2xl text-gray-400 font-bold">你的反應時間</h2>
+        <div class="text-7xl font-black text-[#39ff14] tracking-tighter">
+          <span id="display-reaction-time"></span><span class="text-3xl text-gray-500 ml-2">ms</span>
+        </div>
+        <div id="pb-badge" class="hidden inline-block bg-[#39ff14]/20 text-[#39ff14] px-4 py-1 rounded-sm text-sm font-bold mt-4 animate-bounce">
+          🎉 新個人紀錄！
+        </div>
+      </div>
+      
+      <div class="flex flex-col space-y-4 w-full mt-12">
+        <button id="btn-result-retry" class="w-full relative inline-flex items-center justify-center px-8 py-5 font-bold text-black bg-[#39ff14] rounded-sm transition-all hover:bg-white hover:shadow-[0_0_20px_#39ff14] active:scale-95 text-xl">
+          <svg class="w-6 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+          再次挑戰
+        </button>
+        <button id="btn-result-leaderboard" class="w-full relative inline-flex items-center justify-center px-6 py-4 font-bold text-[#39ff14] border-2 border-[#39ff14] rounded-sm transition-all hover:bg-[#39ff14] hover:text-black active:scale-95">
+          <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+          查看團隊排行榜
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 排行榜畫面 -->
+  <div id="screen-leaderboard" class="screen flex-col min-h-screen p-6 w-full">
+    <div class="max-w-md w-full mx-auto flex-1 flex flex-col">
+      <div class="flex items-center justify-between mb-8 mt-4">
+         <h2 class="text-2xl font-black text-[#39ff14] flex items-center">
+           <svg class="w-6 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg> 
+           排行榜
+         </h2>
+         <div id="leaderboard-meeting-id" class="text-sm text-gray-500 font-bold bg-gray-900 px-3 py-1 rounded-sm border border-gray-800">
+           -
+         </div>
+      </div>
+
+      <div class="flex-1 bg-gray-900/50 border border-gray-800 rounded-sm p-4 overflow-y-auto mb-8 relative">
+        <div id="leaderboard-empty" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 space-y-4 hidden">
+          <svg class="w-12 h-12" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <p>尚無成績記錄</p>
+          <p class="text-sm">成為第一個挑戰的人！</p>
+        </div>
+        <ul id="leaderboard-list" class="space-y-3">
+          <!-- 項目會透過 JS 動態生成 -->
+        </ul>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 pb-8">
+        <button id="btn-leaderboard-menu" class="w-full relative inline-flex items-center justify-center px-6 py-3 font-bold text-[#39ff14] border-2 border-[#39ff14] rounded-sm transition-all hover:bg-[#39ff14] hover:text-black active:scale-95">
+          <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          主選單
+        </button>
+        <button id="btn-leaderboard-start" class="w-full relative inline-flex items-center justify-center px-6 py-3 font-bold text-black bg-[#39ff14] rounded-sm transition-all hover:bg-white hover:shadow-[0_0_20px_#39ff14] active:scale-95">
+          <svg class="w-5 h-5 mr-2 fill-current" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          立刻挑戰
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 應用程式邏輯與 Firebase 整合 -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, collection, onSnapshot, doc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // --- State Variables ---
+    let gameState = 'login';
+    let playerName = '';
+    let meetingId = '';
+    let reactionTime = null;
+    let allScores = [];
+    let timeoutRef = null;
+    let startTimeRef = 0;
+    let currentUser = null;
+    let unsubscribeSnapshot = null;
+
+    // --- DOM Elements ---
+    const screens = {
+      login: document.getElementById('screen-login'),
+      menu: document.getElementById('screen-menu'),
+      waiting: document.getElementById('screen-waiting'),
+      target: document.getElementById('screen-target'),
+      early: document.getElementById('screen-early'),
+      result: document.getElementById('screen-result'),
+      leaderboard: document.getElementById('screen-leaderboard')
+    };
+
+    // --- Firebase Setup ---
+    let app, auth, db, appId;
+    try {
+      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    } catch (error) {
+      console.error("Firebase init error:", error);
+    }
+
+    const initAuth = async () => {
+      if (!auth) return;
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Auth error:", err);
+      }
+    };
+    initAuth();
+
+    if (auth) {
+      onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (user && db) {
+          // Listen to scores collection
+          const scoresRef = collection(db, 'artifacts', appId, 'public', 'data', 'quicktap_scores');
+          if (unsubscribeSnapshot) unsubscribeSnapshot();
+          
+          unsubscribeSnapshot = onSnapshot(scoresRef, (snapshot) => {
+            allScores = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            if (gameState === 'leaderboard') {
+              renderLeaderboardUI();
+            }
+          }, (error) => {
+            console.error("Snapshot error:", error);
+          });
+        }
+      });
+    }
+
+    // --- Navigation & Logic ---
+    function setScreen(newState) {
+      gameState = newState;
+      Object.values(screens).forEach(el => el.classList.remove('active'));
+      if (screens[newState]) {
+        screens[newState].classList.add('active');
+      }
+
+      // State specific triggers
+      if (newState === 'leaderboard') {
+        document.getElementById('leaderboard-meeting-id').innerText = meetingId;
+        renderLeaderboardUI();
+      }
+    }
+
+    function startGame() {
+      reactionTime = null;
+      setScreen('waiting');
+      
+      const delay = Math.floor(Math.random() * 3000) + 2000; // 2s to 5s
+      timeoutRef = setTimeout(() => {
+        setScreen('target');
+        startTimeRef = Date.now();
+      }, delay);
+    }
+
+    async function handlePointerDown(e) {
+      if (gameState === 'waiting') {
+        // False start
+        clearTimeout(timeoutRef);
+        setScreen('early');
+      } else if (gameState === 'target') {
+        // Success tap
+        const timeElapsed = Date.now() - startTimeRef;
+        reactionTime = timeElapsed;
+        
+        // PB Check
+        const myScores = allScores.filter(s => s.uid === currentUser?.uid && s.meetingId === meetingId);
+        const isPersonalBest = myScores.length === 0 || reactionTime < Math.min(...myScores.map(s => s.reactionTime));
+        
+        document.getElementById('display-reaction-time').innerText = reactionTime;
+        const pbBadge = document.getElementById('pb-badge');
+        if (isPersonalBest && reactionTime > 0) {
+          pbBadge.classList.remove('hidden');
+        } else {
+          pbBadge.classList.add('hidden');
+        }
+
+        setScreen('result');
+        await saveScore(timeElapsed);
+      }
+    }
+
+    async function saveScore(time) {
+      if (!currentUser || !db) return;
+      try {
+        const newScoreRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'quicktap_scores'));
+        await setDoc(newScoreRef, {
+          uid: currentUser.uid,
+          playerName: playerName,
+          meetingId: meetingId,
+          reactionTime: time,
+          timestamp: Date.now()
+        });
+      } catch (err) {
+        console.error("Error saving score:", err);
+      }
+    }
+
+    function renderLeaderboardUI() {
+      const listEl = document.getElementById('leaderboard-list');
+      const emptyEl = document.getElementById('leaderboard-empty');
+      listEl.innerHTML = '';
+
+      const meetingScores = allScores.filter(s => s.meetingId === meetingId);
+      meetingScores.sort((a, b) => a.reactionTime - b.reactionTime);
+      
+      const uniqueScoresMap = new Map();
+      meetingScores.forEach(score => {
+        if (!uniqueScoresMap.has(score.uid)) {
+          uniqueScoresMap.set(score.uid, score);
+        }
+      });
+      
+      const top10 = Array.from(uniqueScoresMap.values()).slice(0, 10);
+
+      if (top10.length === 0) {
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+        top10.forEach((score, index) => {
+          const li = document.createElement('li');
+          const isTop1 = index === 0;
+          const rankColor = isTop1 ? 'text-[#39ff14]' : (index < 3 ? 'text-white' : 'text-gray-600');
+          const nameColor = isTop1 ? 'text-[#39ff14]' : 'text-white';
+          
+          li.className = `flex items-center justify-between p-4 rounded-sm ${isTop1 ? 'bg-[#39ff14]/10 border border-[#39ff14]/30' : 'bg-black border border-gray-800'}`;
+          li.innerHTML = `
+            <div class="flex items-center space-x-4">
+              <span class="text-xl font-black ${rankColor}">#${index + 1}</span>
+              <span class="font-bold truncate max-w-[120px] sm:max-w-[180px] ${nameColor}">${escapeHTML(score.playerName)}</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-lg font-bold ${nameColor}">${score.reactionTime}</span>
+              <span class="text-xs text-gray-500">ms</span>
+            </div>
+          `;
+          listEl.appendChild(li);
+        });
+      }
+    }
+
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.innerText = str;
+      return div.innerHTML;
+    }
+
+    // --- Event Listeners Bindings ---
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pName = document.getElementById('input-player-name').value.trim();
+      const mId = document.getElementById('input-meeting-id').value.trim();
+      
+      if (pName && mId) {
+        playerName = pName;
+        meetingId = mId;
+        document.getElementById('display-player-name').innerText = playerName;
+        document.getElementById('display-meeting-id').innerText = meetingId;
+        setScreen('menu');
+      }
+    });
+
+    // Start / Retry Buttons
+    document.getElementById('btn-start').addEventListener('click', startGame);
+    document.getElementById('btn-early-retry').addEventListener('click', () => {
+      clearTimeout(timeoutRef);
+      setScreen('menu');
+    });
+    document.getElementById('btn-result-retry').addEventListener('click', startGame);
+    document.getElementById('btn-leaderboard-start').addEventListener('click', startGame);
+
+    // Leaderboard Buttons
+    document.getElementById('btn-menu-leaderboard').addEventListener('click', () => setScreen('leaderboard'));
+    document.getElementById('btn-result-leaderboard').addEventListener('click', () => setScreen('leaderboard'));
+    
+    // Menu navigation
+    document.getElementById('btn-change-room').addEventListener('click', () => setScreen('login'));
+    document.getElementById('btn-leaderboard-menu').addEventListener('click', () => setScreen('menu'));
+
+    // Game interaction (onPointerDown equivalent)
+    screens.waiting.addEventListener('pointerdown', handlePointerDown);
+    screens.target.addEventListener('pointerdown', handlePointerDown);
+
+  </script>
+</body>
+</html>
