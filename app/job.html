@@ -238,11 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 預設載入熱數據（最近 180 天）
     loadData('recent_jobs.csv');
 
-    // 數據源切換
-    document.getElementById('data-source').addEventListener('change', e => {
-        loadData(e.target.value);
-    });
-
     // 事件綁定
     document.getElementById('search-input').addEventListener('input', applyFilters);
     document.getElementById('date-filter').addEventListener('change', applyFilters);
