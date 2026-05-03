@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 專用語音轉檔工具 (16kHz 單聲道 MP3)</title>
+    <!-- 引入 Tailwind CSS 進行快速現代化排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 LameJS 進行 MP3 編碼 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <!-- 引入 Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .drag-over { border-color: #3b82f6 !important; background-color: #eff6ff !important; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8 border border-slate-100">
+        <!-- 標題區塊 -->
+        <div class="text-center mb-8">
+            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                <i data-lucide="mic-2" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800">AI 語音優化轉檔器</h1>
+            <p class="text-slate-500 mt-2 text-sm">將任何音訊 (如 WAV, M4A) 在本地端轉換為 AI 辨識最佳格式<br><span class="font-semibold">16kHz / 單聲道 / 64kbps MP3</span></p>
+        </div>
+
+        <!-- 拖曳與選擇檔案區塊 -->
+        <div id="dropZone" class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:bg-slate-50 transition-colors duration-200">
+            <input type="file" id="fileInput" class="hidden" accept="audio/*">
+            <i data-lucide="upload-cloud" class="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
+            <h3 class="text-lg font-medium text-slate-700" id="fileNameDisplay">點擊選擇檔案，或拖曳至此處</h3>
+            <p class="text-slate-400 text-sm mt-1">支援 WAV, MP3, M4A, OGG 等格式</p>
+            <div class="mt-4 text-xs text-slate-400 flex items-center justify-center gap-1">
+                <i data-lucide="shield-check" class="w-4 h-4 text-green-500"></i>
+                檔案完全在您的裝置上處理，保護隱私
+            </div>
+        </div>
+
+        <!-- 進度條與狀態 -->
+        <div id="progressContainer" class="hidden mt-6">
+            <div class="flex justify-between text-sm text-slate-600 mb-2">
+                <span id="statusText">準備中...</span>
+                <span id="progressPercentage">0%</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2.5">
+                <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- 操作按鈕 -->
+        <div class="mt-8 flex justify-center gap-4">
+            <button id="convertBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition duration-200 flex items-center gap-2 opacity-50 cursor-not-allowed" disabled>
+                <i data-lucide="settings-2" class="w-5 h-5"></i>
+                開始最佳化轉換
+            </button>
+        </div>
+
+        <!-- 結果展示區 -->
+        <div id="resultContainer" class="hidden mt-8 p-6 bg-green-50 rounded-xl border border-green-100 text-center">
+            <h3 class="text-green-800 font-medium flex items-center justify-center gap-2 mb-4">
+                <i data-lucide="check-circle-2" class="w-5 h-5"></i> 轉換完成！
+            </h3>
+            <audio id="audioPreview" controls class="w-full mb-4"></audio>
+            <a id="downloadLink" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition duration-200">
+                <i data-lucide="download" class="w-5 h-5"></i>
+                下載 MP3 檔案
+            </a>
+            <p id="statsText" class="text-xs text-slate-500 mt-4"></p>
+        </div>
+    </div>
+
+    <script>
+        // 初始化 Lucide Icons
+        lucide.createIcons();
+
+        // DOM 元素
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const convertBtn = document.getElementById('convertBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const statusText = document.getElementById('statusText');
+        const resultContainer = document.getElementById('resultContainer');
+        const audioPreview = document.getElementById('audioPreview');
+        const downloadLink = document.getElementById('downloadLink');
+        const statsText = document.getElementById('statsText');
+
+        let currentFile = null;
+
+        // 點擊上傳
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // 拖曳事件處理
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // 處理選擇的檔案
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('audio/')) {
+                alert('請上傳音訊檔案！');
+                return;
+            }
+            currentFile = file;
+            fileNameDisplay.textContent = file.name;
+            fileNameDisplay.classList.remove('text-slate-700');
+            fileNameDisplay.classList.add('text-blue-600', 'font-semibold');
+            
+            convertBtn.disabled = false;
+            convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // 重置 UI
+            resultContainer.classList.add('hidden');
+            progressContainer.classList.add('hidden');
+            progressBar.style.width = '0%';
+            progressPercentage.textContent = '0%';
+        }
+
+        // 格式化檔案大小
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // 開始轉換
+        convertBtn.addEventListener('click', async () => {
+            if (!currentFile) return;
+
+            // UI 狀態更新
+            convertBtn.disabled = true;
+            convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            statusText.textContent = '讀取與解碼音訊中 (這可能需要幾秒鐘)...';
+
+            try {
+                // 1. 讀取檔案
+                const arrayBuffer = await currentFile.arrayBuffer();
+                
+                // 2. 建立 AudioContext 並強制重採樣為 16000Hz
+                // 為了兼容性，使用 window.AudioContext
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioCtx = new AudioContext({ sampleRate: 16000 });
+                
+                // 解碼音訊資料 (自動重採樣)
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                
+                statusText.textContent = '正在混合為單聲道...';
+                
+                // 3. 提取音訊資料並轉為單聲道
+                const length = audioBuffer.length;
+                const float32Data = new Float32Array(length);
+                
+                if (audioBuffer.numberOfChannels === 2) {
+                    const left = audioBuffer.getChannelData(0);
+                    const right = audioBuffer.getChannelData(1);
+                    // 左右聲道平均
+                    for (let i = 0; i < length; i++) {
+                        float32Data[i] = (left[i] + right[i]) / 2;
+                    }
+                } else {
+                    float32Data.set(audioBuffer.getChannelData(0));
+                }
+
+                // 4. 將 Float32 (-1.0 to 1.0) 轉換為 Int16 (-32768 to 32767) 給 lamejs 使用
+                const int16Data = new Int16Array(length);
+                for (let i = 0; i < length; i++) {
+                    let s = Math.max(-1, Math.min(1, float32Data[i]));
+                    int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+
+                statusText.textContent = '正在編碼 MP3...';
+
+                // 5. 非同步區塊處理 MP3 編碼 (避免卡死主執行緒)
+                const mp3Blob = await encodeMp3Async(int16Data);
+
+                // 6. 轉換完成，建立下載連結
+                statusText.textContent = '轉換完成！';
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
+
+                const mp3Url = URL.createObjectURL(mp3Blob);
+                audioPreview.src = mp3Url;
+                downloadLink.href = mp3Url;
+                
+                // 設定預設下載檔名
+                const originalName = currentFile.name.substring(0, currentFile.name.lastIndexOf('.')) || currentFile.name;
+                downloadLink.download = `${originalName}_16k_mono.mp3`;
+
+                statsText.innerHTML = `原始大小: <b>${formatBytes(currentFile.size)}</b> &rarr; 壓縮後大小: <b>${formatBytes(mp3Blob.size)}</b>`;
+                
+                // 顯示結果
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    resultContainer.classList.remove('hidden');
+                    convertBtn.disabled = false;
+                    convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }, 500);
+
+            } catch (error) {
+                console.error(error);
+                alert('轉換失敗，請確保檔案是有效的音訊。錯誤訊息: ' + error.message);
+                convertBtn.disabled = false;
+                convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+        // 非同步分塊編碼函數
+        function encodeMp3Async(int16Data) {
+            return new Promise((resolve) => {
+                // 初始化編碼器: 1 聲道 (Mono), 16000Hz, 64kbps
+                const mp3encoder = new lamejs.Mp3Encoder(1, 16000, 64);
+                const mp3Data = [];
+                const sampleBlockSize = 1152 * 10; // 每次處理的樣本數
+                const length = int16Data.length;
+                let index = 0;
+
+                function processChunk() {
+                    const end = Math.min(index + sampleBlockSize, length);
+                    const sampleChunk = int16Data.subarray(index, end);
+                    
+                    const mp3buf = mp3encoder.encodeBuffer(sampleChunk);
+                    if (mp3buf.length > 0) {
+                        mp3Data.push(mp3buf);
+                    }
+
+                    index += sampleBlockSize;
+
+                    // 更新進度條
+                    const progress = Math.round((index / length) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressPercentage.textContent = `${progress}%`;
+
+                    if (index < length) {
+                        // 放棄主執行緒控制權，讓瀏覽器更新 UI
+                        setTimeout(processChunk, 0); 
+                    } else {
+                        // 處理最後的資料
+                        const mp3bufFlush = mp3encoder.flush();
+                        if (mp3bufFlush.length > 0) {
+                            mp3Data.push(mp3bufFlush);
+                        }
+                        // 建立最終的 Blob
+                        resolve(new Blob(mp3Data, { type: 'audio/mp3' }));
+                    }
+                }
+
+                // 開始處理第一個區塊
+                processChunk();
+            });
+        }
+    </script>
+</body>
+</html>
