@@ -7,7 +7,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 語音轉檔 (FFmpeg.wasm 巨獸版)</title>
 
-    <!-- 引入 FFmpeg.wasm (v0.12) 核心庫 - 使用本地檔案避免 coi-serviceworker 攔截 CDN -->
+    <!--
+        所有依賴均本地化，避免 coi-serviceworker 攔截外部 CDN：
+        lib/ffmpeg.js         - FFmpeg 主庫 (UMD, 暴露 window.FFmpegWASM)
+        lib/814.ffmpeg.js     - FFmpeg Worker chunk (自動由 ffmpeg.js 載入)
+        lib/ffmpeg-util.js    - fetchFile 工具 (暴露 window.FFmpegUtil)
+        lib/ffmpeg-core.js    - FFmpeg 核心 JS
+        lib/ffmpeg-core.wasm  - FFmpeg WASM 二進制引擎 (31MB)
+    -->
     <script src="lib/ffmpeg.js"></script>
     <script src="lib/ffmpeg-util.js"></script>
 
@@ -34,7 +41,6 @@
             padding: 2.5rem;
         }
 
-        /* ── 頂部標題區 ── */
         .header { text-align: center; margin-bottom: 2rem; }
         .icon-wrap {
             background: #ede9fe;
@@ -49,7 +55,6 @@
         .header p { color: #64748b; font-size: 0.875rem; margin-top: 0.5rem; line-height: 1.6; }
         .header p strong { font-weight: 600; }
 
-        /* ── 拖曳區 ── */
         #dropZone {
             border: 2px dashed #cbd5e1;
             border-radius: 0.875rem;
@@ -65,71 +70,36 @@
         #fileNameDisplay.selected { color: #7c3aed; font-weight: 600; }
         #dropZone p { color: #94a3b8; font-size: 0.8rem; margin-top: 0.35rem; }
 
-        /* ── 進度條 ── */
         #progressContainer { margin-top: 1.5rem; display: none; }
         .progress-header { display: flex; justify-content: space-between; font-size: 0.875rem; color: #475569; margin-bottom: 0.5rem; }
         .progress-track { background: #e2e8f0; border-radius: 9999px; height: 10px; }
-        .progress-fill {
-            background: #7c3aed;
-            height: 10px;
-            border-radius: 9999px;
-            width: 0%;
-            transition: width 0.3s;
-        }
+        .progress-fill { background: #7c3aed; height: 10px; border-radius: 9999px; width: 0%; transition: width 0.3s; }
         #logText { font-size: 0.7rem; color: #94a3b8; margin-top: 0.5rem; height: 1rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-        /* ── 按鈕 ── */
         .btn-wrap { margin-top: 2rem; display: flex; justify-content: center; }
         #convertBtn {
-            background: #7c3aed;
-            color: #fff;
-            font-weight: 500;
-            padding: 0.65rem 1.75rem;
-            border-radius: 0.5rem;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-            transition: background 0.2s, opacity 0.2s;
+            background: #7c3aed; color: #fff; font-weight: 500;
+            padding: 0.65rem 1.75rem; border-radius: 0.5rem; border: none;
+            cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+            font-size: 1rem; transition: background 0.2s, opacity 0.2s;
         }
         #convertBtn:hover:not(:disabled) { background: #6d28d9; }
         #convertBtn:disabled { opacity: 0.5; cursor: not-allowed; }
         #convertBtn svg { width: 1.25rem; height: 1.25rem; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-        /* ── 結果區 ── */
         #resultContainer {
-            display: none;
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: #f0fdf4;
-            border-radius: 0.875rem;
-            border: 1px solid #bbf7d0;
-            text-align: center;
+            display: none; margin-top: 2rem; padding: 1.5rem;
+            background: #f0fdf4; border-radius: 0.875rem;
+            border: 1px solid #bbf7d0; text-align: center;
         }
-        .result-title {
-            color: #166534;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
+        .result-title { color: #166534; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; }
         .result-title svg { width: 1.25rem; height: 1.25rem; stroke: #16a34a; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         #audioPreview { width: 100%; margin-bottom: 1rem; }
         #downloadLink {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: #16a34a;
-            color: #fff;
-            font-weight: 500;
-            padding: 0.55rem 1.5rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            transition: background 0.2s;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: #16a34a; color: #fff; font-weight: 500;
+            padding: 0.55rem 1.5rem; border-radius: 0.5rem;
+            text-decoration: none; transition: background 0.2s;
         }
         #downloadLink:hover { background: #15803d; }
         #downloadLink svg { width: 1.1rem; height: 1.1rem; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -138,28 +108,24 @@
 </head>
 <body>
     <div class="card">
-        <!-- 標題 -->
         <div class="header">
             <div class="icon-wrap">
-                <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 7h10M7 12h10M7 17h10"/></svg>
+                <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 7h10M7 12h10M7 17h4"/></svg>
             </div>
             <h1>AI 語音轉檔器 <span>(WASM 巨獸版)</span></h1>
             <p>搭載 FFmpeg 引擎，專為 100MB+ 大型檔案設計<br><strong>16kHz / 單聲道 / 64kbps MP3</strong></p>
         </div>
 
-        <!-- 拖曳上傳區 -->
         <div id="dropZone">
             <input type="file" id="fileInput" style="display:none" accept="audio/*,video/*">
-            <!-- 音訊檔案圖示 -->
             <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
             <h3 id="fileNameDisplay">點擊選擇檔案，或拖曳至此處</h3>
             <p>支援超大型 WAV, MP3, M4A 甚至 MP4 影片檔</p>
         </div>
 
-        <!-- 進度條 -->
         <div id="progressContainer">
             <div class="progress-header">
-                <span id="statusText">正在載入 FFmpeg 引擎...</span>
+                <span id="statusText">準備就緒</span>
                 <span id="progressPercentage">0%</span>
             </div>
             <div class="progress-track">
@@ -168,7 +134,6 @@
             <p id="logText"></p>
         </div>
 
-        <!-- 轉檔按鈕 -->
         <div class="btn-wrap">
             <button id="convertBtn" disabled>
                 <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -176,7 +141,6 @@
             </button>
         </div>
 
-        <!-- 結果區 -->
         <div id="resultContainer">
             <h3 class="result-title">
                 <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -192,83 +156,87 @@
     </div>
 
     <script>
-        // 用 window.onload 確保所有庫載入後才執行，避免初始化失敗
-        window.onload = function() {
+    // window.onload 確保所有 <script> 標籤載入後才執行
+    window.onload = function() {
 
-        // 從全域變數獲取 FFmpeg 模組
-        // 本地 UMD 版本掛載於 window.FFmpegWASM（非 window.FFmpeg）
+        // ── 取得 FFmpeg 模組（本地 UMD 版本掛載於 window.FFmpegWASM）
         const { FFmpeg } = window.FFmpegWASM;
         const { fetchFile } = window.FFmpegUtil;
+
+        // ── 計算 lib/ 目錄的絕對路徑（確保 Worker chunk 路徑正確）
+        // ffmpeg.js 的 publicPath 會根據自身 <script> src 自動計算
+        // 所以 814.ffmpeg.js 必須與 ffmpeg.js 在同一目錄
         const ffmpeg = new FFmpeg();
 
-        const dropZone         = document.getElementById('dropZone');
-        const fileInput        = document.getElementById('fileInput');
-        const fileNameDisplay  = document.getElementById('fileNameDisplay');
-        const convertBtn       = document.getElementById('convertBtn');
-        const progressContainer= document.getElementById('progressContainer');
-        const progressBar      = document.getElementById('progressBar');
-        const progressPercentage = document.getElementById('progressPercentage');
-        const statusText       = document.getElementById('statusText');
-        const logText          = document.getElementById('logText');
-        const resultContainer  = document.getElementById('resultContainer');
-        const audioPreview     = document.getElementById('audioPreview');
-        const downloadLink     = document.getElementById('downloadLink');
-        const statsText        = document.getElementById('statsText');
+        // ── DOM 元素
+        const dropZone          = document.getElementById('dropZone');
+        const fileInput         = document.getElementById('fileInput');
+        const fileNameDisplay   = document.getElementById('fileNameDisplay');
+        const convertBtn        = document.getElementById('convertBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar       = document.getElementById('progressBar');
+        const progressPercentage= document.getElementById('progressPercentage');
+        const statusText        = document.getElementById('statusText');
+        const logText           = document.getElementById('logText');
+        const resultContainer   = document.getElementById('resultContainer');
+        const audioPreview      = document.getElementById('audioPreview');
+        const downloadLink      = document.getElementById('downloadLink');
+        const statsText         = document.getElementById('statsText');
 
-        let currentFile = null;
+        let currentFile    = null;
         let isFfmpegLoaded = false;
 
-        // 監聽 FFmpeg 轉檔進度
+        // ── FFmpeg 進度回調
         ffmpeg.on('progress', ({ progress }) => {
-            const percent = Math.max(0, Math.min(100, Math.round(progress * 100)));
-            progressBar.style.width = `${percent}%`;
-            progressPercentage.textContent = `${percent}%`;
-            statusText.textContent = '正在進行高效轉檔...';
+            const pct = Math.max(0, Math.min(100, Math.round(progress * 100)));
+            progressBar.style.width     = `${pct}%`;
+            progressPercentage.textContent = `${pct}%`;
+            statusText.textContent      = '正在轉檔...';
         });
 
-        // 監聽底層 Log
         ffmpeg.on('log', ({ message }) => {
             logText.textContent = message;
         });
 
-        // 輔助函數：解決跨域載入 WASM 的問題（透過 Blob URL 繞過 CORP 限制）
-        async function toBlobURL(url, mimeType) {
-            const resp = await fetch(url);
-            const blob = await resp.blob();
-            return URL.createObjectURL(new Blob([blob], { type: mimeType }));
-        }
-
-        // 載入 FFmpeg 引擎（全部使用本地檔案，避免 CDN 被 coi-serviceworker 攔截）
+        // ── 載入 FFmpeg 核心（全部本地，零 CDN）
         async function loadFFmpeg() {
             if (isFfmpegLoaded) return;
             statusText.textContent = '正在初始化 FFmpeg 引擎...';
             progressContainer.style.display = 'block';
 
-            // 使用相對路徑指向本地 lib 目錄
-            const baseURL = new URL('lib/', window.location.href).href;
+            // 取得 trim.html 所在目錄，拼出 lib/ 的絕對 URL
+            const pageBase = window.location.href.replace(/\/[^\/]*$/, '/');
+            const libBase  = pageBase + 'lib/';
+
             await ffmpeg.load({
-                coreURL: `${baseURL}ffmpeg-core.js`,
-                wasmURL: `${baseURL}ffmpeg-core.wasm`,
+                coreURL: libBase + 'ffmpeg-core.js',
+                wasmURL: libBase + 'ffmpeg-core.wasm',
             });
 
             isFfmpegLoaded = true;
             progressContainer.style.display = 'none';
         }
 
-        // 檔案選擇邏輯
+        // ── 拖曳 / 點擊選擇檔案
         dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
-            if (e.dataTransfer.files.length > 0) handleFileSelect(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
         });
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
         });
 
-        function handleFileSelect(file) {
+        function handleFile(file) {
             currentFile = file;
             fileNameDisplay.textContent = `${file.name}  (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
             fileNameDisplay.classList.add('selected');
@@ -276,67 +244,59 @@
             resultContainer.style.display = 'none';
         }
 
-        // 開始轉檔
+        // ── 開始轉檔
         convertBtn.addEventListener('click', async () => {
             if (!currentFile) return;
 
             convertBtn.disabled = true;
             progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
-            progressPercentage.textContent = '0%';
+            progressBar.style.width         = '0%';
+            progressPercentage.textContent  = '0%';
 
             try {
-                // 1. 確保引擎已載入
                 await loadFFmpeg();
 
-                statusText.textContent = '正在將檔案載入虛擬記憶體...';
+                statusText.textContent = '正在載入檔案...';
+                const INPUT  = 'input';
+                const OUTPUT = 'output.mp3';
 
-                // 2. 將檔案寫入 FFmpeg 的虛擬檔案系統 (VFS)
-                const inputName  = 'input_file';
-                const outputName = 'output.mp3';
-                await ffmpeg.writeFile(inputName, await fetchFile(currentFile));
+                // 寫入虛擬檔案系統
+                await ffmpeg.writeFile(INPUT, await fetchFile(currentFile));
 
-                // 3. 執行 FFmpeg 指令 (16kHz, 單聲道, 64kbps)
-                statusText.textContent = '開始轉檔...';
-                await ffmpeg.exec([
-                    '-i', inputName,
-                    '-ar', '16000',
-                    '-ac', '1',
-                    '-b:a', '64k',
-                    outputName
-                ]);
+                // 執行轉檔：16kHz 單聲道 64kbps
+                statusText.textContent = '正在轉檔...';
+                await ffmpeg.exec(['-i', INPUT, '-ar', '16000', '-ac', '1', '-b:a', '64k', OUTPUT]);
 
-                // 4. 從虛擬檔案系統讀取結果
-                statusText.textContent = '轉檔完成，正在匯出...';
-                const data = await ffmpeg.readFile(outputName);
-
-                // 5. 建立下載連結
-                const mp3Blob = new Blob([data.buffer], { type: 'audio/mp3' });
+                // 讀取結果
+                statusText.textContent = '匯出中...';
+                const data    = await ffmpeg.readFile(OUTPUT);
+                const mp3Blob = new Blob([data.buffer], { type: 'audio/mpeg' });
                 const mp3Url  = URL.createObjectURL(mp3Blob);
 
-                audioPreview.src    = mp3Url;
-                downloadLink.href   = mp3Url;
-                const originalName  = currentFile.name.substring(0, currentFile.name.lastIndexOf('.')) || currentFile.name;
-                downloadLink.download = `${originalName}_16k_mono.mp3`;
-
-                statsText.innerHTML = `原始大小: <b>${(currentFile.size / 1024 / 1024).toFixed(2)} MB</b> &rarr; 壓縮後: <b>${(mp3Blob.size / 1024 / 1024).toFixed(2)} MB</b>`;
+                // 更新 UI
+                audioPreview.src      = mp3Url;
+                downloadLink.href     = mp3Url;
+                const stem            = currentFile.name.replace(/\.[^.]+$/, '');
+                downloadLink.download = `${stem}_16k_mono.mp3`;
+                statsText.innerHTML   = `原始: <b>${(currentFile.size/1024/1024).toFixed(2)} MB</b> → 壓縮後: <b>${(mp3Blob.size/1024/1024).toFixed(2)} MB</b>`;
 
                 // 清理虛擬記憶體
-                await ffmpeg.deleteFile(inputName);
-                await ffmpeg.deleteFile(outputName);
+                await ffmpeg.deleteFile(INPUT);
+                await ffmpeg.deleteFile(OUTPUT);
 
                 progressContainer.style.display = 'none';
-                resultContainer.style.display = 'block';
+                resultContainer.style.display   = 'block';
 
-            } catch (error) {
-                console.error(error);
-                alert('轉檔發生錯誤！請查看 Console 了解詳情。\n' + error.message);
+            } catch (err) {
+                console.error(err);
+                statusText.textContent = '轉檔失敗：' + err.message;
+                alert('轉檔失敗！\n' + err.message);
             } finally {
                 convertBtn.disabled = false;
             }
         });
 
-        }; // end window.onload
+    }; // end window.onload
     </script>
 </body>
 </html>
