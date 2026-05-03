@@ -193,7 +193,8 @@
 
     <script>
         // 從全域變數獲取 FFmpeg 模組
-        const { FFmpeg } = window.FFmpeg;
+        // 本地 UMD 版本掛載於 window.FFmpegWASM（非 window.FFmpeg）
+        const { FFmpeg } = window.FFmpegWASM;
         const { fetchFile } = window.FFmpegUtil;
         const ffmpeg = new FFmpeg();
 
