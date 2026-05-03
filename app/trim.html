@@ -192,6 +192,9 @@
     </div>
 
     <script>
+        // 用 window.onload 確保所有庫載入後才執行，避免初始化失敗
+        window.onload = function() {
+
         // 從全域變數獲取 FFmpeg 模組
         // 本地 UMD 版本掛載於 window.FFmpegWASM（非 window.FFmpeg）
         const { FFmpeg } = window.FFmpegWASM;
@@ -331,6 +334,8 @@
                 convertBtn.disabled = false;
             }
         });
+
+        }; // end window.onload
     </script>
 </body>
 </html>
