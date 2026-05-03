@@ -7,9 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 語音轉檔 (FFmpeg.wasm 巨獸版)</title>
 
-    <!-- 引入 FFmpeg.wasm (v0.12) 核心庫 -->
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+    <!-- 引入 FFmpeg.wasm (v0.12) 核心庫 - 使用本地檔案避免 coi-serviceworker 攔截 CDN -->
+    <script src="lib/ffmpeg.js"></script>
+    <script src="lib/ffmpeg-util.js"></script>
 
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
