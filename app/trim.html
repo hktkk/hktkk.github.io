@@ -236,6 +236,7 @@
 
         let currentFile    = null;
         let isFfmpegLoaded = false;
+        let isConverting   = false;  // 追蹤轉檔狀態
 
         // ── FFmpeg 進度回調
         ffmpeg.on('progress', ({ progress }) => {
@@ -265,7 +266,10 @@
             });
 
             isFfmpegLoaded = true;
-            progressContainer.style.display = 'none';
+            // 只有在轉檔進行中才保持進度條顯示，否則隱藏
+            if (!isConverting) {
+                progressContainer.style.display = 'none';
+            }
         }
 
         // ── 拖曳 / 點擊選擇檔案
@@ -300,6 +304,7 @@
             if (!currentFile) return;
 
             convertBtn.disabled = true;
+            isConverting = true;  // 標記轉檔開始
             progressContainer.style.display = 'block';
             progressBar.style.width         = '0%';
             progressPercentage.textContent  = '0%';
@@ -344,6 +349,7 @@
                 alert('轉檔失敗！\n' + err.message);
             } finally {
                 convertBtn.disabled = false;
+                isConverting = false;  // 標記轉檔結束
             }
         });
 
