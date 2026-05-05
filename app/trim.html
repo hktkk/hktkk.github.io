@@ -164,7 +164,7 @@
                 <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 7h10M7 12h10M7 17h4"/></svg>
             </div>
             <h1>AI 語音轉檔器 <span>(WASM 巨獸版)</span></h1>
-            <p>搭載 FFmpeg 引擎，專為 100MB+ 大型檔案設計<br><strong>16kHz / 單聲道 / 64kbps MP3</strong></p>
+            <p>搭載 FFmpeg 引擎，專為 100MB+ 大型檔案設計<br><strong>16kHz / 單聲道 / 16-bit WAV</strong></p>
         </div>
 
         <div id="dropZone">
@@ -200,7 +200,7 @@
             <audio id="audioPreview" controls></audio>
             <a id="downloadLink" href="#">
                 <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                下載最佳化 MP3
+                下載 WAV 檔案
             </a>
             <p id="statsText"></p>
         </div>
@@ -314,26 +314,26 @@
 
                 statusText.textContent = '正在載入檔案...';
                 const INPUT  = 'input';
-                const OUTPUT = 'output.mp3';
+                const OUTPUT = 'output.wav';
 
                 // 寫入虛擬檔案系統
                 await ffmpeg.writeFile(INPUT, await fetchFile(currentFile));
 
-                // 執行轉檔：16kHz 單聲道 64kbps
+                // 執行轉檔：16kHz 單聲道 16-bit PCM WAV
                 statusText.textContent = '正在轉檔...';
-                await ffmpeg.exec(['-i', INPUT, '-ar', '16000', '-ac', '1', '-b:a', '64k', OUTPUT]);
+                await ffmpeg.exec(['-i', INPUT, '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', OUTPUT]);
 
                 // 讀取結果
                 statusText.textContent = '匯出中...';
                 const data    = await ffmpeg.readFile(OUTPUT);
-                const mp3Blob = new Blob([data.buffer], { type: 'audio/mpeg' });
+                const mp3Blob = new Blob([data.buffer], { type: 'audio/wav' });
                 const mp3Url  = URL.createObjectURL(mp3Blob);
 
                 // 更新 UI
                 audioPreview.src      = mp3Url;
                 downloadLink.href     = mp3Url;
                 const stem            = currentFile.name.replace(/\.[^.]+$/, '');
-                downloadLink.download = `${stem}_16k_mono.mp3`;
+                downloadLink.download = `${stem}_16k_mono.wav`;
                 statsText.innerHTML   = `原始: <b>${(currentFile.size/1024/1024).toFixed(2)} MB</b> → 壓縮後: <b>${(mp3Blob.size/1024/1024).toFixed(2)} MB</b>`;
 
                 // 清理虛擬記憶體
