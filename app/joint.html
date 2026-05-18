@@ -354,16 +354,39 @@ async function onDirectionChange() {
 
     try {
         currentStops = [];
+        let kmbStops = [], ctbStops = [];
+
+        // 分別獲取九巴和城巴的車站列表
         if (selectedRoute.companies.includes('KMB')) {
-            const res = await fetch(`${CONFIG.KMB_API}/route-stop/${selectedRoute.route}/${dir}/1`);
-            const data = await res.json();
-            data.data.forEach((item, i) => { if (!currentStops[i]) currentStops[i] = { seq: i + 1, kmb_id: null, ctb_id: null, name: `第 ${i + 1} 站`, lat: null, lng: null }; currentStops[i].kmb_id = item.stop; });
+            try {
+                const res = await fetch(`${CONFIG.KMB_API}/route-stop/${selectedRoute.route}/${dir}/1`);
+                const data = await res.json();
+                kmbStops = (data.data || []).map(item => item.stop);
+            } catch (e) { console.warn('九巴車站載入失敗:', e.message); }
         }
         if (selectedRoute.companies.includes('CTB')) {
             try {
                 const res = await fetch(`${CONFIG.CTB_API}/route-stop/CTB/${selectedRoute.route}/${dir}`);
-                if (res.ok) { const data = await res.json(); data.data.forEach((item, i) => { if (!currentStops[i]) currentStops[i] = { seq: i + 1, kmb_id: null, ctb_id: null, name: `第 ${i + 1} 站`, lat: null, lng: null }; currentStops[i].ctb_id = item.stop; }); }
-            } catch (e) {}
+                if (res.ok) { const data = await res.json(); ctbStops = (data.data || []).map(item => item.stop); }
+            } catch (e) { console.warn('城巴車站載入失敗:', e.message); }
+        }
+
+        // 以站數較多的一方為主幹，建立車站列表
+        const primaryIsKMB = kmbStops.length >= ctbStops.length;
+        const primaryStops = primaryIsKMB ? kmbStops : ctbStops;
+        const secondaryStops = primaryIsKMB ? ctbStops : kmbStops;
+        const totalStops = Math.max(primaryStops.length, secondaryStops.length);
+
+        for (let i = 0; i < totalStops; i++) {
+            const stop = { seq: i + 1, kmb_id: null, ctb_id: null, name: `第 ${i + 1} 站`, lat: null, lng: null };
+            if (primaryIsKMB) {
+                if (i < kmbStops.length) stop.kmb_id = kmbStops[i];
+                if (i < ctbStops.length) stop.ctb_id = ctbStops[i];
+            } else {
+                if (i < ctbStops.length) stop.ctb_id = ctbStops[i];
+                if (i < kmbStops.length) stop.kmb_id = kmbStops[i];
+            }
+            currentStops.push(stop);
         }
 
         renderStopSelect();
