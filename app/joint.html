@@ -271,7 +271,30 @@ async function init() {
             const hasKMB = !!kmbMap[route], hasCTB = !!ctbMap[route];
             let companies = []; if (hasKMB) companies.push('KMB'); if (hasCTB) companies.push('CTB');
             const info = kmbMap[route] || ctbMap[route];
-            allRoutes.push({ route, companies, type: (hasKMB && hasCTB) ? 'joint' : (hasKMB ? 'kmb' : 'ctb'), outbound: info.outbound || null, inbound: info.inbound || null });
+
+            // 計算城巴方向映射：聯營路線中九巴和城巴的 outbound/inbound 可能相反
+            let ctbDirMap = null;
+            if (hasKMB && hasCTB) {
+                const kmbOut = kmbMap[route].outbound;
+                const ctbOut = ctbMap[route].outbound;
+                if (kmbOut && ctbOut) {
+                    // 比對九巴 outbound 的起點是否與城巴 outbound 的起點相同
+                    // 若不同，表示方向相反
+                    const kmbOrigNorm = kmbOut.orig.replace(/[\s()\uff08\uff09]/g, '');
+                    const ctbOrigNorm = ctbOut.orig.replace(/[\s()\uff08\uff09]/g, '');
+                    const kmbDestNorm = kmbOut.dest.replace(/[\s()\uff08\uff09]/g, '');
+                    const ctbOrigMatchesDest = ctbOrigNorm === kmbDestNorm || kmbDestNorm.includes(ctbOrigNorm) || ctbOrigNorm.includes(kmbDestNorm);
+                    const sameDirection = kmbOrigNorm === ctbOrigNorm || kmbOrigNorm.includes(ctbOrigNorm) || ctbOrigNorm.includes(kmbOrigNorm);
+                    if (!sameDirection && ctbOrigMatchesDest) {
+                        // 城巴方向與九巴相反
+                        ctbDirMap = { outbound: 'inbound', inbound: 'outbound' };
+                    } else {
+                        ctbDirMap = { outbound: 'outbound', inbound: 'inbound' };
+                    }
+                }
+            }
+
+            allRoutes.push({ route, companies, type: (hasKMB && hasCTB) ? 'joint' : (hasKMB ? 'kmb' : 'ctb'), outbound: info.outbound || null, inbound: info.inbound || null, ctbDirMap });
         });
         allRoutes.sort((a, b) => { const na = parseInt(a.route), nb = parseInt(b.route); if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb; return a.route.localeCompare(b.route, undefined, { numeric: true }); });
 
@@ -366,7 +389,9 @@ async function onDirectionChange() {
         }
         if (selectedRoute.companies.includes('CTB')) {
             try {
-                const res = await fetch(`${CONFIG.CTB_API}/route-stop/CTB/${selectedRoute.route}/${dir}`);
+                // 聯營路線中城巴方向可能與九巴相反，需用映射轉換
+                const ctbDir = (selectedRoute.ctbDirMap && selectedRoute.ctbDirMap[dir]) || dir;
+                const res = await fetch(`${CONFIG.CTB_API}/route-stop/CTB/${selectedRoute.route}/${ctbDir}`);
                 if (res.ok) { const data = await res.json(); ctbStops = (data.data || []).map(item => item.stop); }
             } catch (e) { console.warn('城巴車站載入失敗:', e.message); }
         }
