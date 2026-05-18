@@ -4,102 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>巴士到站預報 — 九巴 / 城巴</title>
-
-    <!-- PWA: 加到主畫面支援 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="巴士到站">
     <meta name="theme-color" content="#1e293b">
     <link rel="apple-touch-icon" href="https://i.imgur.com/ukbs2uj.png">
     <script>
-        // 動態產生 PWA Manifest
-        const manifest = {
-            name: "巴士到站預報 — 九巴/城巴",
-            short_name: "巴士到站",
-            start_url: "./joint.html",
-            display: "standalone",
-            background_color: "#f0f2f5",
-            theme_color: "#1e293b",
-            icons: [{ src: "https://i.imgur.com/ukbs2uj.png", sizes: "512x512", type: "image/png" }]
-        };
-        document.head.appendChild(Object.assign(document.createElement('link'), {
-            rel: 'manifest',
-            href: URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' }))
-        }));
+        const manifest = { name: "巴士到站預報 — 九巴/城巴", short_name: "巴士到站", start_url: "./joint.html", display: "standalone", background_color: "#f0f2f5", theme_color: "#1e293b", icons: [{ src: "https://i.imgur.com/ukbs2uj.png", sizes: "512x512", type: "image/png" }] };
+        document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'manifest', href: URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' })) }));
     </script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --kmb-red: #e60012;
-            --ctb-yellow: #f3d03e;
-            --bg: #f0f2f5;
-            --card-bg: #ffffff;
-            --text-primary: #1a1a2e;
-            --text-secondary: #6b7280;
-            --accent: #3b82f6;
-            --radius: 12px;
-            --shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
+        :root { --kmb-red: #e60012; --ctb-yellow: #f3d03e; --bg: #f0f2f5; --card-bg: #ffffff; --text-primary: #1a1a2e; --text-secondary: #6b7280; --accent: #3b82f6; --radius: 12px; --shadow: 0 2px 8px rgba(0,0,0,0.08); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg); color: var(--text-primary);
-            min-height: 100vh; -webkit-tap-highlight-color: transparent;
-        }
+        body { font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text-primary); min-height: 100vh; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 520px; margin: 0 auto; padding: 16px; }
-
         header { text-align: center; padding: 20px 0 14px; }
         header h1 { font-size: 21px; font-weight: 700; }
         header .subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
 
-        .panel {
-            background: var(--card-bg); border-radius: var(--radius);
-            box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px;
-        }
+        .panel { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px; }
         .panel label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; }
-        .panel select, .panel input[type="text"] {
-            width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0;
-            border-radius: 8px; font-size: 15px; font-family: inherit;
-            background: #fafafa; transition: border-color 0.2s;
-        }
+        .panel select, .panel input[type="text"] { width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 15px; font-family: inherit; background: #fafafa; transition: border-color 0.2s; }
         .panel select:focus, .panel input:focus { outline: none; border-color: var(--accent); }
         .row { display: flex; gap: 10px; margin-bottom: 12px; }
         .row > div { flex: 1; }
 
-        .search-wrapper { position: relative; margin-bottom: 12px; }
-        .search-wrapper input { padding-left: 36px; }
+        .search-wrapper { position: relative; margin-bottom: 4px; }
+        .search-wrapper input { padding-left: 36px; padding-right: 12px; }
         .search-wrapper .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text-secondary); }
 
-        /* 路線資訊列 */
-        .route-info-bar {
-            display: none; background: linear-gradient(135deg, #eef2ff, #f0f9ff);
-            border: 1.5px solid #c7d2fe; border-radius: 8px;
-            padding: 10px 14px; margin-bottom: 12px;
-        }
-        .route-info-bar .route-number { font-size: 22px; font-weight: 700; margin-right: 8px; }
-        .route-info-bar .route-detail { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
-        .route-info-bar .company-tag {
-            display: inline-block; padding: 2px 8px; border-radius: 4px;
-            font-size: 11px; font-weight: 700; vertical-align: middle;
-        }
-        .company-tag.kmb-tag { background: var(--kmb-red); color: #fff; }
-        .company-tag.ctb-tag { background: var(--ctb-yellow); color: #333; }
-        .company-tag.joint-tag { background: linear-gradient(90deg, var(--kmb-red), var(--ctb-yellow)); color: #fff; }
+        /* 路線摘要（搜尋框下方小字，不佔額外空間） */
+        .route-summary { font-size: 12px; color: var(--text-secondary); padding: 4px 2px 10px; display: none; }
+        .route-summary .co-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; margin-left: 4px; vertical-align: middle; }
+        .co-badge.kmb-b { background: var(--kmb-red); color: #fff; }
+        .co-badge.ctb-b { background: var(--ctb-yellow); color: #333; }
+        .co-badge.joint-b { background: linear-gradient(90deg, var(--kmb-red), var(--ctb-yellow)); color: #fff; }
 
-        /* 下拉選單 */
-        .route-dropdown {
-            position: absolute; top: 100%; left: 0; right: 0;
-            background: var(--card-bg); border: 1.5px solid #e0e0e0; border-top: none;
-            border-radius: 0 0 8px 8px; max-height: 280px; overflow-y: auto;
-            z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
-        .route-dropdown .route-item {
-            padding: 10px 14px; cursor: pointer; font-size: 14px;
-            border-bottom: 1px solid #f0f0f0; transition: background 0.15s;
-            display: flex; align-items: center; gap: 8px;
-        }
+        .route-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--card-bg); border: 1.5px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; max-height: 280px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+        .route-dropdown .route-item { padding: 10px 14px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0; transition: background 0.15s; display: flex; align-items: center; gap: 8px; }
         .route-dropdown .route-item:hover, .route-dropdown .route-item.active { background: #eef4ff; }
         .route-dropdown .route-item .route-num { font-weight: 700; font-size: 16px; min-width: 50px; }
         .route-dropdown .route-item .route-dest { color: var(--text-secondary); font-size: 13px; flex: 1; }
@@ -108,30 +52,25 @@
         .co-indicator.co-ctb { background: #fef9c3; color: #92400e; }
         .co-indicator.co-joint { background: #ede9fe; color: #6d28d9; }
 
-        .btn-primary {
-            width: 100%; padding: 12px; border: none; border-radius: 8px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: #fff; font-size: 15px; font-weight: 700; font-family: inherit;
-            cursor: pointer; transition: transform 0.1s;
-        }
+        /* GPS 定位按鈕 */
+        .stop-row { display: flex; gap: 8px; align-items: flex-end; }
+        .stop-row > div:first-child { flex: 1; }
+        .btn-gps { width: 42px; height: 42px; border: 1.5px solid #e0e0e0; border-radius: 8px; background: #fafafa; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: all 0.2s; flex-shrink: 0; }
+        .btn-gps:hover { border-color: var(--accent); background: #eef4ff; }
+        .btn-gps:active { transform: scale(0.92); }
+        .btn-gps.locating { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .btn-primary { width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: transform 0.1s; }
         .btn-primary:active { transform: scale(0.98); }
         .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
 
-        .status-bar {
-            display: none; justify-content: space-between; align-items: center;
-            padding: 8px 0; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; gap: 6px;
-        }
+        .status-bar { display: none; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; gap: 6px; }
         .refresh-controls { display: flex; align-items: center; gap: 8px; }
         .auto-refresh-toggle { display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
-        .toggle-switch {
-            width: 34px; height: 18px; background: #ccc; border-radius: 9px;
-            position: relative; transition: background 0.2s;
-        }
+        .toggle-switch { width: 34px; height: 18px; background: #ccc; border-radius: 9px; position: relative; transition: background 0.2s; }
         .toggle-switch.on { background: #34d399; }
-        .toggle-switch::after {
-            content: ''; width: 14px; height: 14px; background: #fff; border-radius: 50%;
-            position: absolute; top: 2px; left: 2px; transition: transform 0.2s;
-        }
+        .toggle-switch::after { content: ''; width: 14px; height: 14px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; }
         .toggle-switch.on::after { transform: translateX(16px); }
         .interval-select { padding: 3px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; font-family: inherit; background: #fff; }
 
@@ -139,20 +78,12 @@
         .countdown-bar .fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 2px; transition: width 1s linear; }
 
         .eta-list { margin-top: 4px; }
-        .eta-card {
-            background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
-            padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between;
-            align-items: center; border-left: 5px solid transparent;
-            transition: transform 0.15s; animation: fadeIn 0.3s ease;
-        }
+        .eta-card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid transparent; transition: transform 0.15s; animation: fadeIn 0.3s ease; }
         .eta-card:hover { transform: translateX(3px); }
         .eta-card.kmb { border-left-color: var(--kmb-red); }
         .eta-card.ctb { border-left-color: var(--ctb-yellow); }
         .eta-left { display: flex; align-items: center; gap: 12px; }
-        .company-badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 13px; min-width: 50px;
-        }
+        .company-badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 13px; min-width: 50px; }
         .badge-kmb { background: var(--kmb-red); color: #fff; }
         .badge-ctb { background: var(--ctb-yellow); color: #333; }
         .eta-meta .seq-label { font-size: 12px; color: var(--text-secondary); }
@@ -168,12 +99,11 @@
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
         .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
         .empty-state p { font-size: 14px; }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius); height: 64px; margin-bottom: 10px; }
 
-        .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%; animation: shimmer 1.5s infinite;
-            border-radius: var(--radius); height: 64px; margin-bottom: 10px;
-        }
+        /* Toast 通知 */
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 13px; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; max-width: 90%; text-align: center; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         footer { text-align: center; padding: 20px 0; font-size: 11px; color: #aaa; }
         footer a { color: #aaa; text-decoration: none; }
@@ -186,9 +116,10 @@
             .panel select, .panel input[type="text"] { background: #334155; border-color: #475569; color: #e2e8f0; }
             .route-dropdown { background: #1e293b; border-color: #475569; }
             .route-dropdown .route-item:hover, .route-dropdown .route-item.active { background: #334155; }
-            .route-info-bar { background: linear-gradient(135deg, #1e293b, #1e3a5f); border-color: #475569; }
             .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
             .interval-select { background: #334155; border-color: #475569; color: #e2e8f0; }
+            .btn-gps { background: #334155; border-color: #475569; }
+            .btn-gps:hover { background: #475569; }
         }
     </style>
 </head>
@@ -207,13 +138,8 @@
             <input type="text" id="routeSearch" placeholder="載入路線資料中…" autocomplete="off">
             <div class="route-dropdown" id="routeDropdown"></div>
         </div>
-
-        <!-- 路線資訊顯示區 -->
-        <div class="route-info-bar" id="routeInfoBar">
-            <span class="route-number" id="routeNumDisplay"></span>
-            <span class="company-tag" id="routeCoTag"></span>
-            <div class="route-detail" id="routeDetailDisplay"></div>
-        </div>
+        <!-- 路線摘要：不佔額外高度，不遮擋 -->
+        <div class="route-summary" id="routeSummary"></div>
 
         <div class="row">
             <div>
@@ -224,9 +150,14 @@
             </div>
             <div>
                 <label>車站</label>
-                <select id="stopSelect" disabled>
-                    <option value="">請先選擇方向</option>
-                </select>
+                <div class="stop-row">
+                    <div>
+                        <select id="stopSelect" disabled>
+                            <option value="">請先選擇方向</option>
+                        </select>
+                    </div>
+                    <div class="btn-gps" id="btnGps" onclick="locateNearestStop()" title="定位最近車站">📍</div>
+                </div>
             </div>
         </div>
 
@@ -265,9 +196,12 @@
     </footer>
 </div>
 
+<!-- Toast 通知 -->
+<div class="toast" id="toast"></div>
+
 <script>
 // =====================================================
-// CONFIG: 可調參數
+// CONFIG
 // =====================================================
 const CONFIG = {
     KMB_API: 'https://data.etabus.gov.hk/v1/transport/kmb',
@@ -285,13 +219,23 @@ let autoRefresh = false;
 let countdownTimer = null;
 let countdownSec = 30;
 let refreshInterval = 30;
+let stopCoords = {};  // 快取車站座標 { stop_id: {lat, lng} }
 
 // =====================================================
-// 初始化：載入所有路線（九巴 + 城巴 + 聯營）
+// Toast 通知
+// =====================================================
+function showToast(msg, duration = 2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// =====================================================
+// 初始化
 // =====================================================
 async function init() {
     try {
-        // 分開獲取，任一失敗不影響另一方
         let kmbData = [], ctbData = [];
         try {
             const kmbRes = await fetch(`${CONFIG.KMB_API}/route/`);
@@ -301,73 +245,32 @@ async function init() {
 
         try {
             const ctbRes = await fetch(`${CONFIG.CTB_API}/route/CTB`);
-            if (ctbRes.ok) {
-                const ctbJson = await ctbRes.json();
-                ctbData = ctbJson.data || [];
-            } else { console.warn('城巴路線 API 返回:', ctbRes.status); }
+            if (ctbRes.ok) { const ctbJson = await ctbRes.json(); ctbData = ctbJson.data || []; }
+            else { console.warn('城巴路線 API 返回:', ctbRes.status); }
         } catch (e) { console.warn('城巴路線 API 暫時無法連線:', e.message); }
 
-        if (kmbData.length === 0 && ctbData.length === 0) {
-            throw new Error('兩間公司的路線 API 均無法連線');
-        }
+        if (kmbData.length === 0 && ctbData.length === 0) throw new Error('路線 API 均無法連線');
 
-        // 建立九巴路線 map
         const kmbMap = {};
-        kmbData.forEach(r => {
-            if (r.service_type !== '1') return;
-            if (!kmbMap[r.route]) kmbMap[r.route] = {};
-            if (r.bound === 'O') kmbMap[r.route].outbound = { orig: r.orig_tc, dest: r.dest_tc };
-            if (r.bound === 'I') kmbMap[r.route].inbound = { orig: r.orig_tc, dest: r.dest_tc };
-        });
+        kmbData.forEach(r => { if (r.service_type !== '1') return; if (!kmbMap[r.route]) kmbMap[r.route] = {}; if (r.bound === 'O') kmbMap[r.route].outbound = { orig: r.orig_tc, dest: r.dest_tc }; if (r.bound === 'I') kmbMap[r.route].inbound = { orig: r.orig_tc, dest: r.dest_tc }; });
 
-        // 建立城巴路線 map
         const ctbMap = {};
-        ctbData.forEach(r => {
-            if (!ctbMap[r.route]) ctbMap[r.route] = {};
-            ctbMap[r.route].outbound = { orig: r.orig_tc, dest: r.dest_tc };
-            ctbMap[r.route].inbound = { orig: r.dest_tc, dest: r.orig_tc };
-        });
+        ctbData.forEach(r => { if (!ctbMap[r.route]) ctbMap[r.route] = {}; ctbMap[r.route].outbound = { orig: r.orig_tc, dest: r.dest_tc }; ctbMap[r.route].inbound = { orig: r.dest_tc, dest: r.orig_tc }; });
 
-        // 合併所有路線
         const allRouteNums = new Set([...Object.keys(kmbMap), ...Object.keys(ctbMap)]);
         allRoutes = [];
-
         allRouteNums.forEach(route => {
-            const hasKMB = !!kmbMap[route];
-            const hasCTB = !!ctbMap[route];
-            let companies = [];
-            if (hasKMB) companies.push('KMB');
-            if (hasCTB) companies.push('CTB');
-
-            // 用九巴的起訖點資料（較完整），若無則用城巴
+            const hasKMB = !!kmbMap[route], hasCTB = !!ctbMap[route];
+            let companies = []; if (hasKMB) companies.push('KMB'); if (hasCTB) companies.push('CTB');
             const info = kmbMap[route] || ctbMap[route];
-
-            allRoutes.push({
-                route,
-                companies,
-                type: (hasKMB && hasCTB) ? 'joint' : (hasKMB ? 'kmb' : 'ctb'),
-                outbound: info.outbound || null,
-                inbound: info.inbound || null,
-            });
+            allRoutes.push({ route, companies, type: (hasKMB && hasCTB) ? 'joint' : (hasKMB ? 'kmb' : 'ctb'), outbound: info.outbound || null, inbound: info.inbound || null });
         });
-
-        // 排序
-        allRoutes.sort((a, b) => {
-            const na = parseInt(a.route), nb = parseInt(b.route);
-            if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
-            return a.route.localeCompare(b.route, undefined, { numeric: true });
-        });
+        allRoutes.sort((a, b) => { const na = parseInt(a.route), nb = parseInt(b.route); if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb; return a.route.localeCompare(b.route, undefined, { numeric: true }); });
 
         document.getElementById('routeSearch').placeholder = `共 ${allRoutes.length} 條路線，輸入號碼搜尋…`;
 
-        // 檢查 URL hash
         const hash = window.location.hash.replace('#', '');
-        if (hash) {
-            const found = allRoutes.find(r => r.route === hash);
-            if (found) {
-                selectRoute(hash);
-            }
-        }
+        if (hash) { const found = allRoutes.find(r => r.route === hash); if (found) selectRoute(hash); }
     } catch (err) {
         console.error('初始化失敗:', err);
         document.getElementById('routeSearch').placeholder = '載入失敗，請重新整理頁面';
@@ -383,32 +286,19 @@ const routeDropdown = document.getElementById('routeDropdown');
 routeSearch.addEventListener('input', () => {
     const q = routeSearch.value.trim().toUpperCase();
     if (!q) { routeDropdown.style.display = 'none'; return; }
-
     const exact = allRoutes.filter(r => r.route === q);
     const prefix = allRoutes.filter(r => r.route.startsWith(q) && r.route !== q);
     const contains = allRoutes.filter(r => r.route.includes(q) && !r.route.startsWith(q));
     const results = [...exact, ...prefix, ...contains].slice(0, CONFIG.MAX_DROPDOWN);
-
-    if (results.length === 0) {
-        routeDropdown.innerHTML = '<div class="route-item" style="color:#999;">找不到此路線</div>';
-        routeDropdown.style.display = 'block';
-        return;
-    }
-
+    if (results.length === 0) { routeDropdown.innerHTML = '<div class="route-item" style="color:#999;">找不到此路線</div>'; routeDropdown.style.display = 'block'; return; }
     routeDropdown.innerHTML = results.map(r => {
         const desc = r.outbound ? `${r.outbound.orig} → ${r.outbound.dest}` : '';
         let coClass = 'co-kmb', coLabel = '九巴';
-        if (r.type === 'ctb') { coClass = 'co-ctb'; coLabel = '城巴'; }
-        else if (r.type === 'joint') { coClass = 'co-joint'; coLabel = '聯營'; }
-        return `<div class="route-item" onclick="selectRoute('${r.route}')">
-            <span class="route-num">${r.route}</span>
-            <span class="route-dest">${desc}</span>
-            <span class="co-indicator ${coClass}">${coLabel}</span>
-        </div>`;
+        if (r.type === 'ctb') { coClass = 'co-ctb'; coLabel = '城巴'; } else if (r.type === 'joint') { coClass = 'co-joint'; coLabel = '聯營'; }
+        return `<div class="route-item" onclick="selectRoute('${r.route}')"><span class="route-num">${r.route}</span><span class="route-dest">${desc}</span><span class="co-indicator ${coClass}">${coLabel}</span></div>`;
     }).join('');
     routeDropdown.style.display = 'block';
 });
-
 routeSearch.addEventListener('focus', () => { routeSearch.select(); });
 document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrapper')) routeDropdown.style.display = 'none'; });
 
@@ -421,40 +311,23 @@ function selectRoute(route) {
     selectedRoute = info;
     routeDropdown.style.display = 'none';
 
-    // 在搜尋框顯示完整路線資訊
+    // 搜尋框顯示路線號 + 起訖點
     const dest = info.outbound ? `${info.outbound.orig} ↔ ${info.outbound.dest}` : '';
     routeSearch.value = `${route}  ${dest}`;
 
-    // 顯示路線資訊列
-    const infoBar = document.getElementById('routeInfoBar');
-    document.getElementById('routeNumDisplay').textContent = route;
-
-    const coTag = document.getElementById('routeCoTag');
-    coTag.className = 'company-tag';
-    if (info.type === 'joint') { coTag.classList.add('joint-tag'); coTag.textContent = '九巴+城巴 聯營'; }
-    else if (info.type === 'kmb') { coTag.classList.add('kmb-tag'); coTag.textContent = '九巴 KMB'; }
-    else { coTag.classList.add('ctb-tag'); coTag.textContent = '城巴 CTB'; }
-
-    document.getElementById('routeDetailDisplay').textContent = dest;
-    infoBar.style.display = 'block';
+    // 路線摘要（小字，不遮擋）
+    const summary = document.getElementById('routeSummary');
+    let badgeClass = 'kmb-b', badgeText = '九巴';
+    if (info.type === 'ctb') { badgeClass = 'ctb-b'; badgeText = '城巴'; }
+    else if (info.type === 'joint') { badgeClass = 'joint-b'; badgeText = '聯營'; }
+    summary.innerHTML = `路線 <b>${route}</b> <span class="co-badge ${badgeClass}">${badgeText}</span>`;
+    summary.style.display = 'block';
 
     // 方向選擇器
     const dirSelect = document.getElementById('dirSelect');
-    dirSelect.innerHTML = '';
-    dirSelect.disabled = false;
-
-    if (info.outbound) {
-        const opt = document.createElement('option');
-        opt.value = 'outbound';
-        opt.textContent = `往 ${info.outbound.dest}`;
-        dirSelect.appendChild(opt);
-    }
-    if (info.inbound) {
-        const opt = document.createElement('option');
-        opt.value = 'inbound';
-        opt.textContent = `往 ${info.inbound.dest}`;
-        dirSelect.appendChild(opt);
-    }
+    dirSelect.innerHTML = ''; dirSelect.disabled = false;
+    if (info.outbound) { const o = document.createElement('option'); o.value = 'outbound'; o.textContent = `往 ${info.outbound.dest}`; dirSelect.appendChild(o); }
+    if (info.inbound) { const o = document.createElement('option'); o.value = 'inbound'; o.textContent = `往 ${info.inbound.dest}`; dirSelect.appendChild(o); }
 
     window.location.hash = route;
     onDirectionChange();
@@ -473,30 +346,22 @@ async function onDirectionChange() {
 
     try {
         currentStops = [];
-
         if (selectedRoute.companies.includes('KMB')) {
             const res = await fetch(`${CONFIG.KMB_API}/route-stop/${selectedRoute.route}/${dir}/1`);
             const data = await res.json();
-            data.data.forEach((item, i) => {
-                if (!currentStops[i]) currentStops[i] = { seq: i + 1, kmb_id: null, ctb_id: null, name: `第 ${i + 1} 站` };
-                currentStops[i].kmb_id = item.stop;
-            });
+            data.data.forEach((item, i) => { if (!currentStops[i]) currentStops[i] = { seq: i + 1, kmb_id: null, ctb_id: null, name: `第 ${i + 1} 站`, lat: null, lng: null }; currentStops[i].kmb_id = item.stop; });
         }
-
         if (selectedRoute.companies.includes('CTB')) {
-            const res = await fetch(`${CONFIG.CTB_API}/route-stop/CTB/${selectedRoute.route}/${dir}`);
-            const data = await res.json();
-            data.data.forEach((item, i) => {
-                if (!currentStops[i]) currentStops[i] = { seq: i + 1, kmb_id: null, ctb_id: null, name: `第 ${i + 1} 站` };
-                currentStops[i].ctb_id = item.stop;
-            });
+            try {
+                const res = await fetch(`${CONFIG.CTB_API}/route-stop/CTB/${selectedRoute.route}/${dir}`);
+                if (res.ok) { const data = await res.json(); data.data.forEach((item, i) => { if (!currentStops[i]) currentStops[i] = { seq: i + 1, kmb_id: null, ctb_id: null, name: `第 ${i + 1} 站`, lat: null, lng: null }; currentStops[i].ctb_id = item.stop; }); }
+            } catch (e) {}
         }
 
         renderStopSelect();
         stopSelect.disabled = false;
         document.getElementById('btnQuery').disabled = false;
         enrichStopNames();
-
     } catch (err) {
         console.error('載入車站失敗:', err);
         stopSelect.innerHTML = '<option value="">載入失敗</option>';
@@ -504,25 +369,23 @@ async function onDirectionChange() {
 }
 
 function renderStopSelect() {
-    document.getElementById('stopSelect').innerHTML = currentStops.map((s, i) =>
-        `<option value="${i}">${s.name}</option>`
-    ).join('');
+    document.getElementById('stopSelect').innerHTML = currentStops.map((s, i) => `<option value="${i}">${s.name}</option>`).join('');
 }
 
 async function enrichStopNames() {
     const fetchName = async (stop) => {
         try {
-            let name = '';
             if (stop.kmb_id) {
                 const res = await fetch(`${CONFIG.KMB_API}/stop/${stop.kmb_id}`);
                 const data = await res.json();
-                name = data.data.name_tc;
+                stop.name = `${stop.seq}. ${data.data.name_tc}`;
+                stop.lat = parseFloat(data.data.lat);
+                stop.lng = parseFloat(data.data.long);
+                stopCoords[stop.kmb_id] = { lat: stop.lat, lng: stop.lng };
             } else if (stop.ctb_id) {
                 const res = await fetch(`${CONFIG.CTB_API}/stop/${stop.ctb_id}`);
-                const data = await res.json();
-                name = data.data.name_tc;
+                if (res.ok) { const data = await res.json(); stop.name = `${stop.seq}. ${data.data.name_tc}`; stop.lat = parseFloat(data.data.lat); stop.lng = parseFloat(data.data.long); stopCoords[stop.ctb_id] = { lat: stop.lat, lng: stop.lng }; }
             }
-            if (name) stop.name = `${stop.seq}. ${name}`;
         } catch (e) {}
     };
     for (let i = 0; i < currentStops.length; i += 5) {
@@ -532,12 +395,65 @@ async function enrichStopNames() {
 }
 
 // =====================================================
+// GPS 定位最近車站
+// =====================================================
+function locateNearestStop() {
+    if (currentStops.length === 0) { showToast('請先選擇路線及方向'); return; }
+    if (!navigator.geolocation) { showToast('您的瀏覽器不支援定位功能'); return; }
+
+    const btn = document.getElementById('btnGps');
+    btn.classList.add('locating');
+    showToast('正在定位中…');
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            btn.classList.remove('locating');
+            const userLat = pos.coords.latitude;
+            const userLng = pos.coords.longitude;
+
+            // 計算每個車站與用戶的距離
+            let minDist = Infinity, nearestIdx = 0;
+            currentStops.forEach((stop, i) => {
+                if (stop.lat && stop.lng) {
+                    const dist = haversine(userLat, userLng, stop.lat, stop.lng);
+                    if (dist < minDist) { minDist = dist; nearestIdx = i; }
+                }
+            });
+
+            // 選中最近的車站
+            document.getElementById('stopSelect').value = nearestIdx;
+            const stopName = currentStops[nearestIdx].name || `第 ${nearestIdx + 1} 站`;
+            const distText = minDist < 1000 ? `${Math.round(minDist)}m` : `${(minDist / 1000).toFixed(1)}km`;
+            showToast(`📍 最近車站：${stopName}（${distText}）`, 3500);
+
+            // 自動查詢 ETA
+            fetchETA();
+        },
+        (err) => {
+            btn.classList.remove('locating');
+            if (err.code === 1) showToast('定位權限被拒絕，請在設定中允許');
+            else if (err.code === 2) showToast('無法取得位置資訊');
+            else showToast('定位逾時，請重試');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
+}
+
+// Haversine 公式計算兩點距離（米）
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// =====================================================
 // 獲取 ETA
 // =====================================================
 async function fetchETA() {
     const stopIndex = document.getElementById('stopSelect').value;
     if (stopIndex === '' || !selectedRoute) return;
-
     const stop = currentStops[stopIndex];
     const etaList = document.getElementById('etaList');
     etaList.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
@@ -545,25 +461,12 @@ async function fetchETA() {
     let etas = [];
     try {
         const promises = [];
-
         if (stop.kmb_id && selectedRoute.companies.includes('KMB')) {
-            promises.push(
-                fetch(`${CONFIG.KMB_API}/eta/${stop.kmb_id}/${selectedRoute.route}/1`)
-                    .then(r => r.json())
-                    .then(data => { if (data.data) data.data.forEach(eta => { if (eta.eta) etas.push({ company: 'KMB', time: new Date(eta.eta), remark: eta.rmk_tc || '' }); }); })
-                    .catch(() => {})
-            );
+            promises.push(fetch(`${CONFIG.KMB_API}/eta/${stop.kmb_id}/${selectedRoute.route}/1`).then(r => r.json()).then(data => { if (data.data) data.data.forEach(eta => { if (eta.eta) etas.push({ company: 'KMB', time: new Date(eta.eta), remark: eta.rmk_tc || '' }); }); }).catch(() => {}));
         }
-
         if (stop.ctb_id && selectedRoute.companies.includes('CTB')) {
-            promises.push(
-                fetch(`${CONFIG.CTB_API}/eta/CTB/${stop.ctb_id}/${selectedRoute.route}`)
-                    .then(r => r.json())
-                    .then(data => { if (data.data) data.data.forEach(eta => { if (eta.eta) etas.push({ company: 'CTB', time: new Date(eta.eta), remark: eta.rmk_tc || '' }); }); })
-                    .catch(() => {})
-            );
+            promises.push(fetch(`${CONFIG.CTB_API}/eta/CTB/${stop.ctb_id}/${selectedRoute.route}`).then(r => r.json()).then(data => { if (data.data) data.data.forEach(eta => { if (eta.eta) etas.push({ company: 'CTB', time: new Date(eta.eta), remark: eta.rmk_tc || '' }); }); }).catch(() => {}));
         }
-
         await Promise.all(promises);
         etas.sort((a, b) => a.time - b.time);
 
@@ -571,10 +474,7 @@ async function fetchETA() {
         document.getElementById('lastUpdate').textContent = `最後更新：${now.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
         document.getElementById('statusBar').style.display = 'flex';
 
-        if (etas.length === 0) {
-            etaList.innerHTML = `<div class="empty-state"><div class="emoji">😴</div><p>目前沒有班次資料<br><span style="font-size:12px;">可能已過尾班車時間或服務暫停</span></p></div>`;
-            return;
-        }
+        if (etas.length === 0) { etaList.innerHTML = `<div class="empty-state"><div class="emoji">😴</div><p>目前沒有班次資料<br><span style="font-size:12px;">可能已過尾班車時間或服務暫停</span></p></div>`; return; }
 
         etaList.innerHTML = etas.map((eta, idx) => {
             const diffMs = eta.time - now;
@@ -589,20 +489,10 @@ async function fetchETA() {
             if (diffMins <= 1) { minsClass = 'arriving'; minsDisplay = diffMins === 0 ? '即將到站' : `${diffMins}<span class="eta-mins-unit"> 分鐘</span>`; }
             else if (diffMins <= 5) { minsClass = 'soon'; }
             const orderLabel = idx === 0 ? '下一班' : `第 ${idx + 1} 班`;
-            return `<div class="eta-card ${cardClass}">
-                <div class="eta-left">
-                    <span class="company-badge ${badgeClass}">${compName}</span>
-                    <div class="eta-meta"><div class="seq-label">${orderLabel}</div>${eta.remark ? `<div class="remark">${eta.remark}</div>` : ''}</div>
-                </div>
-                <div class="eta-right">
-                    <div class="eta-mins ${minsClass}">${minsDisplay}</div>
-                    <div class="eta-time">${timeStr}</div>
-                </div>
-            </div>`;
+            return `<div class="eta-card ${cardClass}"><div class="eta-left"><span class="company-badge ${badgeClass}">${compName}</span><div class="eta-meta"><div class="seq-label">${orderLabel}</div>${eta.remark ? `<div class="remark">${eta.remark}</div>` : ''}</div></div><div class="eta-right"><div class="eta-mins ${minsClass}">${minsDisplay}</div><div class="eta-time">${timeStr}</div></div></div>`;
         }).join('');
-
     } catch (err) {
-        etaList.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div><p>獲取班次資料失敗<br><span style="font-size:12px;">請檢查網絡連線後重試</span></p></div>`;
+        etaList.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div><p>獲取班次資料失敗</p></div>`;
     }
 }
 
@@ -616,22 +506,12 @@ function toggleAutoRefresh() {
     if (autoRefresh) { toggle.classList.add('on'); bar.style.display = 'block'; startCountdown(); }
     else { toggle.classList.remove('on'); bar.style.display = 'none'; clearInterval(countdownTimer); }
 }
-
-function onIntervalChange() {
-    refreshInterval = parseInt(document.getElementById('intervalSelect').value);
-    if (autoRefresh) { clearInterval(countdownTimer); startCountdown(); }
-}
-
+function onIntervalChange() { refreshInterval = parseInt(document.getElementById('intervalSelect').value); if (autoRefresh) { clearInterval(countdownTimer); startCountdown(); } }
 function startCountdown() {
     countdownSec = refreshInterval;
-    const fill = document.getElementById('countdownFill');
-    fill.style.width = '100%';
+    const fill = document.getElementById('countdownFill'); fill.style.width = '100%';
     clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-        countdownSec--;
-        fill.style.width = `${(countdownSec / refreshInterval) * 100}%`;
-        if (countdownSec <= 0) { fetchETA(); countdownSec = refreshInterval; fill.style.width = '100%'; }
-    }, 1000);
+    countdownTimer = setInterval(() => { countdownSec--; fill.style.width = `${(countdownSec / refreshInterval) * 100}%`; if (countdownSec <= 0) { fetchETA(); countdownSec = refreshInterval; fill.style.width = '100%'; } }, 1000);
 }
 
 // =====================================================
