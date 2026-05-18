@@ -496,7 +496,7 @@ async function fetchETA() {
             promises.push(fetch(`${CONFIG.KMB_API}/eta/${stop.kmb_id}/${selectedRoute.route}/1`).then(r => r.json()).then(data => { if (data.data) data.data.forEach(eta => { if (eta.eta) etas.push({ company: 'KMB', time: new Date(eta.eta), remark: eta.rmk_tc || '' }); }); }).catch(() => {}));
         }
         if (stop.ctb_id && selectedRoute.companies.includes('CTB')) {
-            promises.push(fetch(`${CONFIG.CTB_API}/eta/CTB/${stop.ctb_id}/${selectedRoute.route}`).then(r => r.json()).then(data => { if (data.data) data.data.forEach(eta => { if (eta.eta) etas.push({ company: 'CTB', time: new Date(eta.eta), remark: eta.rmk_tc || '' }); }); }).catch(() => {}));
+            promises.push(fetch(`${CONFIG.CTB_API}/eta/CTB/${stop.ctb_id}/${selectedRoute.route}`).then(r => r.json()).then(data => { if (data.data) data.data.forEach(eta => { if (eta.eta && !(eta.rmk_tc || '').includes('九巴時段')) etas.push({ company: 'CTB', time: new Date(eta.eta), remark: eta.rmk_tc || '' }); }); }).catch(() => {}));
         }
         await Promise.all(promises);
         etas.sort((a, b) => a.time - b.time);
