@@ -299,7 +299,12 @@ routeSearch.addEventListener('input', () => {
     }).join('');
     routeDropdown.style.display = 'block';
 });
-routeSearch.addEventListener('focus', () => { routeSearch.select(); });
+routeSearch.addEventListener('focus', () => {
+    // 恢復搜尋圖標
+    document.querySelector('.search-wrapper .icon').style.display = '';
+    routeSearch.style.paddingLeft = '';
+    routeSearch.select();
+});
 document.addEventListener('click', (e) => { if (!e.target.closest('.search-wrapper')) routeDropdown.style.display = 'none'; });
 
 // =====================================================
@@ -314,6 +319,9 @@ function selectRoute(route) {
     // 搜尋框顯示路線號 + 起訖點
     const dest = info.outbound ? `${info.outbound.orig} ↔ ${info.outbound.dest}` : '';
     routeSearch.value = `${route}  ${dest}`;
+    // 隱藏搜尋圖標避免遮擋路線號碼
+    document.querySelector('.search-wrapper .icon').style.display = 'none';
+    routeSearch.style.paddingLeft = '12px';
 
     // 路線摘要（小字，不遮擋）
     const summary = document.getElementById('routeSummary');
