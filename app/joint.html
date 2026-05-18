@@ -72,6 +72,11 @@
         .toggle-switch::after { content: ''; width: 14px; height: 14px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; }
         .toggle-switch.on::after { transform: translateX(16px); }
         .interval-select { padding: 3px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; font-family: inherit; background: #fff; }
+        .btn-reload { padding: 3px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; font-family: inherit; background: #fff; cursor: pointer; transition: all 0.2s; }
+        .btn-reload:hover { background: #eef4ff; border-color: var(--accent); }
+        .btn-reload:active { transform: scale(0.95); }
+        .btn-reload.loading { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         .countdown-bar { height: 3px; background: #e0e0e0; border-radius: 2px; overflow: hidden; margin-bottom: 8px; display: none; }
         .countdown-bar .fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); border-radius: 2px; transition: width 1s linear; }
@@ -166,6 +171,7 @@
     <div class="status-bar" id="statusBar">
         <span id="lastUpdate">最後更新：--:--:--</span>
         <div class="refresh-controls">
+            <button class="btn-reload" id="btnReload" onclick="reloadRoutes()" title="更新路線資料">🔄 路線</button>
             <select class="interval-select" id="intervalSelect" onchange="onIntervalChange()">
                 <option value="15">15秒</option>
                 <option value="30" selected>30秒</option>
@@ -510,6 +516,23 @@ function startCountdown() {
     const fill = document.getElementById('countdownFill'); fill.style.width = '100%';
     clearInterval(countdownTimer);
     countdownTimer = setInterval(() => { countdownSec--; fill.style.width = `${(countdownSec / refreshInterval) * 100}%`; if (countdownSec <= 0) { fetchETA(); countdownSec = refreshInterval; fill.style.width = '100%'; } }, 1000);
+}
+
+// =====================================================
+// 更新路線資料
+// =====================================================
+async function reloadRoutes() {
+    const btn = document.getElementById('btnReload');
+    btn.disabled = true;
+    btn.textContent = '⚡ 載入中…';
+    try {
+        await init();
+        showToast(`✅ 路線資料已更新（共 ${allRoutes.length} 條）`);
+    } catch (e) {
+        showToast('⚠️ 更新失敗，請稍後重試');
+    }
+    btn.textContent = '🔄 路線';
+    btn.disabled = false;
 }
 
 // =====================================================
