@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聯營路線實時班次 — 九巴 / 城巴</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== CONFIG: 設計變數 ===== */
+        :root {
+            --kmb-red: #e60012;
+            --ctb-yellow: #f3d03e;
+            --ctb-blue: #1a73b5;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-primary: #1a1a2e;
+            --text-secondary: #6b7280;
+            --accent: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        /* ===== 基礎排版 ===== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* ===== 頂部標題列 ===== */
+        header {
+            text-align: center;
+            padding: 24px 0 16px;
+        }
+        header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        header .subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ===== 控制面板 ===== */
+        .panel {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .panel label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .panel select, .panel input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            background: #fafafa;
+            appearance: auto;
+            transition: border-color 0.2s;
+        }
+        .panel select:focus, .panel input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .row > div { flex: 1; }
+
+        /* ===== 搜尋框 ===== */
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .search-wrapper input {
+            padding-left: 36px;
+        }
+        .search-wrapper .icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        .route-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1.5px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .route-dropdown .route-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+        .route-dropdown .route-item:hover,
+        .route-dropdown .route-item.active {
+            background: #eef4ff;
+        }
+        .route-dropdown .route-item .route-num {
+            font-weight: 700;
+            font-size: 16px;
+            margin-right: 8px;
+        }
+        .route-dropdown .route-item .route-dest {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* ===== 查詢按鈕 ===== */
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* ===== 狀態列 ===== */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .toggle-switch {
+            width: 36px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .toggle-switch.on { background: #34d399; }
+        .toggle-switch::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+        .toggle-switch.on::after { transform: translateX(16px); }
+
+        /* ===== 倒數計時器 ===== */
+        .countdown-bar {
+            height: 3px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .countdown-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            border-radius: 2px;
+            transition: width 1s linear;
+        }
+
+        /* ===== ETA 卡片 ===== */
+        .eta-list { margin-top: 4px; }
+        .eta-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid transparent;
+            transition: transform 0.15s;
+            animation: fadeIn 0.3s ease;
+        }
+        .eta-card:hover { transform: translateX(3px); }
+        .eta-card.kmb { border-left-color: var(--kmb-red); }
+        .eta-card.ctb { border-left-color: var(--ctb-yellow); }
+
+        .eta-left { display: flex; align-items: center; gap: 12px; }
+        .company-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px;
+            min-width: 56px;
+            text-align: center;
+        }
+        .badge-kmb { background: var(--kmb-red); color: #fff; }
+        .badge-ctb { background: var(--ctb-yellow); color: #333; }
+
+        .eta-meta .seq-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .eta-meta .remark {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .eta-right { text-align: right; }
+        .eta-mins {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .eta-mins.arriving { color: #ef4444; }
+        .eta-mins.soon { color: #f59e0b; }
+        .eta-mins.normal { color: #10b981; }
+        .eta-mins-unit {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .eta-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ===== 空狀態 ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ===== 載入動畫 ===== */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+            height: 64px;
+            margin-bottom: 10px;
+        }
+
+        /* ===== 頁腳 ===== */
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 11px;
+            color: #aaa;
+        }
+        footer a { color: #aaa; text-decoration: none; }
+
+        /* ===== 動畫 ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* ===== 深色模式 ===== */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --card-bg: #1e293b;
+                --text-primary: #e2e8f0;
+                --text-secondary: #94a3b8;
+                --shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+            .panel select, .panel input[type="text"] {
+                background: #334155;
+                border-color: #475569;
+                color: #e2e8f0;
+            }
+            .route-dropdown {
+                background: #1e293b;
+                border-color: #475569;
+            }
+            .route-dropdown .route-item:hover,
+            .route-dropdown .route-item.active {
+                background: #334155;
+            }
+            .skeleton {
+                background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+                background-size: 200% 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🚌 聯營路線實時班次</h1>
+        <p class="subtitle">九巴 KMB ╳ 城巴 CTB — 即時到站資訊</p>
+    </header>
+
+    <!-- 路線搜尋面板 -->
+    <div class="panel">
+        <label>搜尋路線</label>
+        <div class="search-wrapper">
+            <span class="icon">🔍</span>
+            <input type="text" id="routeSearch" placeholder="輸入路線號碼，例如 101、118、905…" autocomplete="off">
+            <div class="route-dropdown" id="routeDropdown"></div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>方向</label>
+                <select id="dirSelect" onchange="onDirectionChange()" disabled>
+                    <option value="">請先選擇路線</option>
+                </select>
+            </div>
+            <div>
+                <label>車站</label>
+                <select id="stopSelect" disabled>
+                    <option value="">請先選擇方向</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn-primary" id="btnQuery" onclick="fetchETA()" disabled>查詢實時班次</button>
+    </div>
+
+    <!-- 狀態列 -->
+    <div class="status-bar" id="statusBar" style="display:none;">
+        <span id="lastUpdate">最後更新：--:--:--</span>
+        <div class="auto-refresh-toggle" onclick="toggleAutoRefresh()">
+            <span>自動更新</span>
+            <div class="toggle-switch" id="toggleSwitch"></div>
+        </div>
+    </div>
+    <div class="countdown-bar" id="countdownBar" style="display:none;">
+        <div class="fill" id="countdownFill" style="width:100%"></div>
+    </div>
+
+    <!-- ETA 結果區 -->
+    <div class="eta-list" id="etaList">
+        <div class="empty-state">
+            <div class="emoji">🚏</div>
+            <p>選擇路線及車站後<br>即可查看實時班次資訊</p>
+        </div>
+    </div>
+
+    <footer>
+        數據來源：<a href="https://data.gov.hk" target="_blank">資料一線通 data.gov.hk</a><br>
+        九巴及城巴實時到站數據 API
+    </footer>
+</div>
+
+<script>
+// =====================================================
+// CONFIG: 可調參數
+// =====================================================
+const CONFIG = {
+    REFRESH_INTERVAL: 30,        // 自動更新間隔（秒）
+    KMB_API: 'https://data.etabus.gov.hk/v1/transport/kmb',
+    CTB_API: 'https://rt.data.gov.hk/v2/transport/citybus',
+    MAX_DROPDOWN: 20,            // 下拉選單最多顯示路線數
+};
+
+// =====================================================
+// 全域狀態
+// =====================================================
+let allRoutes = [];              // 所有聯營路線資料
+let currentStops = [];           // 當前選中路線的車站列表
+let selectedRoute = null;        // 當前選中的路線號
+let autoRefresh = false;         // 自動更新開關
+let refreshTimer = null;         // 自動更新計時器
+let countdownTimer = null;       // 倒數計時器
+let countdownSec = CONFIG.REFRESH_INTERVAL;
+
+// =====================================================
+// 初始化：載入所有路線資料
+// =====================================================
+async function init() {
+    try {
+        // 同時獲取九巴與城巴的路線清單
+        const [kmbRes, ctbRes] = await Promise.all([
+            fetch(`${CONFIG.KMB_API}/route/`).then(r => r.json()),
+            fetch(`${CONFIG.CTB_API}/route/CTB`).then(r => r.json())
+        ]);
+
+        const kmbRoutes = {};
+        kmbRes.data.forEach(r => {
+            if (r.service_type !== '1') return;
+            if (!kmbRoutes[r.route]) kmbRoutes[r.route] = [];
+            kmbRoutes[r.route].push(r);
+        });
+
+        const ctbRoutes = {};
+        ctbRes.data.forEach(r => {
+            if (!ctbRoutes[r.route]) ctbRoutes[r.route] = [];
+            ctbRoutes[r.route].push(r);
+        });
+
+        // 找出交集（聯營路線）
+        const jointRouteNums = Object.keys(kmbRoutes).filter(r => ctbRoutes[r]);
+        jointRouteNums.sort((a, b) => {
+            const na = parseInt(a), nb = parseInt(b);
+            if (!isNaN(na) && !isNaN(nb)) return na - nb;
+            return a.localeCompare(b);
+        });
+
+        allRoutes = jointRouteNums.map(route => {
+            const kmbO = kmbRoutes[route].find(r => r.bound === 'O');
+            const kmbI = kmbRoutes[route].find(r => r.bound === 'I');
+            return {
+                route,
+                outbound: kmbO ? { orig: kmbO.orig_tc, dest: kmbO.dest_tc } : null,
+                inbound: kmbI ? { orig: kmbI.orig_tc, dest: kmbI.dest_tc } : null,
+            };
+        });
+
+        document.getElementById('routeSearch').placeholder = `共 ${allRoutes.length} 條聯營路線，輸入號碼搜尋…`;
+
+        // 檢查 URL hash 是否有預設路線
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            const parts = hash.split('/');
+            const routeFromHash = parts[0];
+            const found = allRoutes.find(r => r.route === routeFromHash);
+            if (found) {
+                document.getElementById('routeSearch').value = routeFromHash;
+                selectRoute(routeFromHash);
+            }
+        }
+
+    } catch (err) {
+        console.error('初始化失敗:', err);
+        document.getElementById('routeSearch').placeholder = '載入路線失敗，請重新整理頁面';
+    }
+}
+
+// =====================================================
+// 路線搜尋與下拉選單
+// =====================================================
+const routeSearch = document.getElementById('routeSearch');
+const routeDropdown = document.getElementById('routeDropdown');
+
+routeSearch.addEventListener('input', () => {
+    const q = routeSearch.value.trim().toUpperCase();
+    if (!q) {
+        routeDropdown.style.display = 'none';
+        return;
+    }
+
+    // 篩選匹配的路線（優先完全匹配，再前綴匹配，最後包含匹配）
+    const exact = allRoutes.filter(r => r.route === q);
+    const prefix = allRoutes.filter(r => r.route.startsWith(q) && r.route !== q);
+    const contains = allRoutes.filter(r => r.route.includes(q) && !r.route.startsWith(q));
+    const results = [...exact, ...prefix, ...contains].slice(0, CONFIG.MAX_DROPDOWN);
+
+    if (results.length === 0) {
+        routeDropdown.innerHTML = '<div class="route-item" style="color:#999;">找不到此路線（僅顯示聯營路線）</div>';
+        routeDropdown.style.display = 'block';
+        return;
+    }
+
+    routeDropdown.innerHTML = results.map(r => {
+        const desc = r.outbound ? `${r.outbound.orig} ↔ ${r.outbound.dest}` : '';
+        return `<div class="route-item" onclick="selectRoute('${r.route}')">
+            <span class="route-num">${r.route}</span>
+            <span class="route-dest">${desc}</span>
+        </div>`;
+    }).join('');
+    routeDropdown.style.display = 'block';
+});
+
+routeSearch.addEventListener('focus', () => {
+    if (routeSearch.value.trim()) routeSearch.dispatchEvent(new Event('input'));
+});
+
+// 點擊外部關閉下拉選單
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrapper')) {
+        routeDropdown.style.display = 'none';
+    }
+});
+
+// =====================================================
+// 選擇路線
+// =====================================================
+function selectRoute(route) {
+    selectedRoute = route;
+    routeSearch.value = route;
+    routeDropdown.style.display = 'none';
+
+    const info = allRoutes.find(r => r.route === route);
+    const dirSelect = document.getElementById('dirSelect');
+    dirSelect.innerHTML = '';
+    dirSelect.disabled = false;
+
+    if (info.outbound) {
+        const opt = document.createElement('option');
+        opt.value = 'outbound';
+        opt.textContent = `往 ${info.outbound.dest}`;
+        dirSelect.appendChild(opt);
+    }
+    if (info.inbound) {
+        const opt = document.createElement('option');
+        opt.value = 'inbound';
+        opt.textContent = `往 ${info.inbound.dest}`;
+        dirSelect.appendChild(opt);
+    }
+
+    // 更新 URL hash
+    window.location.hash = route;
+
+    onDirectionChange();
+}
+
+// =====================================================
+// 方向變更 → 載入車站
+// =====================================================
+async function onDirectionChange() {
+    if (!selectedRoute) return;
+    const dir = document.getElementById('dirSelect').value;
+    const stopSelect = document.getElementById('stopSelect');
+    stopSelect.innerHTML = '<option value="">載入車站中…</option>';
+    stopSelect.disabled = true;
+    document.getElementById('btnQuery').disabled = true;
+
+    try {
+        // 同時獲取九巴與城巴的車站序列
+        const [kmbRes, ctbRes] = await Promise.all([
+            fetch(`${CONFIG.KMB_API}/route-stop/${selectedRoute}/${dir}/1`).then(r => r.json()),
+            fetch(`${CONFIG.CTB_API}/route-stop/CTB/${selectedRoute}/${dir}`).then(r => r.json())
+        ]);
+
+        // 以序號配對
+        currentStops = [];
+        const maxSeq = Math.max(kmbRes.data.length, ctbRes.data.length);
+
+        for (let i = 0; i < maxSeq; i++) {
+            currentStops.push({
+                seq: i + 1,
+                kmb_id: kmbRes.data[i] ? kmbRes.data[i].stop : null,
+                ctb_id: ctbRes.data[i] ? ctbRes.data[i].stop : null,
+                name: `第 ${i + 1} 站`
+            });
+        }
+
+        renderStopSelect();
+        stopSelect.disabled = false;
+        document.getElementById('btnQuery').disabled = false;
+
+        // 漸進式獲取中文站名
+        enrichStopNames();
+
+    } catch (err) {
+        console.error('載入車站失敗:', err);
+        stopSelect.innerHTML = '<option value="">載入失敗</option>';
+    }
+}
+
+function renderStopSelect() {
+    const stopSelect = document.getElementById('stopSelect');
+    stopSelect.innerHTML = currentStops.map((s, i) =>
+        `<option value="${i}">${s.name}</option>`
+    ).join('');
+}
+
+async function enrichStopNames() {
+    const fetchName = async (stop) => {
+        // 優先使用九巴站名，若無九巴 ID 則用城巴
+        const stopId = stop.kmb_id || stop.ctb_id;
+        if (!stopId) return;
+        try {
+            let name = '';
+            if (stop.kmb_id) {
+                const res = await fetch(`${CONFIG.KMB_API}/stop/${stop.kmb_id}`);
+                const data = await res.json();
+                name = data.data.name_tc;
+            } else {
+                const res = await fetch(`${CONFIG.CTB_API}/stop/${stop.ctb_id}`);
+                const data = await res.json();
+                name = data.data.name_tc;
+            }
+            stop.name = `${stop.seq}. ${name}`;
+        } catch (e) { /* 靜默失敗 */ }
+    };
+
+    // 每 5 個車站為一批
+    for (let i = 0; i < currentStops.length; i += 5) {
+        const batch = currentStops.slice(i, i + 5);
+        await Promise.all(batch.map(fetchName));
+        renderStopSelect();
+    }
+}
+
+// =====================================================
+// 獲取並顯示 ETA
+// =====================================================
+async function fetchETA() {
+    const stopIndex = document.getElementById('stopSelect').value;
+    if (stopIndex === '' || !selectedRoute) return;
+
+    const stop = currentStops[stopIndex];
+    const etaList = document.getElementById('etaList');
+
+    // 顯示載入骨架
+    etaList.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
+    let etas = [];
+
+    try {
+        const promises = [];
+
+        // 九巴 ETA
+        if (stop.kmb_id) {
+            promises.push(
+                fetch(`${CONFIG.KMB_API}/eta/${stop.kmb_id}/${selectedRoute}/1`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.data) {
+                            data.data.forEach(eta => {
+                                if (eta.eta) {
+                                    etas.push({
+                                        company: 'KMB',
+                                        time: new Date(eta.eta),
+                                        remark: eta.rmk_tc || '',
+                                        seq: eta.eta_seq
+                                    });
+                                }
+                            });
+                        }
+                    })
+                    .catch(() => {})
+            );
+        }
+
+        // 城巴 ETA
+        if (stop.ctb_id) {
+            promises.push(
+                fetch(`${CONFIG.CTB_API}/eta/CTB/${stop.ctb_id}/${selectedRoute}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.data) {
+                            data.data.forEach(eta => {
+                                if (eta.eta) {
+                                    etas.push({
+                                        company: 'CTB',
+                                        time: new Date(eta.eta),
+                                        remark: eta.rmk_tc || '',
+                                        seq: eta.eta_seq
+                                    });
+                                }
+                            });
+                        }
+                    })
+                    .catch(() => {})
+            );
+        }
+
+        await Promise.all(promises);
+
+        // 按時間排序
+        etas.sort((a, b) => a.time - b.time);
+
+        // 更新時間戳
+        const now = new Date();
+        document.getElementById('lastUpdate').textContent =
+            `最後更新：${now.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        document.getElementById('statusBar').style.display = 'flex';
+
+        if (etas.length === 0) {
+            etaList.innerHTML = `
+                <div class="empty-state">
+                    <div class="emoji">😴</div>
+                    <p>目前沒有班次資料<br><span style="font-size:12px;">可能已過尾班車時間或服務暫停</span></p>
+                </div>`;
+            return;
+        }
+
+        etaList.innerHTML = etas.map((eta, idx) => {
+            const diffMs = eta.time - now;
+            const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+            const diffSecs = Math.max(0, Math.floor((diffMs % 60000) / 1000));
+            const timeStr = eta.time.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit' });
+
+            const isKMB = eta.company === 'KMB';
+            const cardClass = isKMB ? 'kmb' : 'ctb';
+            const badgeClass = isKMB ? 'badge-kmb' : 'badge-ctb';
+            const compName = isKMB ? '九巴' : '城巴';
+
+            let minsClass = 'normal';
+            let minsDisplay = `${diffMins}<span class="eta-mins-unit"> 分鐘</span>`;
+            if (diffMins <= 1) {
+                minsClass = 'arriving';
+                minsDisplay = diffMins === 0 ? '即將到站' : `${diffMins}<span class="eta-mins-unit"> 分鐘</span>`;
+            } else if (diffMins <= 5) {
+                minsClass = 'soon';
+            }
+
+            const orderLabel = idx === 0 ? '下一班' : `第 ${idx + 1} 班`;
+
+            return `
+                <div class="eta-card ${cardClass}" style="animation-delay:${idx * 0.05}s">
+                    <div class="eta-left">
+                        <span class="company-badge ${badgeClass}">${compName}</span>
+                        <div class="eta-meta">
+                            <div class="seq-label">${orderLabel}</div>
+                            ${eta.remark ? `<div class="remark">${eta.remark}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="eta-right">
+                        <div class="eta-mins ${minsClass}">${minsDisplay}</div>
+                        <div class="eta-time">${timeStr}</div>
+                    </div>
+                </div>`;
+        }).join('');
+
+    } catch (err) {
+        console.error('獲取 ETA 失敗:', err);
+        etaList.innerHTML = `
+            <div class="empty-state">
+                <div class="emoji">⚠️</div>
+                <p>獲取班次資料失敗<br><span style="font-size:12px;">請檢查網絡連線後重試</span></p>
+            </div>`;
+    }
+}
+
+// =====================================================
+// 自動更新機制
+// =====================================================
+function toggleAutoRefresh() {
+    autoRefresh = !autoRefresh;
+    const toggle = document.getElementById('toggleSwitch');
+    const bar = document.getElementById('countdownBar');
+
+    if (autoRefresh) {
+        toggle.classList.add('on');
+        bar.style.display = 'block';
+        startCountdown();
+    } else {
+        toggle.classList.remove('on');
+        bar.style.display = 'none';
+        clearInterval(refreshTimer);
+        clearInterval(countdownTimer);
+    }
+}
+
+function startCountdown() {
+    countdownSec = CONFIG.REFRESH_INTERVAL;
+    const fill = document.getElementById('countdownFill');
+    fill.style.width = '100%';
+
+    clearInterval(refreshTimer);
+    clearInterval(countdownTimer);
+
+    countdownTimer = setInterval(() => {
+        countdownSec--;
+        const pct = (countdownSec / CONFIG.REFRESH_INTERVAL) * 100;
+        fill.style.width = `${pct}%`;
+
+        if (countdownSec <= 0) {
+            fetchETA();
+            countdownSec = CONFIG.REFRESH_INTERVAL;
+            fill.style.width = '100%';
+        }
+    }, 1000);
+}
+
+// =====================================================
+// 鍵盤導航支援
+// =====================================================
+routeSearch.addEventListener('keydown', (e) => {
+    const items = routeDropdown.querySelectorAll('.route-item');
+    const active = routeDropdown.querySelector('.route-item.active');
+    let idx = Array.from(items).indexOf(active);
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (idx < items.length - 1) idx++;
+        items.forEach(i => i.classList.remove('active'));
+        if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (idx > 0) idx--;
+        items.forEach(i => i.classList.remove('active'));
+        if (items[idx]) { items[idx].classList.add('active'); items[idx].scrollIntoView({ block: 'nearest' }); }
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (active) active.click();
+        else if (items.length > 0) items[0].click();
+    }
+});
+
+// =====================================================
+// 啟動
+// =====================================================
+window.onload = init;
+</script>
+
+</body>
+</html>
