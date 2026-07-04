@@ -383,7 +383,6 @@
       font-weight: 600;
       line-height: 1;
       opacity: .76;
-      transform: translateY(2px);
     }
 
     .clock-block {
@@ -599,14 +598,6 @@
       <header class="topbar">
         <h1>到站時間</h1>
         <div class="top-actions">
-          <button class="icon-button" id="manualRefresh" type="button" aria-label="手動更新" title="手動更新">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20 6v5h-5"></path>
-              <path d="M4 18v-5h5"></path>
-              <path d="M18.4 9A7 7 0 0 0 6.1 6.7L4 8.7"></path>
-              <path d="M5.6 15A7 7 0 0 0 17.9 17.3L20 15.3"></path>
-            </svg>
-          </button>
           <button class="icon-button" id="themeToggle" type="button" aria-label="切換暗黑模式" title="切換暗黑模式">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="4"></circle>
@@ -618,6 +609,14 @@
               <path d="M20 12h2"></path>
               <path d="m6.34 17.66-1.41 1.41"></path>
               <path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+          </button>
+          <button class="icon-button" id="manualRefresh" type="button" aria-label="手動更新" title="手動更新">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6v5h-5"></path>
+              <path d="M4 18v-5h5"></path>
+              <path d="M18.4 9A7 7 0 0 0 6.1 6.7L4 8.7"></path>
+              <path d="M5.6 15A7 7 0 0 0 17.9 17.3L20 15.3"></path>
             </svg>
           </button>
         </div>
@@ -788,6 +787,7 @@
     const HKO_CURRENT_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc";
     const HKO_FORECAST_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc";
     const HKO_WARNINGS_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
+    const HKO_HQ_WEATHER_URL = "./data/hko-hq-weather.json";
     const HKO_ICON_BASE = "https://www.hko.gov.hk/en/wxinfo/dailywx/images/";
     const HKO_WEATHER_ICON_BASE = "https://www.hko.gov.hk/images/HKOWxIconOutline/";
     const hkoWarningIcons = {
@@ -1012,9 +1012,19 @@
       }));
     }
 
+    async function fetchHkoHqWeather() {
+      try {
+        const response = await fetch(HKO_HQ_WEATHER_URL, { cache: "no-store" });
+        return response.ok ? response.json() : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
     async function updateWeather() {
       try {
-        const [currentResponse, forecastResponse, warningsResponse] = await Promise.all([
+        const [hqWeather, currentResponse, forecastResponse, warningsResponse] = await Promise.all([
+          fetchHkoHqWeather(),
           fetch(HKO_CURRENT_URL, { cache: "no-store" }),
           fetch(HKO_FORECAST_URL, { cache: "no-store" }),
           fetch(HKO_WARNINGS_URL, { cache: "no-store" })
@@ -1024,15 +1034,15 @@
           forecastResponse.json(),
           warningsResponse.json()
         ]);
-        const temperature = current.temperature?.data?.find(item => item.place === "屯門")
-          || current.temperature?.data?.find(item => item.place === "香港天文台")
+        const temperature = current.temperature?.data?.find(item => item.place === "香港天文台")
           || current.temperature?.data?.[0];
-        const humidity = current.humidity?.data?.find(item => item.place === "屯門")
-          || current.humidity?.data?.find(item => item.place === "香港天文台")
+        const humidity = current.humidity?.data?.find(item => item.place === "香港天文台")
           || current.humidity?.data?.[0];
 
-        if (temperature) temperatureValue.textContent = formatTemperature(temperature.value);
-        if (humidity) humidityValue.textContent = `${humidity.value}%`;
+        if (hqWeather?.temperature != null) temperatureValue.textContent = formatTemperature(hqWeather.temperature);
+        else if (temperature) temperatureValue.textContent = formatTemperature(temperature.value);
+        if (hqWeather?.humidity != null) humidityValue.textContent = `${hqWeather.humidity}%`;
+        else if (humidity) humidityValue.textContent = `${humidity.value}%`;
         if (current.icon?.[0]) weatherIcon.src = `${HKO_WEATHER_ICON_BASE}pic${current.icon[0]}.png`;
         conditionText.textContent = firstSentence(forecast.forecastDesc);
         renderWarnings(warningSummary);
@@ -1078,6 +1088,7 @@
     console.assert(formatClock(new Date("2026-07-04T09:08:07+08:00")) === "09:08:07");
     console.assert(formatDate(new Date("2026-07-04T09:08:07+08:00")) === "7月4日 星期六");
     console.assert(formatTemperature(27) === "27.0°C");
+    console.assert(formatTemperature(29.1) === "29.1°C");
     console.assert(firstSentence("大致多雲。有雨。") === "大致多雲。");
     console.assert(ETA_REFRESH_SECONDS === 15);
     console.assert(LRT_STATION_ID === 170);
