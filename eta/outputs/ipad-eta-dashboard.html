@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f7fb">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="到站時間">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>到站時間</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Noto+Sans+HK:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d13;
+      --panel: #111821;
+      --panel-soft: rgba(255, 255, 255, .055);
+      --line: #263241;
+      --text: #eef5ff;
+      --muted: #aab8c8;
+      --dim: #7d8ea1;
+      --kmb: #d71920;
+      --kmb-2: #b8c0c8;
+      --citybus: #f7c600;
+      --citybus-2: #112f6b;
+      --lr-505: #da2128;
+      --lr-610: #541912;
+      --lr-615: #ffdc01;
+      --lr-615p: #016584;
+      --green: #5ee08a;
+      --amber: #ffd166;
+      --red: #ff6b6b;
+      --button-bg: rgba(255, 255, 255, .09);
+      --button-border: rgba(255, 255, 255, .16);
+      --shadow: inset 0 1px 0 rgba(255, 255, 255, .07);
+    }
+
+    body.light {
+      color-scheme: light;
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-soft: rgba(5, 18, 32, .055);
+      --line: #cfd8e3;
+      --text: #07111f;
+      --muted: #46586d;
+      --dim: #64758a;
+      --button-bg: #eef3f8;
+      --button-border: #c7d2df;
+      --shadow: 0 1px 2px rgba(15, 23, 42, .08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    .board {
+      width: 1024px;
+      height: 768px;
+      display: grid;
+      grid-template-columns: 2.65fr 1fr;
+      gap: 14px;
+      padding: 18px;
+      background:
+        linear-gradient(135deg, rgba(215, 25, 32, .08), transparent 34%),
+        radial-gradient(circle at 86% 20%, rgba(35, 163, 111, .11), transparent 24%),
+        var(--bg);
+    }
+
+    body.light .board {
+      background:
+        linear-gradient(135deg, rgba(215, 25, 32, .055), transparent 34%),
+        radial-gradient(circle at 86% 20%, rgba(35, 163, 111, .08), transparent 24%),
+        var(--bg);
+    }
+
+    .eta-pane,
+    .side-pane {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .eta-pane {
+      display: grid;
+      grid-template-rows: 66px auto auto 34px;
+      align-content: start;
+    }
+
+    .side-pane {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar,
+    .section-title {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+    }
+
+    h1,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .refresh {
+      min-width: 128px;
+      color: var(--muted);
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .icon-button {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--button-border);
+      border-radius: 6px;
+      background: var(--button-bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .icon-button svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2.2;
+    }
+
+    .icon-button:active {
+      opacity: .72;
+    }
+
+    .section {
+      display: grid;
+      grid-template-rows: 46px 1fr;
+      min-height: 0;
+    }
+
+    .section-title {
+      display: grid;
+      grid-template-columns: 92px 1fr 268px;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+
+    .section-title strong {
+      color: var(--text);
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .eta-row {
+      height: 66px;
+      display: grid;
+      grid-template-columns: 92px 1fr 268px;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eta-row:last-child {
+      border-bottom: 0;
+    }
+
+    .route {
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      color: #fff;
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0;
+      box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .22);
+    }
+
+    .route.kmb {
+      border: 2px solid var(--kmb-2);
+      background: linear-gradient(135deg, var(--kmb), #9e1116);
+    }
+
+    .route.citybus {
+      color: var(--citybus-2);
+      background: linear-gradient(135deg, var(--citybus), #f3a900);
+    }
+
+    .route.lr-610 {
+      background: var(--lr-610);
+    }
+
+    .route.lr-505 {
+      background: var(--lr-505);
+    }
+
+    .route.lr-615 {
+      color: #111;
+      background: var(--lr-615);
+    }
+
+    .route.lr-615p {
+      background: var(--lr-615p);
+    }
+
+    .dest {
+      min-width: 0;
+    }
+
+    .dest-main {
+      display: block;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .dest-sub {
+      display: block;
+      margin-top: 7px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .times {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .time-pill {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 6px 8px;
+      border: 1px solid var(--button-border);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      color: var(--text);
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .time-pill b {
+      font-size: 27px;
+      line-height: 1;
+    }
+
+    .time-pill span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .time-pill.soon {
+      border-color: rgba(255, 209, 102, .76);
+      background: rgba(255, 209, 102, .15);
+      color: #ffd166;
+    }
+
+    body.light .time-pill.soon {
+      color: #8a5b00;
+    }
+
+    .time-pill.now {
+      border-color: rgba(255, 107, 107, .78);
+      background: rgba(255, 107, 107, .15);
+      color: var(--red);
+    }
+
+    body.light .time-pill.now {
+      color: #b3191f;
+    }
+
+    .time-pill.arrival {
+      align-items: center;
+    }
+
+    .time-pill.arrival b {
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
+    .time-pill.empty b {
+      color: var(--dim);
+      font-size: 22px;
+    }
+
+    .eta-footer {
+      display: grid;
+      grid-template-columns: 92px 1fr 268px;
+      align-items: center;
+      gap: 14px;
+      padding: 0 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .eta-footer .refresh {
+      grid-column: 3;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      color: var(--dim);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+      opacity: .76;
+      transform: translateY(4px);
+    }
+
+    .clock-block {
+      padding: 17px 18px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .kicker {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .06em;
+    }
+
+    .clock {
+      margin-top: 8px;
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 46px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .date {
+      margin-top: 12px;
+      color: var(--text);
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .weather {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+      min-height: 0;
+      padding: 10px 18px 18px;
+    }
+
+    .weather-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 13px;
+    }
+
+    .weather-card,
+    .metric {
+      min-height: 76px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .weather-card span,
+    .metric span {
+      display: block;
+      color: var(--dim);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .06em;
+    }
+
+    .weather-card b {
+      display: block;
+      margin-top: 8px;
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 38px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .humidity b {
+      font-size: 38px;
+    }
+
+    .condition {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      color: var(--text);
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .condition img {
+      width: 38px;
+      height: 38px;
+      padding: 4px;
+      border-radius: 50%;
+      background: rgba(100, 117, 138, .14);
+      box-shadow: inset 0 0 0 1px rgba(100, 117, 138, .16);
+      object-fit: contain;
+    }
+
+    .sun-times {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .sun-row {
+      min-height: 44px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      align-items: start;
+      gap: 5px;
+      color: var(--text);
+    }
+
+    .sun-row span {
+      color: var(--dim);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .05em;
+    }
+
+    .sun-row b {
+      display: block;
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 23px;
+      line-height: 1;
+      text-align: left;
+    }
+
+    .warnings {
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .warning {
+      min-height: 43px;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--amber);
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .warning.red {
+      color: var(--red);
+    }
+
+    .warning.none {
+      min-height: 34px;
+      grid-template-columns: 1fr;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    body.light .warning {
+      color: #745000;
+    }
+
+    body.light .warning.red {
+      color: #a4141a;
+    }
+
+    .warning img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+    }
+
+    .time-head {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+
+    @media (max-width: 1023px), (max-height: 767px) {
+      .board {
+        transform: scale(.92);
+      }
+    }
+  </style>
+</head>
+<body class="light">
+  <main class="board" aria-label="到站時間">
+    <section class="eta-pane" aria-label="到站時間">
+      <header class="topbar">
+        <h1>到站時間</h1>
+        <div class="top-actions">
+          <button class="icon-button" id="manualRefresh" type="button" aria-label="手動更新" title="手動更新">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6v5h-5"></path>
+              <path d="M4 18v-5h5"></path>
+              <path d="M18.4 9A7 7 0 0 0 6.1 6.7L4 8.7"></path>
+              <path d="M5.6 15A7 7 0 0 0 17.9 17.3L20 15.3"></path>
+            </svg>
+          </button>
+          <button class="icon-button" id="themeToggle" type="button" aria-label="切換淺色模式" title="切換淺色模式">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path>
+              <path d="M12 20v2"></path>
+              <path d="m4.93 4.93 1.41 1.41"></path>
+              <path d="m17.66 17.66 1.41 1.41"></path>
+              <path d="M2 12h2"></path>
+              <path d="M20 12h2"></path>
+              <path d="m6.34 17.66-1.41 1.41"></path>
+              <path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="section" aria-label="巴士到站">
+        <div class="section-title">
+          <strong>巴士</strong>
+          <span>方向 / 車站</span>
+          <div class="time-head"><span>下一班</span><span>第二班</span><span>第三班</span></div>
+        </div>
+        <div class="rows">
+          <article class="eta-row" data-provider="kmb" data-route="66X" data-stop-id="1AD9C759A42F9003" data-service-type="1" data-dir="I" data-dest="屯門(大興邨)">
+            <div class="route kmb">66X</div>
+            <div class="dest">
+              <span class="dest-main">往屯門(大興邨)</span>
+              <span class="dest-sub">中電 (TM470) · 九巴</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="kmb" data-route="960" data-stop-id="19B569A51034271F" data-service-type="1" data-dir="O" data-dest="會展站">
+            <div class="route kmb">960</div>
+            <div class="dest">
+              <span class="dest-main">往會展站</span>
+              <span class="dest-sub">石排站 (TM584) · 九巴</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="kmb" data-route="258D" data-stop-id="6AE148CA74FC4D53" data-service-type="1" data-dir="O" data-dest="藍田站">
+            <div class="route kmb">258D</div>
+            <div class="dest">
+              <span class="dest-main">往藍田站</span>
+              <span class="dest-sub">大興街 (TM572) · 九巴</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="kmb" data-route="57M" data-stop-id="640B42B50FB0152E" data-service-type="1" data-dir="O" data-dest="荔景(北)">
+            <div class="route kmb">57M</div>
+            <div class="dest">
+              <span class="dest-main">往荔景(北)</span>
+              <span class="dest-sub">山景總站 (TM941) · 九巴</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" aria-label="輕鐵到站">
+        <div class="section-title">
+          <strong>輕鐵</strong>
+          <span>路綫 / 月台</span>
+          <div class="time-head"><span>下一班</span><span>第二班</span><span>第三班</span></div>
+        </div>
+        <div class="rows">
+          <article class="eta-row" data-provider="lrt">
+            <div class="route lr-610">610</div>
+            <div class="dest">
+              <span class="dest-main">石排站</span>
+              <span class="dest-sub">輕鐵 · 等候資料</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="lrt">
+            <div class="route lr-615p">615P</div>
+            <div class="dest">
+              <span class="dest-main">石排站</span>
+              <span class="dest-sub">輕鐵 · 等候資料</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="lrt">
+            <div class="route lr-610">610</div>
+            <div class="dest">
+              <span class="dest-main">石排站</span>
+              <span class="dest-sub">輕鐵 · 等候資料</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="lrt">
+            <div class="route lr-505">505</div>
+            <div class="dest">
+              <span class="dest-main">石排站</span>
+              <span class="dest-sub">輕鐵 · 等候資料</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <footer class="eta-footer" aria-label="更新時間">
+        <div class="refresh" id="refresh">到站更新 --:--:--</div>
+      </footer>
+    </section>
+
+    <aside class="side-pane" aria-label="時間及天氣">
+      <section class="clock-block">
+        <div class="kicker">現在</div>
+        <div class="clock" id="clock">21:39:08</div>
+        <p class="date" id="date">7月4日 星期六</p>
+        <div class="sun-times" aria-label="日出日落">
+          <div class="sun-row"><span>日出</span><b>05:44</b></div>
+          <div class="sun-row"><span>日落</span><b>19:12</b></div>
+        </div>
+      </section>
+
+      <section class="weather">
+        <div class="kicker">天文台天氣</div>
+        <div class="weather-pair">
+          <div class="weather-card">
+            <span>溫度</span>
+            <b id="temperatureValue">--.-°C</b>
+          </div>
+          <div class="weather-card humidity">
+            <span>濕度</span>
+            <b id="humidityValue">--%</b>
+          </div>
+        </div>
+        <div class="condition" aria-label="天氣概況">
+          <img id="weatherIcon" src="https://www.hko.gov.hk/images/HKOWxIconOutline/pic63.png" alt="">
+          <span id="conditionText">讀取天氣資料</span>
+        </div>
+        <div>
+          <div class="warnings" id="warnings" aria-label="天氣警告">
+            <div class="warning none"><span>讀取天氣警告</span></div>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const ETA_REFRESH_SECONDS = 15;
+    const LRT_STATION_ID = 170;
+    const KMB_ETA_BASE = "https://data.etabus.gov.hk/v1/transport/kmb/eta";
+    const LRT_ETA_URL = `https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${LRT_STATION_ID}&with_special=1`;
+    const HKO_CURRENT_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc";
+    const HKO_FORECAST_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc";
+    const HKO_WARNINGS_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
+    const HKO_ICON_BASE = "https://www.hko.gov.hk/en/wxinfo/dailywx/images/";
+    const HKO_WEATHER_ICON_BASE = "https://www.hko.gov.hk/images/HKOWxIconOutline/";
+    const hkoWarningIcons = {
+      WTS: "ts.gif",
+      WRAINA: "raina.gif",
+      WRAINR: "rainr.gif",
+      WRAINB: "rainb.gif",
+      TC1: "tc1.gif",
+      TC3: "tc3.gif",
+      TC8NE: "tc8ne.gif",
+      TC8SE: "tc8se.gif",
+      TC8SW: "tc8sw.gif",
+      TC8NW: "tc8nw.gif",
+      TC9: "tc9.gif",
+      TC10: "tc10.gif",
+      WHOT: "vhot.gif",
+      WCOLD: "cold.gif"
+    };
+    const lrtRouteClasses = {
+      "505": "lr-505",
+      "610": "lr-610",
+      "615": "lr-615",
+      "615P": "lr-615p"
+    };
+    const zhWeekdays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+    const two = value => String(value).padStart(2, "0");
+    const refresh = document.getElementById("refresh");
+    const body = document.body;
+    const busRows = Array.from(document.querySelectorAll('[data-provider="kmb"]'));
+    const lrtRows = Array.from(document.querySelectorAll('[data-provider="lrt"]'));
+    const temperatureValue = document.getElementById("temperatureValue");
+    const humidityValue = document.getElementById("humidityValue");
+    const weatherIcon = document.getElementById("weatherIcon");
+    const conditionText = document.getElementById("conditionText");
+    const warnings = document.getElementById("warnings");
+
+    function formatClock(date) {
+      return `${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}`;
+    }
+
+    function formatDate(date) {
+      return `${date.getMonth() + 1}月${date.getDate()}日 ${zhWeekdays[date.getDay()]}`;
+    }
+
+    function setRefreshLabel(date) {
+      refresh.textContent = `到站更新 ${formatClock(date)}`;
+    }
+
+    function formatTemperature(value) {
+      return `${Number(value).toFixed(1)}°C`;
+    }
+
+    function firstSentence(text) {
+      if (!text) return "未有天氣概況";
+      const index = text.indexOf("。");
+      return index === -1 ? text : text.slice(0, index + 1);
+    }
+
+    function etaFromIso(isoString) {
+      if (!isoString) return null;
+      const minutes = Math.ceil((new Date(isoString).getTime() - Date.now()) / 60000);
+      if (!Number.isFinite(minutes)) return null;
+      if (minutes <= 1) return { arrival: true, sort: 0 };
+      return { minutes, sort: minutes };
+    }
+
+    function etaFromLrtText(text) {
+      if (!text || text === "-" || /即將|到達|抵達/.test(text)) {
+        return { arrival: true, sort: 0 };
+      }
+      const match = text.match(/\d+/);
+      if (!match) return null;
+      const minutes = Number(match[0]);
+      return minutes <= 1 ? { arrival: true, sort: 0 } : { minutes, sort: minutes };
+    }
+
+    function createTimePill(eta) {
+      const pill = document.createElement("div");
+      const value = document.createElement("b");
+      pill.className = "time-pill";
+
+      if (!eta) {
+        pill.classList.add("empty");
+        value.textContent = "--";
+        pill.append(value);
+        return pill;
+      }
+
+      if (eta.arrival) {
+        pill.classList.add("now", "arrival");
+        value.textContent = "即將到達";
+        pill.append(value);
+        return pill;
+      }
+
+      if (eta.minutes <= 4) pill.classList.add("soon");
+      value.textContent = eta.minutes;
+      const unit = document.createElement("span");
+      unit.textContent = "分";
+      pill.append(value, unit);
+      return pill;
+    }
+
+    function renderTimes(container, etas) {
+      const slots = [etas[0], etas[1], etas[2]].map(createTimePill);
+      container.replaceChildren(...slots);
+    }
+
+    async function updateBusEtas() {
+      await Promise.all(busRows.map(async row => {
+        const { route, stopId, serviceType, dir, dest } = row.dataset;
+        const url = `${KMB_ETA_BASE}/${stopId}/${encodeURIComponent(route)}/${serviceType}`;
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          const payload = await response.json();
+          const etas = (payload.data || [])
+            .filter(item => item.dir === dir && item.dest_tc === dest)
+            .map(item => etaFromIso(item.eta))
+            .filter(Boolean)
+            .sort((a, b) => a.sort - b.sort);
+          row.dataset.nextSort = String(etas[0]?.sort ?? Number.POSITIVE_INFINITY);
+          renderTimes(row.querySelector("[data-times]"), etas);
+        } catch (error) {
+          console.warn(`未能更新九巴 ${route} ETA`, error);
+          row.dataset.nextSort = String(Number.POSITIVE_INFINITY);
+          renderTimes(row.querySelector("[data-times]"), []);
+        }
+      }));
+      const busContainer = busRows[0]?.parentElement;
+      busRows
+        .slice()
+        .sort((a, b) => Number(a.dataset.nextSort) - Number(b.dataset.nextSort))
+        .forEach(row => busContainer?.append(row));
+    }
+
+    function setLrtRow(row, group) {
+      const routeBadge = row.querySelector(".route");
+      const main = row.querySelector(".dest-main");
+      const sub = row.querySelector(".dest-sub");
+
+      if (!group) {
+        routeBadge.className = "route lr-610";
+        routeBadge.textContent = "--";
+        main.textContent = "石排站";
+        sub.textContent = "輕鐵 · 暫無資料";
+        renderTimes(row.querySelector("[data-times]"), []);
+        return;
+      }
+
+      routeBadge.className = `route ${lrtRouteClasses[group.routeNo] || "lr-610"}`;
+      routeBadge.textContent = group.routeNo;
+      main.textContent = `往${group.dest}`;
+      sub.textContent = `石排站 · ${group.platform} 號月台`;
+      renderTimes(row.querySelector("[data-times]"), group.etas);
+    }
+
+    async function updateLrtEtas() {
+      try {
+        const response = await fetch(LRT_ETA_URL, { cache: "no-store" });
+        const payload = await response.json();
+        const groups = new Map();
+
+        for (const platform of payload.platform_list || []) {
+          for (const train of platform.route_list || []) {
+            if (train.arrival_departure && train.arrival_departure !== "A") continue;
+            const eta = etaFromLrtText(train.time_ch);
+            if (!eta) continue;
+            const key = `${train.route_no}|${train.dest_ch}|${platform.platform_id}`;
+            if (!groups.has(key)) {
+              groups.set(key, {
+                routeNo: train.route_no,
+                dest: train.dest_ch,
+                platform: platform.platform_id,
+                etas: []
+              });
+            }
+            groups.get(key).etas.push(eta);
+          }
+        }
+
+        const ordered = Array.from(groups.values())
+          .map(group => ({ ...group, etas: group.etas.sort((a, b) => a.sort - b.sort) }))
+          .sort((a, b) => a.etas[0].sort - b.etas[0].sort);
+        lrtRows.forEach((row, index) => setLrtRow(row, ordered[index]));
+      } catch (error) {
+        console.warn("未能更新輕鐵 ETA", error);
+        lrtRows.forEach(row => setLrtRow(row, null));
+      }
+    }
+
+    function renderWarnings(items) {
+      const active = Object.values(items || {});
+      if (!active.length) {
+        const empty = document.createElement("div");
+        empty.className = "warning none";
+        empty.append(document.createElement("span"));
+        empty.firstElementChild.textContent = "未有天氣警告";
+        warnings.replaceChildren(empty);
+        return;
+      }
+
+      warnings.replaceChildren(...active.map(item => {
+        const row = document.createElement("div");
+        const code = item.code || "";
+        row.className = /WTS|WRAINR|WRAINB|TC8|TC9|TC10/.test(code) ? "warning red" : "warning";
+
+        const icon = hkoWarningIcons[code];
+        if (icon) {
+          const img = document.createElement("img");
+          img.src = `${HKO_ICON_BASE}${icon}`;
+          img.alt = "";
+          row.append(img);
+        }
+
+        const label = document.createElement("span");
+        label.textContent = item.name || code || "天氣警告";
+        row.append(label);
+        return row;
+      }));
+    }
+
+    async function updateWeather() {
+      try {
+        const [currentResponse, forecastResponse, warningsResponse] = await Promise.all([
+          fetch(HKO_CURRENT_URL, { cache: "no-store" }),
+          fetch(HKO_FORECAST_URL, { cache: "no-store" }),
+          fetch(HKO_WARNINGS_URL, { cache: "no-store" })
+        ]);
+        const [current, forecast, warningSummary] = await Promise.all([
+          currentResponse.json(),
+          forecastResponse.json(),
+          warningsResponse.json()
+        ]);
+        const temperature = current.temperature?.data?.find(item => item.place === "屯門")
+          || current.temperature?.data?.find(item => item.place === "香港天文台")
+          || current.temperature?.data?.[0];
+        const humidity = current.humidity?.data?.find(item => item.place === "屯門")
+          || current.humidity?.data?.find(item => item.place === "香港天文台")
+          || current.humidity?.data?.[0];
+
+        if (temperature) temperatureValue.textContent = formatTemperature(temperature.value);
+        if (humidity) humidityValue.textContent = `${humidity.value}%`;
+        if (current.icon?.[0]) weatherIcon.src = `${HKO_WEATHER_ICON_BASE}pic${current.icon[0]}.png`;
+        conditionText.textContent = firstSentence(forecast.forecastDesc);
+        renderWarnings(warningSummary);
+      } catch (error) {
+        console.warn("未能更新天文台天氣", error);
+      }
+    }
+
+    async function updateEta() {
+      await Promise.allSettled([updateBusEtas(), updateLrtEtas()]);
+      setRefreshLabel(new Date());
+    }
+
+    async function updateAll() {
+      await Promise.allSettled([updateBusEtas(), updateLrtEtas(), updateWeather()]);
+      setRefreshLabel(new Date());
+    }
+
+    function tick() {
+      const now = new Date();
+      document.getElementById("clock").textContent = formatClock(now);
+      document.getElementById("date").textContent = formatDate(now);
+    }
+
+    function markManualRefresh() {
+      updateAll();
+    }
+
+    document.getElementById("manualRefresh").addEventListener("click", markManualRefresh);
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      body.classList.toggle("light");
+    });
+
+    console.assert(formatClock(new Date("2026-07-04T09:08:07+08:00")) === "09:08:07");
+    console.assert(formatDate(new Date("2026-07-04T09:08:07+08:00")) === "7月4日 星期六");
+    console.assert(formatTemperature(27) === "27.0°C");
+    console.assert(firstSentence("大致多雲。有雨。") === "大致多雲。");
+    console.assert(ETA_REFRESH_SECONDS === 15);
+    console.assert(LRT_STATION_ID === 170);
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+    tick();
+    updateAll();
+    setInterval(tick, 1000);
+    setInterval(updateEta, ETA_REFRESH_SECONDS * 1000);
+  </script>
+</body>
+</html>
