@@ -104,8 +104,9 @@
 
     .eta-pane {
       display: grid;
-      grid-template-rows: 66px auto auto 34px;
+      grid-template-rows: 66px auto auto minmax(34px, 1fr);
       align-content: start;
+      overflow: hidden;
     }
 
     .side-pane {
@@ -358,7 +359,9 @@
       display: grid;
       grid-template-columns: 92px 1fr 268px;
       align-items: center;
+      align-self: end;
       gap: 14px;
+      height: 34px;
       padding: 0 18px;
       border-top: 1px solid var(--line);
     }
@@ -566,11 +569,15 @@
       }
 
       .eta-pane {
-        grid-template-rows: 64px auto auto 30px;
+        grid-template-rows: 64px auto auto minmax(30px, 1fr);
       }
 
       .eta-row {
         height: 64px;
+      }
+
+      .eta-footer {
+        height: 30px;
       }
     }
 
