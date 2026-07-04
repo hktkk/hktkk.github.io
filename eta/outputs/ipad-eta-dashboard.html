@@ -104,7 +104,7 @@
 
     .eta-pane {
       display: grid;
-      grid-template-rows: 66px auto auto minmax(34px, 1fr);
+      grid-template-rows: 66px minmax(0, 1fr) minmax(0, 1fr) 34px;
       align-content: start;
       overflow: hidden;
     }
@@ -188,6 +188,12 @@
       min-height: 0;
     }
 
+    .rows {
+      display: grid;
+      grid-template-rows: repeat(4, minmax(66px, 1fr));
+      min-height: 0;
+    }
+
     .section-title {
       display: grid;
       grid-template-columns: 92px 1fr 268px;
@@ -207,7 +213,7 @@
     }
 
     .eta-row {
-      height: 66px;
+      min-height: 66px;
       display: grid;
       grid-template-columns: 92px 1fr 268px;
       align-items: center;
@@ -569,11 +575,15 @@
       }
 
       .eta-pane {
-        grid-template-rows: 64px auto auto minmax(30px, 1fr);
+        grid-template-rows: 64px minmax(0, 1fr) minmax(0, 1fr) 30px;
+      }
+
+      .rows {
+        grid-template-rows: repeat(4, minmax(64px, 1fr));
       }
 
       .eta-row {
-        height: 64px;
+        min-height: 64px;
       }
 
       .eta-footer {
