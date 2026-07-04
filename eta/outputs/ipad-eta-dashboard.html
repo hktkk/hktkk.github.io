@@ -755,7 +755,7 @@
       </section>
 
       <section class="weather">
-        <div class="kicker">天文台天氣</div>
+        <div class="kicker">屯門天氣</div>
         <div class="weather-pair">
           <div class="weather-card">
             <span>溫度</span>
@@ -781,12 +781,14 @@
 
   <script>
     const ETA_REFRESH_SECONDS = 15;
+    const WEATHER_REFRESH_SECONDS = 300;
     const LRT_STATION_ID = 170;
     const KMB_ETA_BASE = "https://data.etabus.gov.hk/v1/transport/kmb/eta";
     const LRT_ETA_URL = `https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${LRT_STATION_ID}&with_special=1`;
     const HKO_CURRENT_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc";
     const HKO_FORECAST_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc";
     const HKO_WARNINGS_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
+    const TUEN_MUN_WEATHER_URL = "https://helio.dedyn.io/eta-weather/tuen-mun";
     const HKO_ICON_BASE = "https://www.hko.gov.hk/en/wxinfo/dailywx/images/";
     const HKO_WEATHER_ICON_BASE = "https://www.hko.gov.hk/images/HKOWxIconOutline/";
     const hkoWarningIcons = {
@@ -1011,9 +1013,21 @@
       }));
     }
 
+    async function fetchTuenMunWeather() {
+      try {
+        const response = await fetch(TUEN_MUN_WEATHER_URL, { cache: "no-store" });
+        if (!response.ok) return null;
+        return response.json();
+      } catch (error) {
+        console.warn("未能更新屯門天氣代理", error);
+        return null;
+      }
+    }
+
     async function updateWeather() {
       try {
-        const [currentResponse, forecastResponse, warningsResponse] = await Promise.all([
+        const [tuenMunWeather, currentResponse, forecastResponse, warningsResponse] = await Promise.all([
+          fetchTuenMunWeather(),
           fetch(HKO_CURRENT_URL, { cache: "no-store" }),
           fetch(HKO_FORECAST_URL, { cache: "no-store" }),
           fetch(HKO_WARNINGS_URL, { cache: "no-store" })
@@ -1023,18 +1037,26 @@
           forecastResponse.json(),
           warningsResponse.json()
         ]);
-        const temperature = current.temperature?.data?.find(item => item.place === "香港天文台")
+        const temperature = current.temperature?.data?.find(item => item.place === "屯門")
           || current.temperature?.data?.[0];
         const humidity = current.humidity?.data?.find(item => item.place === "香港天文台")
           || current.humidity?.data?.[0];
 
-        if (temperature) temperatureValue.textContent = formatTemperature(temperature.value);
-        if (humidity) humidityValue.textContent = `${humidity.value}%`;
+        if (tuenMunWeather?.temperature !== undefined) {
+          temperatureValue.textContent = formatTemperature(tuenMunWeather.temperature);
+        } else if (temperature) {
+          temperatureValue.textContent = formatTemperature(temperature.value);
+        }
+        if (tuenMunWeather?.humidity !== undefined) {
+          humidityValue.textContent = `${tuenMunWeather.humidity}%`;
+        } else if (humidity) {
+          humidityValue.textContent = `${humidity.value}%`;
+        }
         if (current.icon?.[0]) weatherIcon.src = `${HKO_WEATHER_ICON_BASE}pic${current.icon[0]}.png`;
         conditionText.textContent = firstSentence(forecast.forecastDesc);
         renderWarnings(warningSummary);
       } catch (error) {
-        console.warn("未能更新天文台天氣", error);
+        console.warn("未能更新屯門天氣", error);
       }
     }
 
@@ -1078,6 +1100,7 @@
     console.assert(formatTemperature(29.1) === "29.1°C");
     console.assert(firstSentence("大致多雲。有雨。") === "大致多雲。");
     console.assert(ETA_REFRESH_SECONDS === 15);
+    console.assert(WEATHER_REFRESH_SECONDS === 300);
     console.assert(LRT_STATION_ID === 170);
     syncSystemChrome();
     if ("serviceWorker" in navigator) {
@@ -1089,6 +1112,7 @@
     updateAll();
     setInterval(tick, 1000);
     setInterval(updateEta, ETA_REFRESH_SECONDS * 1000);
+    setInterval(updateWeather, WEATHER_REFRESH_SECONDS * 1000);
   </script>
 </body>
 </html>
