@@ -1,9 +1,0 @@
-{
-  "station": "HKO",
-  "place": "香港天文台",
-  "temperature": 29.0,
-  "humidity": 84,
-  "obsTime": "202607050050",
-  "displayTime": "2026/07/05 00:50",
-  "source": "https://www.hko.gov.hk/PDADATA/locspc/data/gridData/0906_tc.xml"
-}

@@ -787,7 +787,6 @@
     const HKO_CURRENT_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc";
     const HKO_FORECAST_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc";
     const HKO_WARNINGS_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
-    const HKO_HQ_WEATHER_URL = "./data/hko-hq-weather.json";
     const HKO_ICON_BASE = "https://www.hko.gov.hk/en/wxinfo/dailywx/images/";
     const HKO_WEATHER_ICON_BASE = "https://www.hko.gov.hk/images/HKOWxIconOutline/";
     const hkoWarningIcons = {
@@ -1012,19 +1011,9 @@
       }));
     }
 
-    async function fetchHkoHqWeather() {
-      try {
-        const response = await fetch(HKO_HQ_WEATHER_URL, { cache: "no-store" });
-        return response.ok ? response.json() : null;
-      } catch (error) {
-        return null;
-      }
-    }
-
     async function updateWeather() {
       try {
-        const [hqWeather, currentResponse, forecastResponse, warningsResponse] = await Promise.all([
-          fetchHkoHqWeather(),
+        const [currentResponse, forecastResponse, warningsResponse] = await Promise.all([
           fetch(HKO_CURRENT_URL, { cache: "no-store" }),
           fetch(HKO_FORECAST_URL, { cache: "no-store" }),
           fetch(HKO_WARNINGS_URL, { cache: "no-store" })
@@ -1039,10 +1028,8 @@
         const humidity = current.humidity?.data?.find(item => item.place === "香港天文台")
           || current.humidity?.data?.[0];
 
-        if (hqWeather?.temperature != null) temperatureValue.textContent = formatTemperature(hqWeather.temperature);
-        else if (temperature) temperatureValue.textContent = formatTemperature(temperature.value);
-        if (hqWeather?.humidity != null) humidityValue.textContent = `${hqWeather.humidity}%`;
-        else if (humidity) humidityValue.textContent = `${humidity.value}%`;
+        if (temperature) temperatureValue.textContent = formatTemperature(temperature.value);
+        if (humidity) humidityValue.textContent = `${humidity.value}%`;
         if (current.icon?.[0]) weatherIcon.src = `${HKO_WEATHER_ICON_BASE}pic${current.icon[0]}.png`;
         conditionText.textContent = firstSentence(forecast.forecastDesc);
         renderWarnings(warningSummary);

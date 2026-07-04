@@ -1,8 +1,7 @@
-const CACHE_NAME = "eta-dashboard-v10";
+const CACHE_NAME = "eta-dashboard-v11";
 const ASSETS = [
   "./",
   "./ipad-eta-dashboard.html",
-  "./data/hko-hq-weather.json",
   "./manifest.webmanifest",
   "./icon.svg"
 ];
