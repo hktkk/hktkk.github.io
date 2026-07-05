@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Noto+Sans+HK:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@500;600;700&family=Noto+Sans+HK:wght@500;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
@@ -105,9 +105,17 @@
 
     .eta-pane {
       display: grid;
-      grid-template-rows: 66px 258px minmax(0, 1fr) 34px;
+      grid-template-rows: 66px 6fr 5fr 34px;
       align-content: start;
       overflow: hidden;
+    }
+
+    .eta-pane[data-bus-view="routes"] {
+      grid-template-rows: 66px minmax(0, 1fr) 34px;
+    }
+
+    .eta-pane[data-bus-view="routes"] .lrt-section {
+      display: none;
     }
 
     .side-pane {
@@ -121,6 +129,7 @@
     }
 
     .topbar {
+      order: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -150,7 +159,7 @@
     .refresh {
       min-width: 128px;
       color: var(--muted);
-      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 15px;
       font-weight: 700;
       text-align: right;
@@ -187,6 +196,18 @@
       display: grid;
       grid-template-rows: 46px 1fr;
       min-height: 0;
+    }
+
+    .lrt-section {
+      order: 1;
+    }
+
+    .bus-section {
+      order: 2;
+    }
+
+    .eta-footer {
+      order: 3;
     }
 
     .rows {
@@ -261,7 +282,7 @@
     }
 
     .bus-section[data-mode="stations"] .rows {
-      grid-template-rows: repeat(4, minmax(48px, 1fr));
+      grid-template-rows: repeat(5, minmax(50px, 1fr));
     }
 
     .bus-section[data-mode="stations"] .time-head {
@@ -274,26 +295,26 @@
     }
 
     .bus-section[data-mode="stations"] .eta-row {
-      min-height: 48px;
+      min-height: 50px;
       cursor: pointer;
     }
 
     .bus-section[data-mode="routes"] .rows {
-      grid-auto-rows: minmax(58px, auto);
+      grid-auto-rows: 66px;
       grid-template-rows: none;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+      align-content: start;
+      overflow: hidden;
     }
 
     .bus-section[data-mode="routes"] .eta-row {
-      min-height: 58px;
+      min-height: 66px;
     }
 
     .station-enter {
       display: grid;
       place-items: center;
       color: var(--dim);
-      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 27px;
       font-weight: 700;
     }
@@ -303,6 +324,11 @@
       border: 2px solid var(--kmb-2);
       background: linear-gradient(135deg, var(--kmb), #9e1116);
       font-size: 20px;
+    }
+
+    .station-mark.citybus {
+      border-color: var(--citybus-2);
+      color: var(--citybus-2);
     }
 
     .bus-section[data-mode="stations"] .dest-main {
@@ -350,7 +376,7 @@
       place-items: center;
       border-radius: 6px;
       color: #fff;
-      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 28px;
       font-weight: 700;
       letter-spacing: 0;
@@ -410,6 +436,10 @@
       white-space: nowrap;
     }
 
+    .dest-sub:empty {
+      display: none;
+    }
+
     .times {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -427,7 +457,7 @@
       border-radius: 6px;
       background: var(--panel-soft);
       color: var(--text);
-      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
     }
 
     .time-pill b {
@@ -517,7 +547,7 @@
 
     .clock {
       margin-top: 8px;
-      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 46px;
       font-weight: 700;
       line-height: 1;
@@ -568,7 +598,7 @@
     .weather-card b {
       display: block;
       margin-top: 8px;
-      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 38px;
       line-height: 1;
       white-space: nowrap;
@@ -625,7 +655,7 @@
 
     .sun-row b {
       display: block;
-      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 23px;
       line-height: 1;
       text-align: left;
@@ -692,7 +722,11 @@
       }
 
       .eta-pane {
-        grid-template-rows: 64px 238px minmax(0, 1fr) 30px;
+        grid-template-rows: 64px 6fr 5fr 30px;
+      }
+
+      .eta-pane[data-bus-view="routes"] {
+        grid-template-rows: 64px minmax(0, 1fr) 30px;
       }
 
       .rows {
@@ -712,7 +746,7 @@
 </head>
 <body class="light">
   <main class="board" aria-label="到站時間">
-    <section class="eta-pane" aria-label="到站時間">
+    <section class="eta-pane" id="etaPane" data-bus-view="stations" aria-label="到站時間">
       <header class="topbar">
         <h1>到站時間</h1>
         <div class="top-actions">
@@ -884,6 +918,7 @@
     const WEATHER_REFRESH_SECONDS = 300;
     const LRT_STATION_ID = 170;
     const KMB_STOP_ETA_BASE = "https://data.etabus.gov.hk/v1/transport/kmb/stop-eta";
+    const CTB_ETA_BASE = "https://rt.data.gov.hk/v2/transport/citybus/eta/CTB";
     const LRT_ETA_URL = `https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${LRT_STATION_ID}&with_special=1`;
     const HKO_CURRENT_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc";
     const HKO_FORECAST_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc";
@@ -908,11 +943,16 @@
       WCOLD: "cold.gif"
     };
     const busStations = [
-      { id: "clp", name: "中電", code: "TM470", stopId: "1AD9C759A42F9003" },
-      { id: "shek-pai", name: "石排站", code: "TM584", stopId: "19B569A51034271F" },
-      { id: "tai-hing", name: "大興街", code: "TM572", stopId: "6AE148CA74FC4D53" },
-      { id: "shan-king", name: "山景總站", code: "TM941", stopId: "640B42B50FB0152E" }
+      { id: "clp", name: "中電", code: "TM470", provider: "kmb", stopId: "1AD9C759A42F9003" },
+      { id: "tai-hing", name: "大興街", code: "TM572", provider: "kmb", stopId: "6AE148CA74FC4D53" },
+      { id: "shek-pai", name: "石排站", code: "TM584", provider: "kmb", stopId: "19B569A51034271F" },
+      { id: "shan-king", name: "山景總站", code: "TM941", provider: "kmb", stopId: "640B42B50FB0152E" },
+      { id: "king-lai", name: "山景邨景麗樓", provider: "ctb", stopId: "003201", routes: ["B3A"] }
     ];
+    const busProviderLabels = {
+      kmb: "九巴",
+      ctb: "城巴"
+    };
     const lrtRouteClasses = {
       "505": "lr-505",
       "610": "lr-610",
@@ -926,6 +966,7 @@
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     const themeToggle = document.getElementById("themeToggle");
+    const etaPane = document.getElementById("etaPane");
     const busSection = document.getElementById("busSection");
     const busRows = document.getElementById("busRows");
     const busSubtitle = document.getElementById("busSubtitle");
@@ -1017,6 +1058,18 @@
       return badge;
     }
 
+    function busProviderLabel(station) {
+      return busProviderLabels[station?.provider] || "巴士";
+    }
+
+    function busRouteClass(station) {
+      return station?.provider === "ctb" ? "citybus" : "kmb";
+    }
+
+    function busStationBadgeClass(station) {
+      return station?.provider === "ctb" ? "station-mark citybus" : "station-mark";
+    }
+
     function createDestination(mainText, subText) {
       const dest = document.createElement("div");
       const main = document.createElement("span");
@@ -1038,8 +1091,8 @@
       row.setAttribute("role", "button");
       row.setAttribute("aria-label", `${station.name} 巴士路線`);
       row.append(
-        createRouteBadge("九巴", "station-mark"),
-        createDestination(station.name, `${station.code} · 九巴`),
+        createRouteBadge(busProviderLabel(station), busStationBadgeClass(station)),
+        createDestination(station.name, ""),
         enter
       );
       enter.className = "station-enter";
@@ -1054,9 +1107,11 @@
     }
 
     function renderBusStations() {
+      etaPane.dataset.busView = "stations";
       busSection.dataset.mode = "stations";
       busSubtitle.textContent = "車站";
       selectedBusStation = null;
+      busRows.style.removeProperty("--bus-route-count");
       busRows.replaceChildren(...busStations.map(createBusStationRow));
     }
 
@@ -1089,8 +1144,8 @@
       row.className = "eta-row";
       times.className = "times";
       row.append(
-        createRouteBadge(group.route),
-        createDestination(`往${group.dest}`, `${station.name} (${station.code}) · 九巴`),
+        createRouteBadge(group.route, busRouteClass(station)),
+        createDestination(`往${group.dest}`, `${station.name} · ${busProviderLabel(station)}`),
         times
       );
       renderTimes(times, group.etas);
@@ -1100,28 +1155,47 @@
     function renderBusMessage(text) {
       const row = document.createElement("article");
       row.className = "eta-row";
-      row.append(createRouteBadge("--", "station-mark"), createDestination(text, "九巴"), document.createElement("div"));
+      row.append(createRouteBadge("--", busStationBadgeClass(selectedBusStation)), createDestination(text, busProviderLabel(selectedBusStation)), document.createElement("div"));
+      busRows.style.setProperty("--bus-route-count", "1");
       busRows.replaceChildren(row);
     }
 
     function selectBusStation(stationId) {
       selectedBusStation = busStations.find(station => station.id === stationId) || null;
       if (!selectedBusStation) return renderBusStations();
+      etaPane.dataset.busView = "routes";
       busSection.dataset.mode = "routes";
-      busSubtitle.textContent = `${selectedBusStation.name} (${selectedBusStation.code})`;
+      busSubtitle.textContent = selectedBusStation.name;
       renderBusMessage("讀取路線");
       updateBusEtas();
+    }
+
+    async function fetchKmbStationGroups(station) {
+      const response = await fetch(`${KMB_STOP_ETA_BASE}/${station.stopId}`, { cache: "no-store" });
+      const payload = await response.json();
+      return groupBusEtas(payload.data);
+    }
+
+    async function fetchCtbStationGroups(station) {
+      const routeData = await Promise.all((station.routes || []).map(async route => {
+        const response = await fetch(`${CTB_ETA_BASE}/${station.stopId}/${encodeURIComponent(route)}`, { cache: "no-store" });
+        const payload = await response.json();
+        return payload.data || [];
+      }));
+      return groupBusEtas(routeData.flat());
     }
 
     async function updateBusEtas() {
       if (!selectedBusStation) return renderBusStations();
       try {
-        const response = await fetch(`${KMB_STOP_ETA_BASE}/${selectedBusStation.stopId}`, { cache: "no-store" });
-        const payload = await response.json();
-        const groups = groupBusEtas(payload.data);
+        const groups = selectedBusStation.provider === "ctb"
+          ? await fetchCtbStationGroups(selectedBusStation)
+          : await fetchKmbStationGroups(selectedBusStation);
+        busRows.style.setProperty("--bus-route-count", String(Math.max(groups.length, 1)));
+        if (!groups.length) return renderBusMessage("暫無巴士資料");
         busRows.replaceChildren(...groups.map(group => createBusRouteRow(selectedBusStation, group)));
       } catch (error) {
-        console.warn(`未能更新九巴 ${selectedBusStation.name} ETA`, error);
+        console.warn(`未能更新${busProviderLabel(selectedBusStation)} ${selectedBusStation.name} ETA`, error);
         renderBusMessage("暫無巴士資料");
       }
     }
@@ -1302,7 +1376,7 @@
     console.assert(ETA_REFRESH_SECONDS === 15);
     console.assert(WEATHER_REFRESH_SECONDS === 300);
     console.assert(LRT_STATION_ID === 170);
-    console.assert(busStations.length === 4);
+    console.assert(busStations.length === 5);
     console.assert(lrtRows.length === 6);
     syncSystemChrome();
     if ("serviceWorker" in navigator) {
