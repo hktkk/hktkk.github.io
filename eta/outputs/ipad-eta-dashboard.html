@@ -257,16 +257,19 @@
       height: 30px;
       display: none;
       place-items: center;
+      padding: 0;
       border: 1px solid var(--button-border);
       border-radius: 6px;
       background: var(--button-bg);
       color: var(--text);
       cursor: pointer;
+      line-height: 1;
     }
 
     .back-button svg {
       width: 17px;
       height: 17px;
+      display: block;
       fill: none;
       stroke: currentColor;
       stroke-linecap: round;
@@ -293,7 +296,8 @@
     }
 
     .bus-section[data-mode="stations"] .rows {
-      grid-template-rows: repeat(5, minmax(50px, 1fr));
+      grid-template-rows: repeat(5, minmax(0, 1fr));
+      padding-bottom: 6px;
     }
 
     .bus-section[data-mode="stations"] .time-head {
@@ -306,8 +310,12 @@
     }
 
     .bus-section[data-mode="stations"] .eta-row {
-      min-height: 50px;
+      min-height: 0;
       cursor: pointer;
+    }
+
+    .bus-section[data-mode="stations"] .route {
+      height: 42px;
     }
 
     .bus-section[data-mode="routes"] .rows {
