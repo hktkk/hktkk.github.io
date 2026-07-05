@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="./icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@500;600;700&family=Noto+Sans+HK:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@500;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
@@ -72,6 +72,16 @@
 
     body {
       display: block;
+    }
+
+    body,
+    button,
+    .route,
+    .time-pill,
+    .clock,
+    .weather-card b,
+    .sun-row b {
+      font-feature-settings: "zero" 0;
     }
 
     .board {
@@ -159,9 +169,10 @@
     .refresh {
       min-width: 128px;
       color: var(--muted);
-      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 15px;
       font-weight: 700;
+      font-variant-numeric: tabular-nums;
       text-align: right;
       white-space: nowrap;
     }
@@ -314,7 +325,7 @@
       display: grid;
       place-items: center;
       color: var(--dim);
-      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 27px;
       font-weight: 700;
     }
@@ -362,25 +373,35 @@
       font-size: 13px;
     }
 
-    .lrt-section .time-pill {
-      height: 42px;
+    .lrt-section .time-head,
+    .lrt-section .times {
+      grid-template-columns: repeat(2, calc((100% - 16px) / 3));
+      justify-content: end;
     }
 
-    .lrt-section .time-pill b {
-      font-size: 24px;
+    .lrt-section .time-head span:nth-child(3),
+    .lrt-section .times .time-pill:nth-child(3) {
+      display: none;
     }
 
     .route {
       height: 48px;
       display: grid;
       place-items: center;
+      padding-bottom: 2px;
       border-radius: 6px;
       color: #fff;
-      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 28px;
       font-weight: 700;
+      font-variant-numeric: tabular-nums;
       letter-spacing: 0;
+      line-height: 1;
       box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .22);
+    }
+
+    .bus-section .route {
+      padding-bottom: 5px;
     }
 
     .route.kmb {
@@ -444,9 +465,13 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
+      min-width: 0;
     }
 
     .time-pill {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
       height: 48px;
       display: flex;
       align-items: center;
@@ -457,15 +482,24 @@
       border-radius: 6px;
       background: var(--panel-soft);
       color: var(--text);
-      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
     }
 
     .time-pill b {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-size: 27px;
       line-height: 1;
+      transform: translateY(-1px);
     }
 
     .time-pill span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       color: var(--muted);
       font-size: 12px;
       font-weight: 800;
@@ -494,13 +528,21 @@
 
     .time-pill.arrival {
       align-items: center;
+      padding-right: 3px;
+      padding-left: 3px;
     }
 
     .time-pill.arrival b {
       font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      overflow: hidden;
+      font-size: 16px;
       font-weight: 800;
       line-height: 1.05;
+      text-overflow: clip;
       white-space: nowrap;
     }
 
@@ -547,9 +589,10 @@
 
     .clock {
       margin-top: 8px;
-      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 46px;
       font-weight: 700;
+      font-variant-numeric: tabular-nums;
       line-height: 1;
       letter-spacing: 0;
       white-space: nowrap;
@@ -598,8 +641,9 @@
     .weather-card b {
       display: block;
       margin-top: 8px;
-      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 38px;
+      font-variant-numeric: tabular-nums;
       line-height: 1;
       white-space: nowrap;
     }
@@ -655,8 +699,9 @@
 
     .sun-row b {
       display: block;
-      font-family: "Noto Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: "Noto Sans HK", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 23px;
+      font-variant-numeric: tabular-nums;
       line-height: 1;
       text-align: left;
     }
@@ -794,7 +839,7 @@
         <div class="section-title">
           <strong>輕鐵</strong>
           <span>路綫 / 月台</span>
-          <div class="time-head"><span>下一班</span><span>第二班</span><span>第三班</span></div>
+          <div class="time-head"><span>下一班</span><span>第二班</span></div>
         </div>
         <div class="rows">
           <article class="eta-row" data-provider="lrt">
@@ -804,7 +849,6 @@
               <span class="dest-sub">輕鐵 · 等候資料</span>
             </div>
             <div class="times" data-times>
-              <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
             </div>
@@ -818,7 +862,6 @@
             <div class="times" data-times>
               <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
             </div>
           </article>
           <article class="eta-row" data-provider="lrt">
@@ -828,7 +871,6 @@
               <span class="dest-sub">輕鐵 · 等候資料</span>
             </div>
             <div class="times" data-times>
-              <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
             </div>
@@ -842,7 +884,6 @@
             <div class="times" data-times>
               <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
             </div>
           </article>
           <article class="eta-row" data-provider="lrt">
@@ -854,7 +895,6 @@
             <div class="times" data-times>
               <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
             </div>
           </article>
           <article class="eta-row" data-provider="lrt">
@@ -864,7 +904,6 @@
               <span class="dest-sub">輕鐵 · 等候資料</span>
             </div>
             <div class="times" data-times>
-              <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
               <div class="time-pill empty"><b>--</b></div>
             </div>
@@ -1046,8 +1085,8 @@
       return pill;
     }
 
-    function renderTimes(container, etas) {
-      const slots = [etas[0], etas[1], etas[2]].map(createTimePill);
+    function renderTimes(container, etas, count = 3) {
+      const slots = Array.from({ length: count }, (_, index) => createTimePill(etas[index]));
       container.replaceChildren(...slots);
     }
 
@@ -1210,7 +1249,7 @@
         routeBadge.textContent = "--";
         main.textContent = "石排站";
         sub.textContent = "輕鐵 · 暫無資料";
-        renderTimes(row.querySelector("[data-times]"), []);
+        renderTimes(row.querySelector("[data-times]"), [], 2);
         return;
       }
 
@@ -1218,7 +1257,7 @@
       routeBadge.textContent = group.routeNo;
       main.textContent = `往${group.dest}`;
       sub.textContent = `石排站 · ${group.platform} 號月台`;
-      renderTimes(row.querySelector("[data-times]"), group.etas);
+      renderTimes(row.querySelector("[data-times]"), group.etas, 2);
     }
 
     async function updateLrtEtas() {
