@@ -105,7 +105,7 @@
 
     .eta-pane {
       display: grid;
-      grid-template-rows: 66px minmax(0, 1fr) minmax(0, 1fr) 34px;
+      grid-template-rows: 66px 258px minmax(0, 1fr) 34px;
       align-content: start;
       overflow: hidden;
     }
@@ -213,6 +213,39 @@
       letter-spacing: 0;
     }
 
+    .title-main {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .back-button {
+      width: 30px;
+      height: 30px;
+      display: none;
+      place-items: center;
+      border: 1px solid var(--button-border);
+      border-radius: 6px;
+      background: var(--button-bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .back-button svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2.4;
+    }
+
+    .bus-section[data-mode="routes"] .back-button {
+      display: grid;
+    }
+
     .eta-row {
       min-height: 66px;
       display: grid;
@@ -225,6 +258,90 @@
 
     .eta-row:last-child {
       border-bottom: 0;
+    }
+
+    .bus-section[data-mode="stations"] .rows {
+      grid-template-rows: repeat(4, minmax(48px, 1fr));
+    }
+
+    .bus-section[data-mode="stations"] .time-head {
+      display: none;
+    }
+
+    .bus-section[data-mode="stations"] .section-title,
+    .bus-section[data-mode="stations"] .eta-row {
+      grid-template-columns: 92px 1fr 44px;
+    }
+
+    .bus-section[data-mode="stations"] .eta-row {
+      min-height: 48px;
+      cursor: pointer;
+    }
+
+    .bus-section[data-mode="routes"] .rows {
+      grid-auto-rows: minmax(58px, auto);
+      grid-template-rows: none;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .bus-section[data-mode="routes"] .eta-row {
+      min-height: 58px;
+    }
+
+    .station-enter {
+      display: grid;
+      place-items: center;
+      color: var(--dim);
+      font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 27px;
+      font-weight: 700;
+    }
+
+    .station-mark {
+      height: 42px;
+      border: 2px solid var(--kmb-2);
+      background: linear-gradient(135deg, var(--kmb), #9e1116);
+      font-size: 20px;
+    }
+
+    .bus-section[data-mode="stations"] .dest-main {
+      font-size: 23px;
+    }
+
+    .bus-section[data-mode="stations"] .dest-sub {
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    .lrt-section .rows {
+      grid-template-rows: repeat(6, minmax(50px, 1fr));
+    }
+
+    .lrt-section .eta-row {
+      min-height: 50px;
+    }
+
+    .lrt-section .route {
+      height: 40px;
+      font-size: 24px;
+    }
+
+    .lrt-section .dest-main {
+      font-size: 22px;
+    }
+
+    .lrt-section .dest-sub {
+      margin-top: 4px;
+      font-size: 13px;
+    }
+
+    .lrt-section .time-pill {
+      height: 42px;
+    }
+
+    .lrt-section .time-pill b {
+      font-size: 24px;
     }
 
     .route {
@@ -575,7 +692,7 @@
       }
 
       .eta-pane {
-        grid-template-rows: 64px minmax(0, 1fr) minmax(0, 1fr) 30px;
+        grid-template-rows: 64px 238px minmax(0, 1fr) 30px;
       }
 
       .rows {
@@ -623,65 +740,23 @@
         </div>
       </header>
 
-      <section class="section" aria-label="巴士到站">
+      <section class="section bus-section" id="busSection" data-mode="stations" aria-label="巴士到站">
         <div class="section-title">
-          <strong>巴士</strong>
-          <span>方向 / 車站</span>
+          <div class="title-main">
+            <button class="back-button" id="busBack" type="button" aria-label="返回車站">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m15 18-6-6 6-6"></path>
+              </svg>
+            </button>
+            <strong>巴士</strong>
+          </div>
+          <span id="busSubtitle">車站</span>
           <div class="time-head"><span>下一班</span><span>第二班</span><span>第三班</span></div>
         </div>
-        <div class="rows">
-          <article class="eta-row" data-provider="kmb" data-route="66X" data-stop-id="1AD9C759A42F9003" data-service-type="1" data-dir="I" data-dest="屯門(大興邨)">
-            <div class="route kmb">66X</div>
-            <div class="dest">
-              <span class="dest-main">往屯門(大興邨)</span>
-              <span class="dest-sub">中電 (TM470) · 九巴</span>
-            </div>
-            <div class="times" data-times>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-            </div>
-          </article>
-          <article class="eta-row" data-provider="kmb" data-route="960" data-stop-id="19B569A51034271F" data-service-type="1" data-dir="O" data-dest="會展站">
-            <div class="route kmb">960</div>
-            <div class="dest">
-              <span class="dest-main">往會展站</span>
-              <span class="dest-sub">石排站 (TM584) · 九巴</span>
-            </div>
-            <div class="times" data-times>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-            </div>
-          </article>
-          <article class="eta-row" data-provider="kmb" data-route="258D" data-stop-id="6AE148CA74FC4D53" data-service-type="1" data-dir="O" data-dest="藍田站">
-            <div class="route kmb">258D</div>
-            <div class="dest">
-              <span class="dest-main">往藍田站</span>
-              <span class="dest-sub">大興街 (TM572) · 九巴</span>
-            </div>
-            <div class="times" data-times>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-            </div>
-          </article>
-          <article class="eta-row" data-provider="kmb" data-route="57M" data-stop-id="640B42B50FB0152E" data-service-type="1" data-dir="O" data-dest="荔景(北)">
-            <div class="route kmb">57M</div>
-            <div class="dest">
-              <span class="dest-main">往荔景(北)</span>
-              <span class="dest-sub">山景總站 (TM941) · 九巴</span>
-            </div>
-            <div class="times" data-times>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-              <div class="time-pill empty"><b>--</b></div>
-            </div>
-          </article>
-        </div>
+        <div class="rows bus-rows" id="busRows"></div>
       </section>
 
-      <section class="section" aria-label="輕鐵到站">
+      <section class="section lrt-section" aria-label="輕鐵到站">
         <div class="section-title">
           <strong>輕鐵</strong>
           <span>路綫 / 月台</span>
@@ -726,6 +801,30 @@
           </article>
           <article class="eta-row" data-provider="lrt">
             <div class="route lr-505">505</div>
+            <div class="dest">
+              <span class="dest-main">石排站</span>
+              <span class="dest-sub">輕鐵 · 等候資料</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="lrt">
+            <div class="route lr-615">615</div>
+            <div class="dest">
+              <span class="dest-main">石排站</span>
+              <span class="dest-sub">輕鐵 · 等候資料</span>
+            </div>
+            <div class="times" data-times>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+              <div class="time-pill empty"><b>--</b></div>
+            </div>
+          </article>
+          <article class="eta-row" data-provider="lrt">
+            <div class="route lr-610">610</div>
             <div class="dest">
               <span class="dest-main">石排站</span>
               <span class="dest-sub">輕鐵 · 等候資料</span>
@@ -784,7 +883,7 @@
     const ETA_REFRESH_SECONDS = 15;
     const WEATHER_REFRESH_SECONDS = 300;
     const LRT_STATION_ID = 170;
-    const KMB_ETA_BASE = "https://data.etabus.gov.hk/v1/transport/kmb/eta";
+    const KMB_STOP_ETA_BASE = "https://data.etabus.gov.hk/v1/transport/kmb/stop-eta";
     const LRT_ETA_URL = `https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${LRT_STATION_ID}&with_special=1`;
     const HKO_CURRENT_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc";
     const HKO_FORECAST_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc";
@@ -808,6 +907,12 @@
       WHOT: "vhot.gif",
       WCOLD: "cold.gif"
     };
+    const busStations = [
+      { id: "clp", name: "中電", code: "TM470", stopId: "1AD9C759A42F9003" },
+      { id: "shek-pai", name: "石排站", code: "TM584", stopId: "19B569A51034271F" },
+      { id: "tai-hing", name: "大興街", code: "TM572", stopId: "6AE148CA74FC4D53" },
+      { id: "shan-king", name: "山景總站", code: "TM941", stopId: "640B42B50FB0152E" }
+    ];
     const lrtRouteClasses = {
       "505": "lr-505",
       "610": "lr-610",
@@ -821,13 +926,17 @@
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     const themeToggle = document.getElementById("themeToggle");
-    const busRows = Array.from(document.querySelectorAll('[data-provider="kmb"]'));
+    const busSection = document.getElementById("busSection");
+    const busRows = document.getElementById("busRows");
+    const busSubtitle = document.getElementById("busSubtitle");
+    const busBack = document.getElementById("busBack");
     const lrtRows = Array.from(document.querySelectorAll('[data-provider="lrt"]'));
     const temperatureValue = document.getElementById("temperatureValue");
     const humidityValue = document.getElementById("humidityValue");
     const weatherIcon = document.getElementById("weatherIcon");
     const conditionText = document.getElementById("conditionText");
     const warnings = document.getElementById("warnings");
+    let selectedBusStation = null;
 
     function formatClock(date) {
       return `${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}`;
@@ -901,31 +1010,120 @@
       container.replaceChildren(...slots);
     }
 
-    async function updateBusEtas() {
-      await Promise.all(busRows.map(async row => {
-        const { route, stopId, serviceType, dir, dest } = row.dataset;
-        const url = `${KMB_ETA_BASE}/${stopId}/${encodeURIComponent(route)}/${serviceType}`;
-        try {
-          const response = await fetch(url, { cache: "no-store" });
-          const payload = await response.json();
-          const etas = (payload.data || [])
-            .filter(item => item.dir === dir && item.dest_tc === dest)
-            .map(item => etaFromIso(item.eta))
-            .filter(Boolean)
-            .sort((a, b) => a.sort - b.sort);
-          row.dataset.nextSort = String(etas[0]?.sort ?? Number.POSITIVE_INFINITY);
-          renderTimes(row.querySelector("[data-times]"), etas);
-        } catch (error) {
-          console.warn(`未能更新九巴 ${route} ETA`, error);
-          row.dataset.nextSort = String(Number.POSITIVE_INFINITY);
-          renderTimes(row.querySelector("[data-times]"), []);
+    function createRouteBadge(text, className = "kmb") {
+      const badge = document.createElement("div");
+      badge.className = `route ${className}`;
+      badge.textContent = text;
+      return badge;
+    }
+
+    function createDestination(mainText, subText) {
+      const dest = document.createElement("div");
+      const main = document.createElement("span");
+      const sub = document.createElement("span");
+      dest.className = "dest";
+      main.className = "dest-main";
+      sub.className = "dest-sub";
+      main.textContent = mainText;
+      sub.textContent = subText;
+      dest.append(main, sub);
+      return dest;
+    }
+
+    function createBusStationRow(station) {
+      const row = document.createElement("article");
+      const enter = document.createElement("div");
+      row.className = "eta-row station-row";
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", `${station.name} 巴士路線`);
+      row.append(
+        createRouteBadge("九巴", "station-mark"),
+        createDestination(station.name, `${station.code} · 九巴`),
+        enter
+      );
+      enter.className = "station-enter";
+      enter.textContent = "›";
+      row.addEventListener("click", () => selectBusStation(station.id));
+      row.addEventListener("keydown", event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        selectBusStation(station.id);
+      });
+      return row;
+    }
+
+    function renderBusStations() {
+      busSection.dataset.mode = "stations";
+      busSubtitle.textContent = "車站";
+      selectedBusStation = null;
+      busRows.replaceChildren(...busStations.map(createBusStationRow));
+    }
+
+    function groupBusEtas(items) {
+      const groups = new Map();
+      for (const item of items || []) {
+        const key = `${item.route}|${item.dest_tc}`;
+        if (!groups.has(key)) {
+          groups.set(key, {
+            route: item.route,
+            dest: item.dest_tc,
+            etas: []
+          });
         }
-      }));
-      const busContainer = busRows[0]?.parentElement;
-      busRows
-        .slice()
-        .sort((a, b) => Number(a.dataset.nextSort) - Number(b.dataset.nextSort))
-        .forEach(row => busContainer?.append(row));
+        const eta = etaFromIso(item.eta);
+        if (eta) groups.get(key).etas.push(eta);
+      }
+      return Array.from(groups.values())
+        .map(group => ({
+          ...group,
+          etas: group.etas.sort((a, b) => a.sort - b.sort),
+          nextSort: group.etas[0]?.sort ?? Number.POSITIVE_INFINITY
+        }))
+        .sort((a, b) => a.nextSort - b.nextSort || a.route.localeCompare(b.route, "zh-Hant-HK", { numeric: true }));
+    }
+
+    function createBusRouteRow(station, group) {
+      const row = document.createElement("article");
+      const times = document.createElement("div");
+      row.className = "eta-row";
+      times.className = "times";
+      row.append(
+        createRouteBadge(group.route),
+        createDestination(`往${group.dest}`, `${station.name} (${station.code}) · 九巴`),
+        times
+      );
+      renderTimes(times, group.etas);
+      return row;
+    }
+
+    function renderBusMessage(text) {
+      const row = document.createElement("article");
+      row.className = "eta-row";
+      row.append(createRouteBadge("--", "station-mark"), createDestination(text, "九巴"), document.createElement("div"));
+      busRows.replaceChildren(row);
+    }
+
+    function selectBusStation(stationId) {
+      selectedBusStation = busStations.find(station => station.id === stationId) || null;
+      if (!selectedBusStation) return renderBusStations();
+      busSection.dataset.mode = "routes";
+      busSubtitle.textContent = `${selectedBusStation.name} (${selectedBusStation.code})`;
+      renderBusMessage("讀取路線");
+      updateBusEtas();
+    }
+
+    async function updateBusEtas() {
+      if (!selectedBusStation) return renderBusStations();
+      try {
+        const response = await fetch(`${KMB_STOP_ETA_BASE}/${selectedBusStation.stopId}`, { cache: "no-store" });
+        const payload = await response.json();
+        const groups = groupBusEtas(payload.data);
+        busRows.replaceChildren(...groups.map(group => createBusRouteRow(selectedBusStation, group)));
+      } catch (error) {
+        console.warn(`未能更新九巴 ${selectedBusStation.name} ETA`, error);
+        renderBusMessage("暫無巴士資料");
+      }
     }
 
     function setLrtRow(row, group) {
@@ -1090,6 +1288,7 @@
     }
 
     document.getElementById("manualRefresh").addEventListener("click", markManualRefresh);
+    busBack.addEventListener("click", renderBusStations);
     themeToggle.addEventListener("click", () => {
       body.classList.toggle("light");
       syncSystemChrome();
@@ -1103,6 +1302,8 @@
     console.assert(ETA_REFRESH_SECONDS === 15);
     console.assert(WEATHER_REFRESH_SECONDS === 300);
     console.assert(LRT_STATION_ID === 170);
+    console.assert(busStations.length === 4);
+    console.assert(lrtRows.length === 6);
     syncSystemChrome();
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
