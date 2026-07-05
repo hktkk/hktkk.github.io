@@ -33,7 +33,6 @@
       --lr-610: #541912;
       --lr-615: #ffdc01;
       --lr-615p: #016584;
-      --green: #5ee08a;
       --amber: #ffd166;
       --red: #ff6b6b;
       --button-bg: rgba(255, 255, 255, .09);
@@ -115,13 +114,13 @@
 
     .eta-pane {
       display: grid;
-      grid-template-rows: 66px 6fr 5fr 34px;
+      grid-template-rows: 66px 1.145fr 1fr;
       align-content: start;
       overflow: hidden;
     }
 
     .eta-pane[data-bus-view="routes"] {
-      grid-template-rows: 66px minmax(0, 1fr) 34px;
+      grid-template-rows: 66px minmax(0, 1fr);
     }
 
     .eta-pane[data-bus-view="routes"] .lrt-section {
@@ -163,7 +162,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 8px;
+      gap: 10px;
     }
 
     .refresh {
@@ -217,13 +216,8 @@
       order: 2;
     }
 
-    .eta-footer {
-      order: 3;
-    }
-
     .rows {
       display: grid;
-      grid-template-rows: repeat(4, minmax(66px, 1fr));
       min-height: 0;
     }
 
@@ -270,6 +264,7 @@
       width: 17px;
       height: 17px;
       display: block;
+      transform: translateX(-1px);
       fill: none;
       stroke: currentColor;
       stroke-linecap: round;
@@ -360,15 +355,15 @@
     }
 
     .lrt-section .rows {
-      grid-template-rows: repeat(6, minmax(50px, 1fr));
+      grid-template-rows: repeat(6, minmax(0, 1fr));
     }
 
     .lrt-section .eta-row {
-      min-height: 50px;
+      min-height: 0;
     }
 
     .lrt-section .route {
-      height: 40px;
+      height: 42px;
       font-size: 24px;
     }
 
@@ -385,11 +380,6 @@
     .lrt-section .times {
       grid-template-columns: repeat(2, calc((100% - 16px) / 3));
       justify-content: end;
-    }
-
-    .lrt-section .time-head span:nth-child(3),
-    .lrt-section .times .time-pill:nth-child(3) {
-      display: none;
     }
 
     .route {
@@ -559,30 +549,6 @@
       font-size: 22px;
     }
 
-    .eta-footer {
-      display: grid;
-      grid-template-columns: 92px 1fr 268px;
-      align-items: center;
-      align-self: end;
-      gap: 14px;
-      height: 34px;
-      padding: 0 18px;
-      border-top: 1px solid var(--line);
-    }
-
-    .eta-footer .refresh {
-      grid-column: 3;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      color: var(--dim);
-      font-size: 12px;
-      font-weight: 600;
-      line-height: 1;
-      opacity: .76;
-    }
-
     .clock-block {
       padding: 17px 18px 14px;
       border-bottom: 1px solid var(--line);
@@ -628,8 +594,7 @@
       margin-top: 13px;
     }
 
-    .weather-card,
-    .metric {
+    .weather-card {
       min-height: 76px;
       padding: 0;
       border: 0;
@@ -637,8 +602,7 @@
       background: transparent;
     }
 
-    .weather-card span,
-    .metric span {
+    .weather-card span {
       display: block;
       color: var(--dim);
       font-size: 12px;
@@ -775,24 +739,17 @@
       }
 
       .eta-pane {
-        grid-template-rows: 64px 6fr 5fr 30px;
+        grid-template-rows: 64px 1.145fr 1fr;
       }
 
       .eta-pane[data-bus-view="routes"] {
-        grid-template-rows: 64px minmax(0, 1fr) 30px;
-      }
-
-      .rows {
-        grid-template-rows: repeat(4, minmax(64px, 1fr));
+        grid-template-rows: 64px minmax(0, 1fr);
       }
 
       .eta-row {
         min-height: 64px;
       }
 
-      .eta-footer {
-        height: 30px;
-      }
     }
 
   </style>
@@ -803,6 +760,7 @@
       <header class="topbar">
         <h1>到站時間</h1>
         <div class="top-actions">
+          <div class="refresh" id="refresh">更新時間 --:--:--</div>
           <button class="icon-button" id="themeToggle" type="button" aria-label="切換暗黑模式" title="切換暗黑模式">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="4"></circle>
@@ -919,9 +877,6 @@
         </div>
       </section>
 
-      <footer class="eta-footer" aria-label="更新時間">
-        <div class="refresh" id="refresh">到站更新 --:--:--</div>
-      </footer>
     </section>
 
     <aside class="side-pane" aria-label="時間及天氣">
@@ -990,10 +945,10 @@
       WCOLD: "cold.gif"
     };
     const busStations = [
-      { id: "clp", name: "中電", code: "TM470", provider: "kmb", stopId: "1AD9C759A42F9003" },
-      { id: "tai-hing", name: "大興街", code: "TM572", provider: "kmb", stopId: "6AE148CA74FC4D53" },
-      { id: "shek-pai", name: "石排站", code: "TM584", provider: "kmb", stopId: "19B569A51034271F" },
-      { id: "shan-king", name: "山景總站", code: "TM941", provider: "kmb", stopId: "640B42B50FB0152E" },
+      { id: "clp", name: "中電", provider: "kmb", stopId: "1AD9C759A42F9003" },
+      { id: "tai-hing", name: "大興街", provider: "kmb", stopId: "6AE148CA74FC4D53" },
+      { id: "shek-pai", name: "石排站", provider: "kmb", stopId: "19B569A51034271F" },
+      { id: "shan-king", name: "山景總站", provider: "kmb", stopId: "640B42B50FB0152E" },
       { id: "king-lai", name: "山景邨景麗樓", provider: "ctb", stopId: "003201", routes: ["B3A"] }
     ];
     const busProviderLabels = {
@@ -1035,7 +990,7 @@
     }
 
     function setRefreshLabel(date) {
-      refresh.textContent = `到站更新 ${formatClock(date)}`;
+      refresh.textContent = `更新時間 ${formatClock(date)}`;
     }
 
     function formatTemperature(value) {
@@ -1158,7 +1113,6 @@
       busSection.dataset.mode = "stations";
       busSubtitle.textContent = "車站";
       selectedBusStation = null;
-      busRows.style.removeProperty("--bus-route-count");
       busRows.replaceChildren(...busStations.map(createBusStationRow));
     }
 
@@ -1203,7 +1157,6 @@
       const row = document.createElement("article");
       row.className = "eta-row";
       row.append(createRouteBadge("--", busStationBadgeClass(selectedBusStation)), createDestination(text, busProviderLabel(selectedBusStation)), document.createElement("div"));
-      busRows.style.setProperty("--bus-route-count", "1");
       busRows.replaceChildren(row);
     }
 
@@ -1238,7 +1191,6 @@
         const groups = selectedBusStation.provider === "ctb"
           ? await fetchCtbStationGroups(selectedBusStation)
           : await fetchKmbStationGroups(selectedBusStation);
-        busRows.style.setProperty("--bus-route-count", String(Math.max(groups.length, 1)));
         if (!groups.length) return renderBusMessage("暫無巴士資料");
         busRows.replaceChildren(...groups.map(group => createBusRouteRow(selectedBusStation, group)));
       } catch (error) {
