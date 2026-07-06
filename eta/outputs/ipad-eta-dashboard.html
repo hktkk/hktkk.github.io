@@ -1598,7 +1598,7 @@
     }
 
     function renderWarnings(items) {
-      const active = Object.values(items || {}).filter(isActiveWarning);
+      const active = Object.values(items || {}).filter(item => isActiveWarning(item));
       if (!active.length) {
         const empty = document.createElement("div");
         empty.className = "warning none";
@@ -1733,6 +1733,7 @@
     console.assert(!isActiveWarning({ code: "WRAINR", actionCode: "CANCEL" }));
     console.assert(!isActiveWarning({ code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" }, new Date("2026-07-06T23:16:00+08:00")));
     console.assert(isActiveWarning({ code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" }, new Date("2026-07-06T23:14:00+08:00")));
+    console.assert(Object.values({ WTS: { code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" } }).filter(item => isActiveWarning(item, new Date("2026-07-06T23:14:00+08:00"))).length === 1);
     console.assert(ETA_REFRESH_SECONDS === 15);
     console.assert(WEATHER_REFRESH_SECONDS === 300);
     console.assert(LRT_STATION_ID === 170);
