@@ -1,4 +1,4 @@
-const CACHE_NAME = "eta-dashboard-v20";
+const CACHE_NAME = "eta-dashboard-v26";
 const ASSETS = [
   "./",
   "./ipad-eta-dashboard.html",

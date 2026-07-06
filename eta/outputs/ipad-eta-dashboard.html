@@ -119,11 +119,13 @@
       overflow: hidden;
     }
 
-    .eta-pane[data-bus-view="routes"] {
+    .eta-pane[data-bus-view="routes"],
+    .eta-pane[data-bus-view="detail"] {
       grid-template-rows: 66px minmax(0, 1fr);
     }
 
-    .eta-pane[data-bus-view="routes"] .lrt-section {
+    .eta-pane[data-bus-view="routes"] .lrt-section,
+    .eta-pane[data-bus-view="detail"] .lrt-section {
       display: none;
     }
 
@@ -272,7 +274,8 @@
       stroke-width: 2.4;
     }
 
-    .bus-section[data-mode="routes"] .back-button {
+    .bus-section[data-mode="routes"] .back-button,
+    .bus-section[data-mode="detail"] .back-button {
       display: grid;
     }
 
@@ -313,15 +316,71 @@
       height: 42px;
     }
 
+    .bus-section[data-mode="routes"] .eta-row {
+      cursor: pointer;
+    }
+
+    .bus-section[data-mode="routes"] .section-title,
+    .bus-section[data-mode="detail"] .section-title {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    .bus-section[data-mode="routes"] #busSubtitle,
+    .bus-section[data-mode="detail"] #busSubtitle {
+      justify-self: start;
+      font-size: 18px;
+    }
+
+    .bus-section[data-mode="routes"] .section-title .time-head,
+    .bus-section[data-mode="detail"] .section-title .time-head {
+      display: none;
+    }
+
     .bus-section[data-mode="routes"] .rows {
-      grid-auto-rows: 66px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: minmax(0, 1fr);
       grid-template-rows: none;
-      align-content: start;
+      align-content: stretch;
       overflow: hidden;
     }
 
     .bus-section[data-mode="routes"] .eta-row {
-      min-height: 66px;
+      grid-template-columns: 86px minmax(0, 1fr);
+      gap: 12px;
+      padding: 0 14px;
+      min-height: 0;
+    }
+
+    .bus-section[data-mode="routes"] .eta-row:nth-child(odd) {
+      border-right: 1px solid var(--line);
+    }
+
+    .bus-section[data-mode="routes"] .route {
+      height: 44px;
+      font-size: 24px;
+    }
+
+    .bus-section[data-mode="routes"] .dest-main {
+      font-size: 24px;
+      line-height: 1.08;
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    .bus-section[data-mode="routes"] .dest-sub {
+      margin-top: 3px;
+      font-size: 14px;
+    }
+
+    .bus-section[data-mode="routes"] .times {
+      display: none;
+    }
+
+    .bus-section[data-mode="detail"] .rows {
+      grid-template-rows: minmax(0, 1fr);
+      min-height: 0;
     }
 
     .station-enter {
@@ -549,6 +608,92 @@
       font-size: 22px;
     }
 
+    .route-detail {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 218px minmax(0, 1fr);
+      gap: 18px;
+      padding: 22px;
+    }
+
+    .detail-main {
+      display: grid;
+      align-content: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .detail-main .route {
+      width: 150px;
+      height: 88px;
+      font-size: 40px;
+    }
+
+    .detail-main .dest-main {
+      overflow: visible;
+      font-size: 30px;
+      line-height: 1.15;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    .detail-main .dest-sub {
+      font-size: 17px;
+      white-space: normal;
+    }
+
+    .detail-schedule {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 28px auto;
+      align-content: center;
+      gap: 12px;
+    }
+
+    .detail-labels {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      color: var(--muted);
+      font-size: 17px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .detail-times {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: center;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .detail-times.two-slots {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-times .time-pill {
+      height: 340px;
+      min-height: 0;
+      flex-direction: column;
+      gap: 10px;
+      padding: 18px 10px;
+    }
+
+    .detail-times .time-pill b {
+      font-size: 58px;
+    }
+
+    .detail-times .time-pill span {
+      font-size: 20px;
+    }
+
+    .detail-times .time-pill.arrival b {
+      font-size: 28px;
+      white-space: normal;
+    }
+
     .clock-block {
       padding: 17px 18px 14px;
       border-bottom: 1px solid var(--line);
@@ -742,7 +887,8 @@
         grid-template-rows: 64px 1.145fr 1fr;
       }
 
-      .eta-pane[data-bus-view="routes"] {
+      .eta-pane[data-bus-view="routes"],
+      .eta-pane[data-bus-view="detail"] {
         grid-template-rows: 64px minmax(0, 1fr);
       }
 
@@ -885,8 +1031,8 @@
         <div class="clock" id="clock">21:39:08</div>
         <p class="date" id="date">7月4日 星期六</p>
         <div class="sun-times" aria-label="日出日落">
-          <div class="sun-row"><span>日出</span><b>05:44</b></div>
-          <div class="sun-row"><span>日落</span><b>19:12</b></div>
+          <div class="sun-row"><span>日出</span><b id="sunriseValue">--:--</b></div>
+          <div class="sun-row"><span>日落</span><b id="sunsetValue">--:--</b></div>
         </div>
       </section>
 
@@ -925,7 +1071,11 @@
     const HKO_CURRENT_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc";
     const HKO_FORECAST_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=flw&lang=tc";
     const HKO_WARNINGS_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
+    const HKO_SUN_BASE_URL = "https://data.weather.gov.hk/weatherAPI/opendata/opendata.php?dataType=SRS&lang=tc";
     const TUEN_MUN_WEATHER_URL = "https://helio.dedyn.io/eta-weather/tuen-mun";
+    const HONG_KONG_LATITUDE = 22.3027;
+    const HONG_KONG_LONGITUDE = 114.1747;
+    const HONG_KONG_TIMEZONE = 8;
     const HKO_ICON_BASE = "https://www.hko.gov.hk/en/wxinfo/dailywx/images/";
     const HKO_WEATHER_ICON_BASE = "https://www.hko.gov.hk/images/HKOWxIconOutline/";
     const hkoWarningIcons = {
@@ -945,10 +1095,10 @@
       WCOLD: "cold.gif"
     };
     const busStations = [
-      { id: "clp", name: "中電", provider: "kmb", stopId: "1AD9C759A42F9003" },
-      { id: "tai-hing", name: "大興街", provider: "kmb", stopId: "6AE148CA74FC4D53" },
-      { id: "shek-pai", name: "石排站", provider: "kmb", stopId: "19B569A51034271F" },
-      { id: "shan-king", name: "山景總站", provider: "kmb", stopId: "640B42B50FB0152E" },
+      { id: "clp", name: "中電", provider: "kmb", stopIds: ["1AD9C759A42F9003", "AA239AD010294414"] },
+      { id: "tai-hing", name: "大興街", provider: "kmb", stopIds: ["6AE148CA74FC4D53", "951EB88600BAF893"] },
+      { id: "shek-pai", name: "石排站", provider: "kmb", stopIds: ["19B569A51034271F", "044276F0C057E98B", "FB46A4053B38C81D", "C192BEF2264E0CC6"] },
+      { id: "shan-king", name: "山景總站", provider: "kmb", stopIds: ["640B42B50FB0152E", "2297CADDD7BC438D"] },
       { id: "king-lai", name: "山景邨景麗樓", provider: "ctb", stopId: "003201", routes: ["B3A"] }
     ];
     const busProviderLabels = {
@@ -979,7 +1129,12 @@
     const weatherIcon = document.getElementById("weatherIcon");
     const conditionText = document.getElementById("conditionText");
     const warnings = document.getElementById("warnings");
+    const sunriseValue = document.getElementById("sunriseValue");
+    const sunsetValue = document.getElementById("sunsetValue");
     let selectedBusStation = null;
+    let selectedBusRouteKey = "";
+    let selectedBusRouteGroup = null;
+    let latestBusGroups = [];
 
     function formatClock(date) {
       return `${two(date.getHours())}:${two(date.getMinutes())}:${two(date.getSeconds())}`;
@@ -995,6 +1150,63 @@
 
     function formatTemperature(value) {
       return `${Number(value).toFixed(1)}°C`;
+    }
+
+    function hkoSunUrl(date = new Date()) {
+      return `${HKO_SUN_BASE_URL}&year=${date.getFullYear()}&month=${two(date.getMonth() + 1)}&day=${two(date.getDate())}`;
+    }
+
+    function parseSunTimesCsv(csvText) {
+      const rows = csvText.trim().replace(/^\uFEFF/, "").split(/\r?\n/);
+      const values = rows[1]?.split(",") || [];
+      return { sunrise: values[1], sunset: values[3] };
+    }
+
+    function formatHourMinute(decimalHour) {
+      const totalMinutes = Math.round(decimalHour * 60);
+      const hours = Math.floor(totalMinutes / 60) % 24;
+      const minutes = totalMinutes % 60;
+      return `${two(hours)}:${two(minutes)}`;
+    }
+
+    function calculateSunTime(date, isSunrise) {
+      const startOfYear = Date.UTC(date.getFullYear(), 0, 0);
+      const dayOfYear = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - startOfYear) / 86400000);
+      const longitudeHour = HONG_KONG_LONGITUDE / 15;
+      const approximateTime = dayOfYear + ((isSunrise ? 6 : 18) - longitudeHour) / 24;
+      const meanAnomaly = 0.9856 * approximateTime - 3.289;
+      let trueLongitude = meanAnomaly + 1.916 * Math.sin(meanAnomaly * Math.PI / 180) + 0.02 * Math.sin(2 * meanAnomaly * Math.PI / 180) + 282.634;
+      trueLongitude = (trueLongitude + 360) % 360;
+      let rightAscension = Math.atan(0.91764 * Math.tan(trueLongitude * Math.PI / 180)) * 180 / Math.PI;
+      rightAscension = (rightAscension + 360) % 360;
+      rightAscension += Math.floor(trueLongitude / 90) * 90 - Math.floor(rightAscension / 90) * 90;
+      rightAscension /= 15;
+
+      const sinDeclination = 0.39782 * Math.sin(trueLongitude * Math.PI / 180);
+      const cosDeclination = Math.cos(Math.asin(sinDeclination));
+      const latitudeRad = HONG_KONG_LATITUDE * Math.PI / 180;
+      const zenith = 90.75;
+      const cosHourAngle = (Math.cos(zenith * Math.PI / 180) - sinDeclination * Math.sin(latitudeRad)) / (cosDeclination * Math.cos(latitudeRad));
+      if (cosHourAngle > 1 || cosHourAngle < -1) return "--:--";
+
+      let hourAngle = Math.acos(cosHourAngle) * 180 / Math.PI;
+      if (isSunrise) hourAngle = 360 - hourAngle;
+      hourAngle /= 15;
+
+      const localHour = (hourAngle + rightAscension - 0.06571 * approximateTime - 6.622 - longitudeHour + HONG_KONG_TIMEZONE + 48) % 24;
+      return formatHourMinute(localHour);
+    }
+
+    function fallbackSunTimes(date = new Date()) {
+      return {
+        sunrise: calculateSunTime(date, true),
+        sunset: calculateSunTime(date, false)
+      };
+    }
+
+    function applySunTimes(sunTimes) {
+      if (sunTimes.sunrise) sunriseValue.textContent = sunTimes.sunrise;
+      if (sunTimes.sunset) sunsetValue.textContent = sunTimes.sunset;
     }
 
     function firstSentence(text) {
@@ -1051,6 +1263,10 @@
     function renderTimes(container, etas, count = 3) {
       const slots = Array.from({ length: count }, (_, index) => createTimePill(etas[index]));
       container.replaceChildren(...slots);
+    }
+
+    function busRouteKey(group) {
+      return `${group.route}|${group.dest}`;
     }
 
     function createRouteBadge(text, className = "kmb") {
@@ -1113,6 +1329,9 @@
       busSection.dataset.mode = "stations";
       busSubtitle.textContent = "車站";
       selectedBusStation = null;
+      selectedBusRouteKey = "";
+      selectedBusRouteGroup = null;
+      latestBusGroups = [];
       busRows.replaceChildren(...busStations.map(createBusStationRow));
     }
 
@@ -1136,13 +1355,16 @@
           etas: group.etas.sort((a, b) => a.sort - b.sort),
           nextSort: group.etas[0]?.sort ?? Number.POSITIVE_INFINITY
         }))
-        .sort((a, b) => a.nextSort - b.nextSort || a.route.localeCompare(b.route, "zh-Hant-HK", { numeric: true }));
+        .sort((a, b) => a.route.localeCompare(b.route, "zh-Hant-HK", { numeric: true }) || a.dest.localeCompare(b.dest, "zh-Hant-HK"));
     }
 
     function createBusRouteRow(station, group) {
       const row = document.createElement("article");
       const times = document.createElement("div");
       row.className = "eta-row";
+      row.tabIndex = 0;
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", `${group.route} 往${group.dest} 到站時間`);
       times.className = "times";
       row.append(
         createRouteBadge(group.route, busRouteClass(station)),
@@ -1150,7 +1372,43 @@
         times
       );
       renderTimes(times, group.etas);
+      row.addEventListener("click", () => selectBusRoute(group));
+      row.addEventListener("keydown", event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        selectBusRoute(group);
+      });
       return row;
+    }
+
+    function renderBusRouteRows(groups) {
+      busRows.replaceChildren(...groups.map(group => createBusRouteRow(selectedBusStation, group)));
+    }
+
+    function renderBusRouteDetail(group) {
+      const detail = document.createElement("article");
+      const main = document.createElement("div");
+      const schedule = document.createElement("div");
+      const labels = document.createElement("div");
+      const times = document.createElement("div");
+      detail.className = "route-detail";
+      main.className = "detail-main";
+      schedule.className = "detail-schedule";
+      labels.className = "detail-labels";
+      times.className = "detail-times";
+      ["下一班", "第二班", "第三班"].forEach(text => {
+        const label = document.createElement("span");
+        label.textContent = text;
+        labels.append(label);
+      });
+      main.append(
+        createRouteBadge(group.route, busRouteClass(selectedBusStation)),
+        createDestination(`往${group.dest}`, `${selectedBusStation.name} · ${busProviderLabel(selectedBusStation)}`)
+      );
+      renderTimes(times, group.etas);
+      schedule.append(labels, times);
+      detail.append(main, schedule);
+      busRows.replaceChildren(detail);
     }
 
     function renderBusMessage(text) {
@@ -1160,20 +1418,59 @@
       busRows.replaceChildren(row);
     }
 
+    function stopIdsFor(station) {
+      return station.stopIds || [station.stopId];
+    }
+
     function selectBusStation(stationId) {
       selectedBusStation = busStations.find(station => station.id === stationId) || null;
       if (!selectedBusStation) return renderBusStations();
       etaPane.dataset.busView = "routes";
       busSection.dataset.mode = "routes";
       busSubtitle.textContent = selectedBusStation.name;
+      selectedBusRouteKey = "";
+      selectedBusRouteGroup = null;
       renderBusMessage("讀取路線");
       updateBusEtas();
     }
 
+    function selectBusRoute(group) {
+      selectedBusRouteKey = busRouteKey(group);
+      selectedBusRouteGroup = group;
+      etaPane.dataset.busView = "detail";
+      busSection.dataset.mode = "detail";
+      busSubtitle.textContent = group.route;
+      renderBusRouteDetail(group);
+    }
+
+    function showBusRouteList() {
+      etaPane.dataset.busView = "routes";
+      busSection.dataset.mode = "routes";
+      busSubtitle.textContent = selectedBusStation?.name || "車站";
+      selectedBusRouteKey = "";
+      selectedBusRouteGroup = null;
+      if (latestBusGroups.length) {
+        renderBusRouteRows(latestBusGroups);
+      } else {
+        updateBusEtas();
+      }
+    }
+
+    function goBack() {
+      if (busSection.dataset.mode === "detail") {
+        showBusRouteList();
+        return;
+      }
+      renderBusStations();
+    }
+
     async function fetchKmbStationGroups(station) {
-      const response = await fetch(`${KMB_STOP_ETA_BASE}/${station.stopId}`, { cache: "no-store" });
-      const payload = await response.json();
-      return groupBusEtas(payload.data);
+      const payloads = await Promise.all(stopIdsFor(station).map(async stopId => {
+        const response = await fetch(`${KMB_STOP_ETA_BASE}/${stopId}`, { cache: "no-store" });
+        const payload = await response.json();
+        return payload.data || [];
+      }));
+      return groupBusEtas(payloads.flat());
     }
 
     async function fetchCtbStationGroups(station) {
@@ -1191,8 +1488,14 @@
         const groups = selectedBusStation.provider === "ctb"
           ? await fetchCtbStationGroups(selectedBusStation)
           : await fetchKmbStationGroups(selectedBusStation);
+        latestBusGroups = groups;
         if (!groups.length) return renderBusMessage("暫無巴士資料");
-        busRows.replaceChildren(...groups.map(group => createBusRouteRow(selectedBusStation, group)));
+        if (busSection.dataset.mode === "detail") {
+          const group = groups.find(item => busRouteKey(item) === selectedBusRouteKey) || selectedBusRouteGroup;
+          if (group) renderBusRouteDetail(group);
+          return;
+        }
+        renderBusRouteRows(groups);
       } catch (error) {
         console.warn(`未能更新${busProviderLabel(selectedBusStation)} ${selectedBusStation.name} ETA`, error);
         renderBusMessage("暫無巴士資料");
@@ -1332,13 +1635,24 @@
       }
     }
 
+    async function updateSunTimes() {
+      try {
+        const response = await fetch(hkoSunUrl(), { cache: "no-store" });
+        const sunTimes = parseSunTimesCsv(await response.text());
+        applySunTimes(sunTimes.sunrise && sunTimes.sunset ? sunTimes : fallbackSunTimes());
+      } catch (error) {
+        console.warn("未能更新日出日落", error);
+        applySunTimes(fallbackSunTimes());
+      }
+    }
+
     async function updateEta() {
       await Promise.allSettled([updateBusEtas(), updateLrtEtas()]);
       setRefreshLabel(new Date());
     }
 
     async function updateAll() {
-      await Promise.allSettled([updateBusEtas(), updateLrtEtas(), updateWeather()]);
+      await Promise.allSettled([updateBusEtas(), updateLrtEtas(), updateWeather(), updateSunTimes()]);
       setRefreshLabel(new Date());
     }
 
@@ -1361,7 +1675,7 @@
     }
 
     document.getElementById("manualRefresh").addEventListener("click", markManualRefresh);
-    busBack.addEventListener("click", renderBusStations);
+    busBack.addEventListener("click", goBack);
     themeToggle.addEventListener("click", () => {
       body.classList.toggle("light");
       syncSystemChrome();
@@ -1371,11 +1685,19 @@
     console.assert(formatDate(new Date("2026-07-04T09:08:07+08:00")) === "7月4日 星期六");
     console.assert(formatTemperature(27) === "27.0°C");
     console.assert(formatTemperature(29.1) === "29.1°C");
+    console.assert(hkoSunUrl(new Date("2026-07-06T09:08:07+08:00")).includes("year=2026&month=07&day=06"));
+    console.assert(parseSunTimesCsv("\uFEFFYYYY-MM-DD,RISE,TRAN.,SET\n2026-07-06,05:45,12:28,19:11\n").sunset === "19:11");
+    console.assert(fallbackSunTimes(new Date("2026-07-06T09:08:07+08:00")).sunrise === "05:45");
     console.assert(firstSentence("大致多雲。有雨。") === "大致多雲。");
     console.assert(ETA_REFRESH_SECONDS === 15);
     console.assert(WEATHER_REFRESH_SECONDS === 300);
     console.assert(LRT_STATION_ID === 170);
     console.assert(busStations.length === 5);
+    console.assert(stopIdsFor(busStations[0]).length === 2);
+    console.assert(stopIdsFor(busStations[1]).length === 2);
+    console.assert(stopIdsFor(busStations[2]).length === 4);
+    console.assert(stopIdsFor(busStations[3]).length === 2);
+    console.assert(busRouteKey({ route: "66X", dest: "屯門(大興邨)" }) === "66X|屯門(大興邨)");
     console.assert(lrtRows.length === 6);
     syncSystemChrome();
     if ("serviceWorker" in navigator) {
@@ -1387,7 +1709,10 @@
     updateAll();
     setInterval(tick, 1000);
     setInterval(updateEta, ETA_REFRESH_SECONDS * 1000);
-    setInterval(updateWeather, WEATHER_REFRESH_SECONDS * 1000);
+    setInterval(() => {
+      updateWeather();
+      updateSunTimes();
+    }, WEATHER_REFRESH_SECONDS * 1000);
   </script>
 </body>
 </html>
