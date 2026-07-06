@@ -611,34 +611,36 @@
     .route-detail {
       min-height: 0;
       display: grid;
-      grid-template-columns: 218px minmax(0, 1fr);
-      gap: 18px;
-      padding: 22px;
+      grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
+      gap: 16px;
+      padding: 20px 22px 22px;
     }
 
     .detail-main {
       display: grid;
-      align-content: center;
-      gap: 16px;
+      grid-template-columns: 226px minmax(0, 1fr);
+      align-items: center;
+      gap: 22px;
       min-width: 0;
     }
 
     .detail-main .route {
-      width: 150px;
-      height: 88px;
-      font-size: 40px;
+      width: 214px;
+      height: 128px;
+      font-size: 58px;
     }
 
     .detail-main .dest-main {
       overflow: visible;
-      font-size: 30px;
-      line-height: 1.15;
+      font-size: 62px;
+      line-height: 1.02;
       text-overflow: clip;
       white-space: normal;
     }
 
     .detail-main .dest-sub {
-      font-size: 17px;
+      margin-top: 8px;
+      font-size: 28px;
       white-space: normal;
     }
 
@@ -646,8 +648,7 @@
       min-width: 0;
       min-height: 0;
       display: grid;
-      grid-template-rows: 28px auto;
-      align-content: center;
+      grid-template-rows: 40px minmax(0, 1fr);
       gap: 12px;
     }
 
@@ -656,7 +657,7 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       color: var(--muted);
-      font-size: 17px;
+      font-size: 24px;
       font-weight: 800;
       text-align: center;
     }
@@ -674,23 +675,23 @@
     }
 
     .detail-times .time-pill {
-      height: 340px;
+      height: 100%;
       min-height: 0;
       flex-direction: column;
-      gap: 10px;
-      padding: 18px 10px;
+      gap: 12px;
+      padding: 14px 10px;
     }
 
     .detail-times .time-pill b {
-      font-size: 58px;
+      font-size: 88px;
     }
 
     .detail-times .time-pill span {
-      font-size: 20px;
+      font-size: 28px;
     }
 
     .detail-times .time-pill.arrival b {
-      font-size: 28px;
+      font-size: 40px;
       white-space: normal;
     }
 
@@ -928,6 +929,13 @@
               <path d="M5.6 15A7 7 0 0 0 17.9 17.3L20 15.3"></path>
             </svg>
           </button>
+          <button class="icon-button" id="homeButton" type="button" aria-label="返回主頁" title="返回主頁">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m3 11 9-8 9 8"></path>
+              <path d="M5 10v10h14V10"></path>
+              <path d="M9 20v-6h6v6"></path>
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -1099,7 +1107,7 @@
       { id: "tai-hing", name: "大興街", provider: "kmb", stopIds: ["6AE148CA74FC4D53", "951EB88600BAF893"] },
       { id: "shek-pai", name: "石排站", provider: "kmb", stopIds: ["19B569A51034271F", "044276F0C057E98B", "FB46A4053B38C81D", "C192BEF2264E0CC6"] },
       { id: "shan-king", name: "山景總站", provider: "kmb", stopIds: ["640B42B50FB0152E", "2297CADDD7BC438D"] },
-      { id: "king-lai", name: "山景邨景麗樓", provider: "ctb", stopId: "003201", routes: ["B3A"] }
+      { id: "king-lai", name: "山景邨景麗樓", provider: "ctb", stopId: "003201", routes: [{ route: "B3A", dest: "深圳灣口岸" }, { route: "B3A", dest: "山景邨" }] }
     ];
     const busProviderLabels = {
       kmb: "九巴",
@@ -1118,6 +1126,7 @@
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
     const themeToggle = document.getElementById("themeToggle");
+    const homeButton = document.getElementById("homeButton");
     const etaPane = document.getElementById("etaPane");
     const busSection = document.getElementById("busSection");
     const busRows = document.getElementById("busRows");
@@ -1213,6 +1222,12 @@
       if (!text) return "未有天氣概況";
       const index = text.indexOf("。");
       return index === -1 ? text : text.slice(0, index + 1);
+    }
+
+    function isActiveWarning(item, now = new Date()) {
+      if (!item || item.actionCode === "CANCEL") return false;
+      const expiry = Date.parse(item.expireTime || "");
+      return Number.isNaN(expiry) || expiry > now.getTime();
     }
 
     function etaFromIso(isoString) {
@@ -1335,6 +1350,18 @@
       busRows.replaceChildren(...busStations.map(createBusStationRow));
     }
 
+    function sortBusGroups(groups, routeConfigs = []) {
+      const configuredOrder = new Map(routeConfigs.filter(route => route.dest).map((route, index) => [`${route.route}|${route.dest}`, index]));
+      return groups.sort((a, b) => {
+        const aOrder = configuredOrder.get(busRouteKey(a));
+        const bOrder = configuredOrder.get(busRouteKey(b));
+        if (aOrder !== undefined && bOrder !== undefined) return aOrder - bOrder;
+        if (aOrder !== undefined) return -1;
+        if (bOrder !== undefined) return 1;
+        return a.route.localeCompare(b.route, "zh-Hant-HK", { numeric: true }) || a.dest.localeCompare(b.dest, "zh-Hant-HK");
+      });
+    }
+
     function groupBusEtas(items) {
       const groups = new Map();
       for (const item of items || []) {
@@ -1422,6 +1449,10 @@
       return station.stopIds || [station.stopId];
     }
 
+    function routeConfigsFor(station) {
+      return (station.routes || []).map(route => typeof route === "string" ? { route } : route);
+    }
+
     function selectBusStation(stationId) {
       selectedBusStation = busStations.find(station => station.id === stationId) || null;
       if (!selectedBusStation) return renderBusStations();
@@ -1474,12 +1505,21 @@
     }
 
     async function fetchCtbStationGroups(station) {
-      const routeData = await Promise.all((station.routes || []).map(async route => {
+      const routeConfigs = routeConfigsFor(station);
+      const routeNames = Array.from(new Set(routeConfigs.map(route => route.route)));
+      const routeData = await Promise.all(routeNames.map(async route => {
         const response = await fetch(`${CTB_ETA_BASE}/${station.stopId}/${encodeURIComponent(route)}`, { cache: "no-store" });
         const payload = await response.json();
         return payload.data || [];
       }));
-      return groupBusEtas(routeData.flat());
+      const configuredDestinations = new Set(routeConfigs.filter(route => route.dest).map(route => `${route.route}|${route.dest}`));
+      const groups = groupBusEtas(routeData.flat()).filter(group => !configuredDestinations.size || configuredDestinations.has(busRouteKey(group)));
+      for (const route of routeConfigs) {
+        if (!route.dest) continue;
+        if (groups.some(group => group.route === route.route && group.dest === route.dest)) continue;
+        groups.push({ route: route.route, dest: route.dest, etas: [], nextSort: Number.POSITIVE_INFINITY });
+      }
+      return sortBusGroups(groups, routeConfigs);
     }
 
     async function updateBusEtas() {
@@ -1558,7 +1598,7 @@
     }
 
     function renderWarnings(items) {
-      const active = Object.values(items || {});
+      const active = Object.values(items || {}).filter(isActiveWarning);
       if (!active.length) {
         const empty = document.createElement("div");
         empty.className = "warning none";
@@ -1675,6 +1715,7 @@
     }
 
     document.getElementById("manualRefresh").addEventListener("click", markManualRefresh);
+    homeButton.addEventListener("click", renderBusStations);
     busBack.addEventListener("click", goBack);
     themeToggle.addEventListener("click", () => {
       body.classList.toggle("light");
@@ -1689,6 +1730,9 @@
     console.assert(parseSunTimesCsv("\uFEFFYYYY-MM-DD,RISE,TRAN.,SET\n2026-07-06,05:45,12:28,19:11\n").sunset === "19:11");
     console.assert(fallbackSunTimes(new Date("2026-07-06T09:08:07+08:00")).sunrise === "05:45");
     console.assert(firstSentence("大致多雲。有雨。") === "大致多雲。");
+    console.assert(!isActiveWarning({ code: "WRAINR", actionCode: "CANCEL" }));
+    console.assert(!isActiveWarning({ code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" }, new Date("2026-07-06T23:16:00+08:00")));
+    console.assert(isActiveWarning({ code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" }, new Date("2026-07-06T23:14:00+08:00")));
     console.assert(ETA_REFRESH_SECONDS === 15);
     console.assert(WEATHER_REFRESH_SECONDS === 300);
     console.assert(LRT_STATION_ID === 170);
