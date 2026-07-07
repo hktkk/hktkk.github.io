@@ -1084,23 +1084,30 @@
     const HONG_KONG_LATITUDE = 22.3027;
     const HONG_KONG_LONGITUDE = 114.1747;
     const HONG_KONG_TIMEZONE = 8;
-    const HKO_ICON_BASE = "https://www.hko.gov.hk/en/wxinfo/dailywx/images/";
+    const HKO_ICON_BASE = "https://www.hko.gov.hk/tc/wxinfo/dailywx/images/";
     const HKO_WEATHER_ICON_BASE = "https://www.hko.gov.hk/images/HKOWxIconOutline/";
     const hkoWarningIcons = {
-      WTS: "ts.gif",
+      WHOT: "vhot.gif",
       WRAINA: "raina.gif",
       WRAINR: "rainr.gif",
       WRAINB: "rainb.gif",
       TC1: "tc1.gif",
       TC3: "tc3.gif",
       TC8NE: "tc8ne.gif",
-      TC8SE: "tc8se.gif",
-      TC8SW: "tc8sw.gif",
-      TC8NW: "tc8nw.gif",
+      TC8SE: "tc8b.gif",
+      TC8SW: "tc8c.gif",
+      TC8NW: "tc8d.gif",
       TC9: "tc9.gif",
       TC10: "tc10.gif",
-      WHOT: "vhot.gif",
-      WCOLD: "cold.gif"
+      WTS: "ts.gif",
+      WFNTSA: "ntfl.gif",
+      WL: "landslip.gif",
+      WCOLD: "cold.gif",
+      WMSGNL: "sms.gif",
+      WFROST: "frost.gif",
+      WFIRER: "firer.gif",
+      WFIREY: "firey.gif",
+      WTMW: "tsunami-warn.gif"
     };
     const busStations = [
       { id: "clp", name: "中電", provider: "kmb", stopIds: ["1AD9C759A42F9003", "AA239AD010294414"] },
@@ -1734,6 +1741,7 @@
     console.assert(!isActiveWarning({ code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" }, new Date("2026-07-06T23:16:00+08:00")));
     console.assert(isActiveWarning({ code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" }, new Date("2026-07-06T23:14:00+08:00")));
     console.assert(Object.values({ WTS: { code: "WTS", expireTime: "2026-07-06T23:15:00+08:00" } }).filter(item => isActiveWarning(item, new Date("2026-07-06T23:14:00+08:00"))).length === 1);
+    console.assert(["WHOT", "WRAINA", "WRAINR", "WRAINB", "TC1", "TC3", "TC8NE", "TC8SE", "TC8SW", "TC8NW", "TC9", "TC10", "WTS", "WFNTSA", "WL", "WCOLD", "WMSGNL", "WFROST", "WFIRER", "WFIREY", "WTMW"].every(code => hkoWarningIcons[code]));
     console.assert(ETA_REFRESH_SECONDS === 15);
     console.assert(WEATHER_REFRESH_SECONDS === 300);
     console.assert(LRT_STATION_ID === 170);
