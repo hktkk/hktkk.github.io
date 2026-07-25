@@ -1237,11 +1237,11 @@
       return Number.isNaN(expiry) || expiry > now.getTime();
     }
 
-    function etaFromIso(isoString) {
+    function etaFromIso(isoString, now = Date.now()) {
       if (!isoString) return null;
-      const minutes = Math.ceil((new Date(isoString).getTime() - Date.now()) / 60000);
+      const minutes = Math.floor((new Date(isoString).getTime() - now) / 60000);
       if (!Number.isFinite(minutes)) return null;
-      if (minutes <= 1) return { arrival: true, sort: 0 };
+      if (minutes <= 0) return { arrival: true, sort: 0 };
       return { minutes, sort: minutes };
     }
 
@@ -1733,6 +1733,9 @@
     console.assert(formatDate(new Date("2026-07-04T09:08:07+08:00")) === "7月4日 星期六");
     console.assert(formatTemperature(27) === "27.0°C");
     console.assert(formatTemperature(29.1) === "29.1°C");
+    console.assert(etaFromIso("2026-07-25T15:08:21+08:00", new Date("2026-07-25T14:51:24+08:00").getTime()).minutes === 16);
+    console.assert(etaFromIso("2026-07-25T14:52:24+08:00", new Date("2026-07-25T14:51:24+08:00").getTime()).minutes === 1);
+    console.assert(etaFromIso("2026-07-25T14:52:23+08:00", new Date("2026-07-25T14:51:24+08:00").getTime()).arrival);
     console.assert(hkoSunUrl(new Date("2026-07-06T09:08:07+08:00")).includes("year=2026&month=07&day=06"));
     console.assert(parseSunTimesCsv("\uFEFFYYYY-MM-DD,RISE,TRAN.,SET\n2026-07-06,05:45,12:28,19:11\n").sunset === "19:11");
     console.assert(fallbackSunTimes(new Date("2026-07-06T09:08:07+08:00")).sunrise === "05:45");

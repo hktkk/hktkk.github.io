@@ -1,6 +1,6 @@
 # 到站時間資訊板維護筆記
 
-版本：v35
+版本：v36
 
 ## 發佈位置
 
@@ -8,7 +8,7 @@
 - 主頁：`/eta/outputs/ipad-eta-dashboard.html`
 - 本機工作檔：`outputs/ipad-eta-dashboard.html`
 - Service worker：`outputs/sw.js`
-- 目前 cache 名稱：`eta-dashboard-v35`
+- 目前 cache 名稱：`eta-dashboard-v36`
 
 遠端 repo 內的 ETA 專案位於 `eta/` 目錄。本機這份工作目錄保留舊結構，發佈時要把本機 `outputs/` 同步到遠端的 `eta/outputs/`。
 
@@ -44,6 +44,7 @@
 
 - 時鐘：每秒更新。
 - ETA：每 15 秒更新。
+- ETA 分鐘顯示：捨去不足一分鐘的餘秒；少於一分鐘時顯示「即將到達」，與 APP1933 的倒數方式一致。
 - 天氣和日出日落：每 5 分鐘更新。
 - 手動更新：同時更新 ETA、天氣和日出日落，並刷新頂部「更新時間」。
 
